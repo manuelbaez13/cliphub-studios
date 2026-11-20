@@ -200,38 +200,114 @@
             <span>Cargar Video Demo</span>
           </button>
 
+          <!-- Botón YouTube / En Directo -->
+          <button id="toggleYtLivePanelBtn" type="button" onclick="toggleYoutubeLivePanel()" class="px-3.5 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/45 text-rose-200 text-xs sm:text-sm font-extrabold flex items-center gap-2 transition">
+            <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+            <span>YouTube / En Directo</span>
+          </button>
+
           <!-- Botón Auto-Analizar Todo (IA) -->
-          <button id="autoAnalyzeBtn" type="button" class="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/50 text-emerald-200 text-xs sm:text-sm font-extrabold flex items-center gap-2 shadow-lg shadow-emerald-500/10 transition disabled:opacity-40 disabled:cursor-not-allowed" disabled>
-            <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-            <span id="autoAnalyzeBtnText">Auto-Analizar Todo (IA)</span>
-          </button>
-
-          <!-- Switch Auto al subir -->
-          <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-pro-bg border border-pro-border text-[11px] font-semibold text-slate-300 cursor-pointer select-none">
-            <input id="toggleAutoAnalyzeOnUpload" type="checkbox" checked class="w-4 h-4 accent-emerald-400 rounded" />
-            <span>Auto al subir</span>
-          </label>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-          <!-- Capturar a Miniatura -->
-          <button id="captureToThumbBtn" type="button" class="px-3.5 py-2.5 rounded-xl bg-pro-card hover:bg-pro-elevated border border-pro-border text-slate-200 text-xs sm:text-sm font-semibold flex items-center gap-2 transition disabled:opacity-40 disabled:cursor-not-allowed" disabled>
-            <svg class="w-4 h-4 text-cyan-300" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span class="hidden md:inline">Capturar a Miniatura</span>
-          </button>
-
-          <!-- Exportar Clip -->
+          <!-- Exportar Clip / Vista Previa -->
           <button id="exportVideoBtn" type="button" class="px-4 py-2.5 rounded-xl grad-pro hover:opacity-95 text-slate-950 text-xs sm:text-sm font-black flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition disabled:opacity-40 disabled:cursor-not-allowed" disabled>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            <span id="exportVideoBtnText">Exportar Clip</span>
+            <span id="exportVideoBtnText">Visualizar y Descargar</span>
           </button>
+        </div>
+      </div>
+
+      <!-- PANEL DE YOUTUBE Y CORTES EN DIRECTO -->
+      <div id="youtubeLivePanel" class="hidden rounded-2xl bg-pro-surface border border-rose-500/40 p-4 sm:p-5 space-y-4 shadow-xl shadow-rose-950/20">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5">
+            <span class="px-2.5 py-1 rounded-lg bg-rose-500 text-[10px] font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+              EN DIRECTO / YT
+            </span>
+            <div>
+              <h2 class="text-sm sm:text-base font-black text-white">Extractor de Cortes desde Link de YouTube o Directo</h2>
+              <p class="text-[11px] text-slate-400">Pega un link de YouTube (video o transmisión en vivo), captura momentos al instante y llévalos al editor</p>
+            </div>
+          </div>
+          <button type="button" onclick="toggleYoutubeLivePanel(false)" class="px-2.5 py-1 rounded-lg bg-pro-card hover:bg-pro-elevated border border-pro-border text-[11px] font-bold text-slate-300 transition">Cerrar</button>
+        </div>
+
+        <!-- Barra de enlace de YouTube -->
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input id="ytUrlInput" type="url" placeholder="https://www.youtube.com/watch?v=... o https://www.youtube.com/live/..." class="flex-1 px-3.5 py-2.5 rounded-xl bg-pro-bg border border-pro-border text-xs text-white focus:border-rose-400 outline-none" />
+          <button type="button" onclick="loadYoutubeLink()" class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold transition shrink-0">
+            Cargar Link de YouTube
+          </button>
+          <button id="btnYtAiPlan" type="button" onclick="analyzeYoutubeLinkWithAI()" class="px-4 py-2.5 rounded-xl grad-violet-cyan hover:opacity-95 text-white text-xs font-extrabold transition shrink-0">
+            ✨ Sacar Cortes IA del Link
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          <!-- Reproductor embebido + Captura en Directo -->
+          <div class="lg:col-span-7 space-y-3">
+            <div class="relative rounded-2xl overflow-hidden bg-black border border-pro-border aspect-video flex items-center justify-center">
+              <iframe id="ytEmbedIframe" class="hidden w-full h-full" src="" title="Reproductor YouTube" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+              <div id="ytEmptyPlaceholder" class="p-6 text-center space-y-2">
+                <div class="text-rose-400 font-black text-sm">Pega un enlace de YouTube arriba</div>
+                <p class="text-[11px] text-slate-400 max-w-md mx-auto leading-relaxed">Soporta videos normales, Shorts y transmisiones <strong>En Directo (Live)</strong>. Una vez cargado, puedes activar la <strong>Captura en Vivo</strong> para ir sacando clips reales mientras el directo avanza.</p>
+              </div>
+            </div>
+
+            <!-- Controles de Captura Real en Directo -->
+            <div class="p-3 rounded-xl bg-pro-bg border border-pro-border flex flex-wrap items-center justify-between gap-2.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <button id="btnLiveCaptureToggle" type="button" onclick="toggleLiveStreamCapture()" class="px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-200 text-xs font-extrabold flex items-center gap-1.5 transition">
+                  <span id="liveCaptureDot" class="w-2 h-2 rounded-full bg-rose-400"></span>
+                  <span id="liveCaptureBtnText">Iniciar Captura del Directo</span>
+                </button>
+
+                <button id="btnExtractLiveClip" type="button" onclick="extractLiveBufferClip()" class="px-3.5 py-2 rounded-xl grad-pro hover:opacity-95 text-slate-950 text-xs font-black flex items-center gap-1.5 transition disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+                  <span>✂️ Sacar Corte Ahora</span>
+                </button>
+              </div>
+
+              <div class="flex items-center gap-2 text-[11px]">
+                <span id="liveCaptureTimer" class="font-mono font-bold text-rose-300 bg-rose-950/50 px-2.5 py-1 rounded-lg border border-rose-500/30">00:00</span>
+                <button type="button" onclick="addManualLiveMarker()" class="px-2.5 py-1.5 rounded-lg bg-pro-card hover:bg-pro-elevated border border-pro-border text-[11px] font-bold text-amber-300 transition">⚡ Marcar Minuto</button>
+              </div>
+            </div>
+
+            <p class="text-[10px] text-slate-400 leading-relaxed">
+              <strong>Cómo sacar cortes reales de un Directo sin servidor:</strong> Pulsa <em>"Iniciar Captura del Directo"</em>, selecciona esta pestaña (marca <em>Compartir audio de la pestaña</em>), deja correr el directo y pulsa <strong>"✂️ Sacar Corte Ahora"</strong> cada vez que pase un momento épico. Cada clip cae listo para editar en 9:16, ponerle fotos PNG, subtítulos y descargar.
+            </p>
+          </div>
+
+          <!-- Derecha: Metadata + Notas del Directo + Bandeja de Cortes Extraídos -->
+          <div class="lg:col-span-5 space-y-3">
+            <div id="ytMetaBox" class="hidden p-3 rounded-xl bg-pro-card border border-pro-border flex items-center gap-3">
+              <img id="ytMetaThumb" alt="Portada YouTube" class="w-20 aspect-video rounded-lg object-cover border border-white/10 shrink-0 bg-black" />
+              <div class="min-w-0">
+                <div id="ytMetaTitle" class="text-xs font-extrabold text-white line-clamp-2">Video de YouTube</div>
+                <div id="ytMetaAuthor" class="text-[10px] text-slate-400 mt-0.5 truncate">Canal detectado</div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-pro-card border border-pro-border space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-extrabold uppercase tracking-wider text-violet-300">Tema / Notas del Directo (para la IA)</span>
+                <span class="text-[10px] text-slate-400">Opcional</span>
+              </div>
+              <textarea id="ytLiveNotesInput" rows="2" placeholder="Ej: Minuto 12 habló sobre monetización, minuto 25 reveló el truco secreto..." class="w-full px-2.5 py-2 rounded-lg bg-pro-bg border border-pro-border text-xs text-slate-200 focus:border-violet-400 outline-none resize-none"></textarea>
+            </div>
+
+            <div class="p-3 rounded-xl bg-pro-card border border-pro-border space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-extrabold uppercase tracking-wider text-cyan-300">Cortes Sacados del Directo</span>
+                <span id="liveClipsCountBadge" class="text-[10px] font-bold text-slate-400">0 cortes</span>
+              </div>
+              <div id="liveExtractedClipsList" class="space-y-2 max-h-[210px] overflow-y-auto pr-1">
+                <div class="text-center py-4 text-[11px] text-slate-400">Los cortes que saques del directo aparecerán aquí listos para editar, visualizar y descargar.</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -434,14 +510,14 @@
             </div>
           </div>
         </div>
-
-        <!-- COLUMNA DERECHA (5 cols): Paneles de Encuadre, Gancho y Subtítulos Animados -->
+        <!-- COLUMNA DERECHA (5 cols): Paneles de Encuadre, Gancho, Subtítulos Animados y Fotos sin Fondo -->
         <div class="lg:col-span-5 space-y-4">
           <div class="rounded-2xl bg-pro-surface border border-pro-border p-4 space-y-4 shadow-xl">
             <!-- Sub-pestañas derechas -->
-            <div class="grid grid-cols-2 gap-1.5 bg-pro-bg p-1 rounded-xl border border-pro-border">
-              <button type="button" id="clipSubtabFrame" onclick="switchClipSideTab('frame')" class="py-2 px-3 rounded-lg text-xs font-extrabold bg-pro-elevated text-cyan-300 border border-cyan-500/30 transition">Encuadre &amp; Gancho</button>
-              <button type="button" id="clipSubtabSubs" onclick="switchClipSideTab('subs')" class="py-2 px-3 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">Subtítulos Animados</button>
+            <div class="grid grid-cols-3 gap-1 bg-pro-bg p-1 rounded-xl border border-pro-border">
+              <button type="button" id="clipSubtabFrame" onclick="switchClipSideTab('frame')" class="py-2 px-2 rounded-lg text-[11px] font-extrabold bg-pro-elevated text-cyan-300 border border-cyan-500/30 transition">Encuadre</button>
+              <button type="button" id="clipSubtabSubs" onclick="switchClipSideTab('subs')" class="py-2 px-2 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white transition">Subtítulos</button>
+              <button type="button" id="clipSubtabOverlays" onclick="switchClipSideTab('overlays')" class="py-2 px-2 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white transition">Fotos PNG</button>
             </div>
 
             <!-- SUB-PANEL A: Encuadre, Gancho y Contexto IA -->
@@ -547,211 +623,116 @@
                 <div id="subtitleEditorList" class="space-y-2 max-h-[290px] overflow-y-auto pr-1"></div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- ===================================================================
-         MÓDULO 2: GENERADOR DE MINIATURAS IA Y TEST DE CTR EN MÓVIL
-         =================================================================== -->
-    <section id="module-thumbs" class="hidden space-y-5">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-
-        <!-- COLUMNA IZQUIERDA (7 cols): Lienzo HD + Vista Previa Móvil -->
-        <div class="lg:col-span-7 space-y-4">
-          <div class="rounded-2xl bg-pro-surface border border-pro-border p-4 space-y-4 shadow-xl">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 class="text-sm sm:text-base font-black text-white">Editor de Miniaturas de Alto CTR</h2>
-                <p class="text-[11px] text-slate-400">Usa un fotograma de tus cortes o genera un fondo exclusivo con IA</p>
-              </div>
-
-              <div class="inline-flex rounded-xl bg-pro-bg border border-pro-border p-0.5">
-                <button type="button" id="thumbAspect169" onclick="setThumbAspect('16:9')" class="px-3 py-1 rounded-lg text-[11px] font-extrabold bg-cyan-500 text-slate-950 transition">16:9 YouTube</button>
-                <button type="button" id="thumbAspect916" onclick="setThumbAspect('9:16')" class="px-3 py-1 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white transition">9:16 Portada</button>
-              </div>
-            </div>
-
-            <!-- Canvas de Miniatura -->
-            <div class="rounded-2xl bg-pro-bg border border-pro-border p-3 flex items-center justify-center overflow-hidden stage-checker">
-              <canvas id="thumbCanvas" class="max-w-full max-h-[420px] rounded-xl shadow-2xl border border-white/10 bg-black"></canvas>
-            </div>
-
-            <!-- Botones de exportación -->
-            <div class="flex flex-wrap items-center justify-between gap-2.5">
-              <label class="cursor-pointer px-3.5 py-2 rounded-xl bg-pro-card hover:bg-pro-elevated border border-pro-border text-xs font-bold text-slate-200 flex items-center gap-2 transition">
-                <svg class="w-4 h-4 text-cyan-300" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                <span>Subir Imagen Propia</span>
-                <input id="thumbImageUpload" type="file" accept="image/*" class="hidden" />
-              </label>
-
-              <div class="flex flex-wrap items-center gap-2">
-                <button type="button" onclick="sendCurrentThumbToSocial()" class="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 text-amber-200 text-xs font-extrabold transition">
-                  Enviar a Redes
-                </button>
-                <button type="button" onclick="downloadThumbnailPng()" class="px-4 py-2 rounded-xl grad-pro hover:opacity-95 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-lg shadow-cyan-500/20 transition">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  <span>Descargar PNG HD</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Test de CTR: Vista Previa en Móvil -->
-          <div class="rounded-2xl bg-pro-surface border border-pro-border p-4 space-y-3 shadow-xl">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-400/35 text-[10px] font-black text-emerald-300 uppercase">Test de CTR</span>
-                <h3 class="text-xs sm:text-sm font-extrabold text-white">Vista Previa en Móvil (Legibilidad Real)</h3>
-              </div>
-              <span class="text-[11px] text-slate-400">Verifica que el texto se lea en pequeño</span>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-              <!-- Simulador Feed YouTube -->
-              <div class="rounded-2xl bg-[#0f0f0f] border border-slate-800 p-3 space-y-2.5">
-                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Feed de YouTube Móvil</div>
-                <div class="relative rounded-xl overflow-hidden bg-black aspect-video">
-                  <img id="mobilePreviewYtImg" alt="Vista previa YouTube" class="w-full h-full object-cover" />
-                  <span class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/85 text-[10px] font-mono text-white font-bold">08:42</span>
+            <!-- SUB-PANEL C: Fotos sin Fondo / PNG / Stickers sobre el Video -->
+            <div id="clipSidePanelOverlays" class="hidden space-y-3.5">
+              <div class="p-3.5 rounded-xl bg-pro-card border border-pro-border space-y-2.5">
+                <div class="flex items-center justify-between gap-2">
+                  <div>
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-emerald-300">Fotos sin Fondo sobre el Video</h3>
+                    <p class="text-[10px] text-slate-400">Añade PNG transparentes, logos o quita el fondo en 1 clic</p>
+                  </div>
+                  <label class="cursor-pointer px-3 py-1.5 rounded-xl grad-pro text-slate-950 text-[11px] font-black shrink-0 hover:opacity-95 transition">
+                    + Añadir Foto
+                    <input id="overlayFileInput" type="file" accept="image/png,image/webp,image/jpeg,image/*" multiple class="hidden" />
+                  </label>
                 </div>
-                <div class="flex items-start gap-2.5">
-                  <div class="w-8 h-8 rounded-full grad-violet-cyan shrink-0 flex items-center justify-center text-[11px] font-black text-white">CH</div>
-                  <div class="min-w-0">
-                    <div id="mobilePreviewTitle" class="text-xs font-bold text-white leading-snug line-clamp-2">EL SECRETO QUE CAMBIÓ TODO</div>
-                    <div class="text-[10px] text-slate-400 mt-0.5">Tu Canal • 128 mil vistas • hace 2 h</div>
+
+                <!-- Lista de capas agregadas -->
+                <div id="overlayLayersList" class="space-y-1.5 max-h-[150px] overflow-y-auto pr-1">
+                  <div class="text-center py-4 text-[11px] text-slate-400">Aún no has añadido fotos. Sube un PNG sin fondo o cualquier imagen para recortarle el fondo automáticamente.</div>
+                </div>
+              </div>
+
+              <!-- Controles de la capa PNG seleccionada -->
+              <div id="activeOverlayControls" class="hidden p-3.5 rounded-xl bg-pro-card border border-cyan-500/40 space-y-3">
+                <div class="flex items-center justify-between">
+                  <span id="activeOverlayName" class="text-xs font-extrabold text-white truncate">Capa seleccionada</span>
+                  <button type="button" onclick="deleteSelectedOverlay()" class="text-[11px] font-bold text-rose-400 hover:text-rose-300">Eliminar</button>
+                </div>
+
+                <!-- Quitafondo automático integrado -->
+                <div class="p-2.5 rounded-xl bg-pro-bg border border-pro-border space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label class="inline-flex items-center gap-2 text-xs font-bold text-emerald-300 cursor-pointer">
+                      <input id="ovRemoveBgToggle" type="checkbox" class="w-4 h-4 accent-emerald-400 rounded" />
+                      <span>Quitar Fondo Automático</span>
+                    </label>
+                    <select id="ovBgModeSelect" class="px-2 py-1 rounded-lg bg-pro-surface border border-pro-border text-[10px] font-bold text-slate-200 outline-none">
+                      <option value="auto">Auto (Bordes)</option>
+                      <option value="white">Fondo Blanco</option>
+                      <option value="green">Pantalla Verde</option>
+                      <option value="black">Fondo Negro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-[10px] mb-1">
+                      <span class="text-slate-400">Suavizado / Tolerancia de recorte</span>
+                      <span id="ovBgToleranceVal" class="font-mono text-emerald-300">42</span>
+                    </div>
+                    <input id="ovBgToleranceSlider" type="range" min="10" max="130" value="42" class="w-full" />
                   </div>
                 </div>
-              </div>
 
-              <!-- Simulador Shorts / Reels -->
-              <div class="rounded-2xl bg-[#0f0f0f] border border-slate-800 p-3 flex items-center gap-3">
-                <div class="relative w-24 shrink-0 rounded-xl overflow-hidden bg-black aspect-[9/16] border border-white/10">
-                  <img id="mobilePreviewShortImg" alt="Vista previa Short" class="w-full h-full object-cover" />
-                  <div class="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/90 to-transparent">
-                    <div class="text-[9px] font-extrabold text-white leading-tight line-clamp-2">Clip Viral #1</div>
-                    <div class="text-[8px] text-slate-300">94K vistas</div>
+                <!-- Posiciones rápidas -->
+                <div class="grid grid-cols-5 gap-1">
+                  <button type="button" onclick="setOverlayQuickPos(22, 22)" class="py-1 rounded-lg bg-pro-bg hover:bg-pro-elevated border border-pro-border text-[10px] font-bold text-slate-300">Arr-Izq</button>
+                  <button type="button" onclick="setOverlayQuickPos(78, 22)" class="py-1 rounded-lg bg-pro-bg hover:bg-pro-elevated border border-pro-border text-[10px] font-bold text-slate-300">Arr-Der</button>
+                  <button type="button" onclick="setOverlayQuickPos(50, 48)" class="py-1 rounded-lg bg-pro-bg hover:bg-pro-elevated border border-pro-border text-[10px] font-bold text-cyan-300">Centro</button>
+                  <button type="button" onclick="setOverlayQuickPos(22, 76)" class="py-1 rounded-lg bg-pro-bg hover:bg-pro-elevated border border-pro-border text-[10px] font-bold text-slate-300">Abj-Izq</button>
+                  <button type="button" onclick="setOverlayQuickPos(78, 76)" class="py-1 rounded-lg bg-pro-bg hover:bg-pro-elevated border border-pro-border text-[10px] font-bold text-slate-300">Abj-Der</button>
+                </div>
+
+                <!-- Sliders de transformación -->
+                <div class="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <div class="flex justify-between text-[10px] mb-1">
+                      <span class="text-slate-400">Posición X</span>
+                      <span id="ovPosXVal" class="font-mono text-slate-200">50%</span>
+                    </div>
+                    <input id="ovPosXSlider" type="range" min="0" max="100" value="50" class="w-full" />
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-[10px] mb-1">
+                      <span class="text-slate-400">Posición Y</span>
+                      <span id="ovPosYVal" class="font-mono text-slate-200">45%</span>
+                    </div>
+                    <input id="ovPosYSlider" type="range" min="0" max="100" value="45" class="w-full" />
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-[10px] mb-1">
+                      <span class="text-slate-400">Tamaño</span>
+                      <span id="ovScaleVal" class="font-mono text-cyan-300">40%</span>
+                    </div>
+                    <input id="ovScaleSlider" type="range" min="10" max="125" value="40" class="w-full" />
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-[10px] mb-1">
+                      <span class="text-slate-400">Rotación</span>
+                      <span id="ovRotVal" class="font-mono text-slate-200">0°</span>
+                    </div>
+                    <input id="ovRotSlider" type="range" min="-180" max="180" value="0" class="w-full" />
+                  </div>
+                  <div class="col-span-2">
+                    <div class="flex justify-between text-[10px] mb-1">
+                      <span class="text-slate-400">Opacidad</span>
+                      <span id="ovOpacityVal" class="font-mono text-slate-200">100%</span>
+                    </div>
+                    <input id="ovOpacitySlider" type="range" min="10" max="100" value="100" class="w-full" />
                   </div>
                 </div>
-                <div class="space-y-1.5 text-[11px] text-slate-300">
-                  <div class="font-extrabold text-white">Checklist de Miniatura:</div>
-                  <div>• Máximo 3–5 palabras grandes</div>
-                  <div>• Alto contraste entre texto y fondo</div>
-                  <div>• Expresión o sujeto visible al centro</div>
+
+                <!-- Rango de tiempo de aparición -->
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                  <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">Aparece (seg)</label>
+                    <input id="ovStartTimeInput" type="number" step="0.1" min="0" value="0" class="w-full px-2.5 py-1.5 rounded-lg bg-pro-bg border border-pro-border text-xs font-mono text-white outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-slate-400 mb-1">Desaparece (seg)</label>
+                    <input id="ovEndTimeInput" type="number" step="0.1" min="0" value="15" class="w-full px-2.5 py-1.5 rounded-lg bg-pro-bg border border-pro-border text-xs font-mono text-white outline-none" />
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- COLUMNA DERECHA (5 cols): Generador IA de Fondos + Presets + Controles -->
-        <div class="lg:col-span-5 space-y-4">
-          <!-- Generar fondo con Gemini Imagen IA -->
-          <div class="rounded-2xl bg-pro-surface border border-pro-border p-4 space-y-3 shadow-xl">
-            <div class="flex items-center justify-between">
-              <h3 class="text-xs font-extrabold uppercase tracking-wider text-violet-300">Generar Fondo con IA</h3>
-              <span class="text-[10px] text-slate-400">Gemini Image</span>
-            </div>
-            <textarea id="thumbAiPromptInput" rows="2" placeholder="Ej: Estudio moderno con luces neón azul y naranja, ambiente épico de podcast, fondo cinemático desenfocado..." class="w-full px-3 py-2 rounded-xl bg-pro-bg border border-pro-border text-xs text-slate-200 focus:border-violet-400 outline-none resize-none"></textarea>
-            <button id="btnGenerateThumbBg" type="button" onclick="generateAiThumbnailBackground()" class="w-full py-2.5 px-4 rounded-xl grad-violet-cyan hover:opacity-95 text-white text-xs font-extrabold flex items-center justify-center gap-2 transition disabled:opacity-50">
-              <svg id="thumbAiSpinner" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-              <span id="btnGenerateThumbBgText">Crear Fondo con IA</span>
-            </button>
-          </div>
-
-          <!-- Presets rápidos -->
-          <div class="rounded-2xl bg-pro-surface border border-pro-border p-4 space-y-3 shadow-xl">
-            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-300">Estilos Rápidos (1 Clic)</h3>
-            <div class="grid grid-cols-2 gap-2">
-              <button type="button" onclick="applyThumbPreset('viral')" class="p-2.5 rounded-xl bg-pro-card hover:bg-pro-elevated border border-pro-border hover:border-amber-400/50 text-left transition">
-                <div class="text-xs font-black text-amber-300">Viral Alto Contraste</div>
-                <div class="text-[10px] text-slate-400">Amarillo + Rojo CTR</div>
-              </button>
-              <button type="button" onclick="applyThumbPreset('pixar3d')" class="p-2.5 rounded-xl bg-pro-card hover:bg-pro-elevated border border-pro-border hover:border-cyan-400/50 text-left transition">
-                <div class="text-xs font-black text-cyan-300">Animación 3D Pixar</div>
-                <div class="text-[10px] text-slate-400">Luminoso + Cian</div>
-              </button>
-              <button type="button" onclick="applyThumbPreset('magic')" class="p-2.5 rounded-xl bg-pro-card hover:bg-pro-elevated border border-pro-border hover:border-violet-400/50 text-left transition">
-                <div class="text-xs font-serif italic font-bold text-violet-300">Cuento Mágico</div>
-                <div class="text-[10px] text-slate-400">Dorado + Viñeta</div>
-              </button>
-              <button type="button" onclick="applyThumbPreset('podcast')" class="p-2.5 rounded-xl bg-pro-card hover:bg-pro-elevated border border-pro-border hover:border-rose-400/50 text-left transition">
-                <div class="text-xs font-black text-rose-300">Podcast / Reacción</div>
-                <div class="text-[10px] text-slate-400">Blanco + Etiqueta Roja</div>
-              </button>
-            </div>
-          </div>
-
-          <!-- Controles de Texto y Color -->
-          <div class="rounded-2xl bg-pro-surface border border-pro-border p-4 space-y-3 shadow-xl">
-            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-300">Texto y Ajustes Visuales</h3>
-
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-400 mb-1">Texto Principal (usa Enter para 2 líneas)</label>
-              <textarea id="thumbMainText" rows="2" class="w-full px-3 py-2 rounded-xl bg-pro-bg border border-pro-border text-xs font-extrabold text-white focus:border-cyan-400 outline-none resize-none">EL SECRETO
-DEL ÉXITO</textarea>
-            </div>
-
-            <div class="grid grid-cols-12 gap-2 items-end">
-              <div class="col-span-8">
-                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Etiqueta Superior (Badge)</label>
-                <input id="thumbBadgeText" type="text" value="NUEVO CLIP" class="w-full px-3 py-2 rounded-xl bg-pro-bg border border-pro-border text-xs font-bold text-white focus:border-cyan-400 outline-none" />
-              </div>
-              <div class="col-span-4 pb-2">
-                <label class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-300 cursor-pointer">
-                  <input id="thumbShowBadge" type="checkbox" checked class="w-4 h-4 accent-cyan-400 rounded" />
-                  <span>Mostrar</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Color Texto 2da Línea</label>
-                <input id="thumbTextColor" type="color" value="#fde047" class="w-full h-9 rounded-xl bg-pro-bg border border-pro-border cursor-pointer p-1" />
-              </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Color Etiqueta</label>
-                <input id="thumbAccentColor" type="color" value="#ef4444" class="w-full h-9 rounded-xl bg-pro-bg border border-pro-border cursor-pointer p-1" />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 pt-1">
-              <div>
-                <div class="flex justify-between text-[11px] mb-1">
-                  <span class="text-slate-400">Tamaño Texto</span>
-                  <span id="thumbFontSizeVal" class="font-mono text-slate-200">108px</span>
-                </div>
-                <input id="thumbFontSize" type="range" min="56" max="150" value="108" class="w-full" />
-              </div>
-              <div>
-                <div class="flex justify-between text-[11px] mb-1">
-                  <span class="text-slate-400">Inclinación</span>
-                  <span id="thumbTiltVal" class="font-mono text-slate-200">-3°</span>
-                </div>
-                <input id="thumbTilt" type="range" min="-12" max="12" value="-3" class="w-full" />
-              </div>
-              <div>
-                <div class="flex justify-between text-[11px] mb-1">
-                  <span class="text-slate-400">Brillo / Contraste</span>
-                  <span id="thumbContrastVal" class="font-mono text-slate-200">115%</span>
-                </div>
-                <input id="thumbContrast" type="range" min="80" max="150" value="115" class="w-full" />
-              </div>
-              <div>
-                <div class="flex justify-between text-[11px] mb-1">
-                  <span class="text-slate-400">Viñeta Oscura</span>
-                  <span id="thumbVignetteVal" class="font-mono text-slate-200">45%</span>
-                </div>
-                <input id="thumbVignette" type="range" min="0" max="85" value="45" class="w-full" />
               </div>
             </div>
           </div>
@@ -934,6 +915,44 @@ DEL ÉXITO</textarea>
 
   <!-- Video HTML5 oculto para reproducción real y análisis -->
   <video id="nativeVideo" class="hidden" playsinline crossorigin="anonymous"></video>
+
+  <!-- Modal Vista Previa y Descarga del Clip Antes de Publicar -->
+  <div id="clipPreviewModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="max-w-xl w-full rounded-2xl bg-pro-surface border border-cyan-500/40 p-5 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded-md grad-pro text-[10px] font-black text-slate-950 uppercase">Listo para Revisar</span>
+          <h3 class="text-sm sm:text-base font-black text-white">Vista Previa del Clip Antes de Publicar</h3>
+        </div>
+        <button type="button" onclick="closeClipPreviewModal()" class="w-8 h-8 rounded-lg bg-pro-card hover:bg-pro-elevated text-slate-300 font-bold">✕</button>
+      </div>
+
+      <div class="rounded-2xl bg-black border border-pro-border p-2 flex items-center justify-center">
+        <video id="exportedPreviewVideo" controls playsinline loop class="max-h-[52vh] w-auto max-w-full rounded-xl bg-black"></video>
+      </div>
+
+      <div id="exportedClipMetaBar" class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-pro-bg border border-pro-border text-[11px] text-slate-300">
+        <span>Formato: <strong id="previewMetaAspect" class="text-cyan-300">9:16</strong></span>
+        <span>Duración: <strong id="previewMetaDuration" class="text-white font-mono">0.0s</strong></span>
+        <span>Peso: <strong id="previewMetaSize" class="text-emerald-300 font-mono">0 MB</strong></span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <button type="button" onclick="downloadLastExportedClip()" class="py-2.5 px-4 rounded-xl grad-pro hover:opacity-95 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 shadow-lg shadow-cyan-500/20 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span>Descargar Video</span>
+        </button>
+        <button type="button" onclick="sendExportedClipToSocial()" class="py-2.5 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/45 text-amber-200 text-xs font-extrabold transition">
+          Enviar a Redes
+        </button>
+        <button type="button" onclick="closeClipPreviewModal()" class="py-2.5 px-4 rounded-xl bg-pro-card hover:bg-pro-elevated border border-pro-border text-slate-200 text-xs font-bold transition">
+          Seguir Editando
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal Guía API / OAuth -->
   <div id="apiGuideModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1209,6 +1228,27 @@ DEL ÉXITO</textarea>
         { start: 6.5, end: 10.2, text: "CADA CORTE NECESITA UN GANCHO FUERTE" },
         { start: 10.3, end: 14.6, text: "Y UN CIERRE PERFECTO PARA REPETIR" },
       ],
+      activeSideTab: "frame",
+      overlays: [],
+      selectedOverlayId: null,
+      lastExportedUrl: "",
+      lastExportedName: "",
+      lastExportedDuration: 0,
+    };
+
+    const ytLiveState = {
+      videoId: "",
+      url: "",
+      title: "",
+      author: "",
+      thumbUrl: "",
+      isCapturing: false,
+      stream: null,
+      recorder: null,
+      chunks: [],
+      captureStartMs: 0,
+      timerInterval: null,
+      capturedClips: [],
     };
 
     let autoAnalysisData = null;
@@ -1261,311 +1301,702 @@ DEL ÉXITO</textarea>
     }
 
     function switchClipSideTab(tab) {
+      clipState.activeSideTab = tab;
       const isFrame = tab === "frame";
+      const isSubs = tab === "subs";
+      const isOverlays = tab === "overlays";
+
       document.getElementById("clipSidePanelFrame").classList.toggle("hidden", !isFrame);
-      document.getElementById("clipSidePanelSubs").classList.toggle("hidden", isFrame);
-      document.getElementById("clipSubtabFrame").className = isFrame
-        ? "py-2 px-3 rounded-lg text-xs font-extrabold bg-pro-elevated text-cyan-300 border border-cyan-500/30 transition"
-        : "py-2 px-3 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
-      document.getElementById("clipSubtabSubs").className = !isFrame
-        ? "py-2 px-3 rounded-lg text-xs font-extrabold bg-pro-elevated text-cyan-300 border border-cyan-500/30 transition"
-        : "py-2 px-3 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
+      document.getElementById("clipSidePanelSubs").classList.toggle("hidden", !isSubs);
+      document.getElementById("clipSidePanelOverlays").classList.toggle("hidden", !isOverlays);
+
+      const activeCls = "py-2 px-2 rounded-lg text-[11px] font-extrabold bg-pro-elevated text-cyan-300 border border-cyan-500/30 transition";
+      const idleCls = "py-2 px-2 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white transition";
+
+      document.getElementById("clipSubtabFrame").className = isFrame ? activeCls : idleCls;
+      document.getElementById("clipSubtabSubs").className = isSubs ? activeCls : idleCls;
+      document.getElementById("clipSubtabOverlays").className = isOverlays ? activeCls : idleCls;
     }
 
     /* =========================================================================
-       4. MOTOR DEL VIDEO DEMO PROCEDURAL Y CARGA DE VIDEOS LOCALES
+       4B. MÓDULO YOUTUBE / EN DIRECTO Y EXTRACCIÓN DE CORTES EN VIVO
        ========================================================================= */
-    function drawProceduralDemoScene(t) {
-      const w = demoCanvas.width;
-      const h = demoCanvas.height;
-      const p = (t % 15) / 15;
-
-      // Cielo dinámico que evoluciona del atardecer a la noche mágica
-      const sky = demoCtx.createLinearGradient(0, 0, 0, h * 0.68);
-      if (p < 0.5) {
-        sky.addColorStop(0, "#0f172a");
-        sky.addColorStop(0.55, "#312e81");
-        sky.addColorStop(1, "#f97316");
+    function toggleYoutubeLivePanel(forceState) {
+      const panel = document.getElementById("youtubeLivePanel");
+      if (typeof forceState === "boolean") {
+        panel.classList.toggle("hidden", !forceState);
       } else {
-        sky.addColorStop(0, "#020617");
-        sky.addColorStop(0.55, "#1e1b4b");
-        sky.addColorStop(1, "#0e7490");
-      }
-      demoCtx.fillStyle = sky;
-      demoCtx.fillRect(0, 0, w, h);
-
-      // Estrellas centelleantes
-      for (let i = 0; i < 42; i++) {
-        const sx = (i * 197 + 40) % w;
-        const sy = (i * 89 + 25) % (h * 0.45);
-        const alpha = 0.35 + 0.65 * Math.abs(Math.sin(t * 2.2 + i));
-        demoCtx.fillStyle = `rgba(255, 250, 210, ${alpha.toFixed(2)})`;
-        demoCtx.beginPath();
-        demoCtx.arc(sx, sy, (i % 3) + 1.2, 0, Math.PI * 2);
-        demoCtx.fill();
-      }
-
-      // Luna brillante
-      const moonX = w * (0.25 + p * 0.5);
-      const moonY = h * (0.24 - Math.sin(p * Math.PI) * 0.08);
-      const moonGlow = demoCtx.createRadialGradient(moonX, moonY, 15, moonX, moonY, 130);
-      moonGlow.addColorStop(0, "rgba(254, 240, 138, 0.95)");
-      moonGlow.addColorStop(0.35, "rgba(254, 240, 138, 0.3)");
-      moonGlow.addColorStop(1, "rgba(254, 240, 138, 0)");
-      demoCtx.fillStyle = moonGlow;
-      demoCtx.beginPath();
-      demoCtx.arc(moonX, moonY, 130, 0, Math.PI * 2);
-      demoCtx.fill();
-      demoCtx.fillStyle = "#fef9c3";
-      demoCtx.beginPath();
-      demoCtx.arc(moonX, moonY, 34, 0, Math.PI * 2);
-      demoCtx.fill();
-
-      // Montañas en paralaje
-      demoCtx.fillStyle = "#0f172a";
-      demoCtx.beginPath();
-      demoCtx.moveTo(0, h * 0.65);
-      demoCtx.lineTo(w * 0.22, h * 0.44);
-      demoCtx.lineTo(w * 0.45, h * 0.60);
-      demoCtx.lineTo(w * 0.72, h * 0.40);
-      demoCtx.lineTo(w, h * 0.63);
-      demoCtx.lineTo(w, h);
-      demoCtx.lineTo(0, h);
-      demoCtx.closePath();
-      demoCtx.fill();
-
-      // Río con reflejos
-      const waterGrad = demoCtx.createLinearGradient(0, h * 0.62, 0, h);
-      waterGrad.addColorStop(0, "#0c4a6e");
-      waterGrad.addColorStop(1, "#020617");
-      demoCtx.fillStyle = waterGrad;
-      demoCtx.fillRect(0, h * 0.62, w, h * 0.38);
-
-      for (let r = 0; r < 14; r++) {
-        const ry = h * 0.66 + r * 18;
-        const rx = ((r * 140 + t * 55) % (w + 200)) - 100;
-        demoCtx.fillStyle = "rgba(103, 232, 249, 0.16)";
-        demoCtx.fillRect(rx, ry, 110, 3);
-      }
-
-      // Barquito de papel dorado flotando suavemente
-      const boatX = w * 0.5 + Math.sin(t * 0.8) * 140;
-      const boatY = h * 0.72 + Math.sin(t * 3.1) * 8;
-      const tilt = Math.cos(t * 2.5) * 0.08;
-
-      demoCtx.save();
-      demoCtx.translate(boatX, boatY);
-      demoCtx.rotate(tilt);
-
-      // Halo mágico del barquito
-      const boatHalo = demoCtx.createRadialGradient(0, -10, 8, 0, -10, 120);
-      boatHalo.addColorStop(0, "rgba(251, 191, 36, 0.55)");
-      boatHalo.addColorStop(1, "rgba(251, 191, 36, 0)");
-      demoCtx.fillStyle = boatHalo;
-      demoCtx.beginPath();
-      demoCtx.arc(0, -10, 120, 0, Math.PI * 2);
-      demoCtx.fill();
-
-      // Casco dorado
-      demoCtx.fillStyle = "#f59e0b";
-      demoCtx.beginPath();
-      demoCtx.moveTo(-88, 0);
-      demoCtx.lineTo(88, 0);
-      demoCtx.lineTo(54, 42);
-      demoCtx.lineTo(-54, 42);
-      demoCtx.closePath();
-      demoCtx.fill();
-
-      // Vela central de papel
-      demoCtx.fillStyle = "#fde047";
-      demoCtx.beginPath();
-      demoCtx.moveTo(-48, 0);
-      demoCtx.lineTo(0, -82);
-      demoCtx.lineTo(48, 0);
-      demoCtx.closePath();
-      demoCtx.fill();
-
-      demoCtx.fillStyle = "#fbbf24";
-      demoCtx.beginPath();
-      demoCtx.moveTo(0, -82);
-      demoCtx.lineTo(48, 0);
-      demoCtx.lineTo(0, 0);
-      demoCtx.closePath();
-      demoCtx.fill();
-      demoCtx.restore();
-
-      // Luciérnagas animadas
-      for (let f = 0; f < 16; f++) {
-        const fx = w * 0.2 + ((f * 73 + Math.sin(t + f) * 65) % (w * 0.6));
-        const fy = h * 0.48 + Math.cos(t * 1.6 + f * 2) * 75;
-        demoCtx.fillStyle = "rgba(253, 224, 71, 0.85)";
-        demoCtx.beginPath();
-        demoCtx.arc(fx, fy, 3.2, 0, Math.PI * 2);
-        demoCtx.fill();
+        panel.classList.toggle("hidden");
       }
     }
 
-    function enableClipControls(label, durationSec) {
-      clipState.duration = Math.max(1, Number(durationSec) || 15);
-      clipState.currentTime = 0;
-      clipState.startTime = 0;
-      clipState.endTime = Number(clipState.duration.toFixed(1));
-      clipState.panX = 50;
-      clipState.panY = 50;
-      clipState.zoom = 100;
+    function extractYoutubeVideoId(urlStr) {
+      const s = String(urlStr || "").trim();
+      if (!s) return "";
+      const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/live\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+        /^([a-zA-Z0-9_-]{11})$/,
+      ];
+      for (const rx of patterns) {
+        const m = s.match(rx);
+        if (m && m[1]) return m[1];
+      }
+      return "";
+    }
 
-      document.getElementById("clipEmptyOverlay").classList.add("hidden");
-      document.getElementById("dragHintBadge").classList.remove("hidden");
-      document.getElementById("clipSourceBadge").textContent = label;
+    async function loadYoutubeLink() {
+      const url = document.getElementById("ytUrlInput").value.trim();
+      const videoId = extractYoutubeVideoId(url);
+      if (!videoId) {
+        showToast("Pega un enlace válido de YouTube (video, Short o En Directo).", "error");
+        return;
+      }
 
-      const scrub = document.getElementById("timelineScrubber");
-      const startS = document.getElementById("cutStartSlider");
-      const endS = document.getElementById("cutEndSlider");
-      scrub.max = clipState.duration;
-      startS.max = clipState.duration;
-      endS.max = clipState.duration;
-      scrub.value = 0;
-      startS.value = 0;
-      endS.value = clipState.duration;
+      ytLiveState.videoId = videoId;
+      ytLiveState.url = url;
+      ytLiveState.thumbUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+      ytLiveState.title = `YouTube Video (${videoId})`;
+      ytLiveState.author = "Canal de YouTube";
 
-      [
-        "btnPlayPause",
-        "btnPlaySegment",
-        "btnInfiniteLoop",
-        "btnSetStartNow",
-        "btnSetEndNow",
-        "captureToThumbBtn",
-        "autoAnalyzeBtn",
-        "exportVideoBtn",
-      ].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.disabled = false;
+      const iframe = document.getElementById("ytEmbedIframe");
+      iframe.src = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+      iframe.classList.remove("hidden");
+      document.getElementById("ytEmptyPlaceholder").classList.add("hidden");
+
+      const metaBox = document.getElementById("ytMetaBox");
+      document.getElementById("ytMetaThumb").src = ytLiveState.thumbUrl;
+      document.getElementById("ytMetaTitle").textContent = ytLiveState.title;
+      document.getElementById("ytMetaAuthor").textContent = ytLiveState.author;
+      metaBox.classList.remove("hidden");
+
+      try {
+        const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}`);
+        if (res.ok) {
+          const info = await res.json();
+          if (info.title) {
+            ytLiveState.title = info.title;
+            document.getElementById("ytMetaTitle").textContent = info.title;
+          }
+          if (info.author_name) {
+            ytLiveState.author = info.author_name;
+            document.getElementById("ytMetaAuthor").textContent = info.author_name;
+          }
+        }
+      } catch (e) {}
+
+      showToast("YouTube cargado. Activa 'Iniciar Captura del Directo' para sacar cortes reales en vivo.", "success");
+    }
+
+    function startFreshLiveRecorderSegment() {
+      if (!ytLiveState.stream) return;
+      ytLiveState.chunks = [];
+      const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
+        ? "video/webm;codecs=vp9,opus"
+        : MediaRecorder.isTypeSupported("video/webm")
+          ? "video/webm"
+          : "";
+      const options = mimeType ? { mimeType, videoBitsPerSecond: 3500000 } : { videoBitsPerSecond: 3500000 };
+      const rec = new MediaRecorder(ytLiveState.stream, options);
+      rec.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) ytLiveState.chunks.push(e.data);
+      };
+      rec.start(1000);
+      ytLiveState.recorder = rec;
+      ytLiveState.captureStartMs = Date.now();
+    }
+
+    function stopLiveStreamCapture() {
+      if (ytLiveState.timerInterval) {
+        clearInterval(ytLiveState.timerInterval);
+        ytLiveState.timerInterval = null;
+      }
+      if (ytLiveState.recorder && ytLiveState.recorder.state !== "inactive") {
+        try {
+          ytLiveState.recorder.stop();
+        } catch (e) {}
+      }
+      if (ytLiveState.stream) {
+        ytLiveState.stream.getTracks().forEach((t) => t.stop());
+      }
+      ytLiveState.isCapturing = false;
+      ytLiveState.stream = null;
+      ytLiveState.recorder = null;
+      ytLiveState.chunks = [];
+
+      document.getElementById("liveCaptureBtnText").textContent = "Iniciar Captura del Directo";
+      document.getElementById("liveCaptureDot").className = "w-2 h-2 rounded-full bg-rose-400";
+      document.getElementById("btnExtractLiveClip").disabled = true;
+      document.getElementById("liveCaptureTimer").textContent = "00:00";
+    }
+
+    async function toggleLiveStreamCapture() {
+      if (ytLiveState.isCapturing) {
+        stopLiveStreamCapture();
+        showToast("Captura del directo detenida.", "info");
+        return;
+      }
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        showToast("Tu navegador no permite captura de pantalla/pestaña.", "error");
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: 30 },
+          audio: true,
+        });
+        ytLiveState.stream = stream;
+        ytLiveState.isCapturing = true;
+        stream.getVideoTracks()[0].addEventListener("ended", () => {
+          stopLiveStreamCapture();
+        });
+
+        startFreshLiveRecorderSegment();
+        document.getElementById("liveCaptureBtnText").textContent = "Detener Captura";
+        document.getElementById("liveCaptureDot").className = "w-2 h-2 rounded-full bg-emerald-400 animate-ping";
+        document.getElementById("btnExtractLiveClip").disabled = false;
+
+        ytLiveState.timerInterval = setInterval(() => {
+          const secs = Math.floor((Date.now() - ytLiveState.captureStartMs) / 1000);
+          const m = String(Math.floor(secs / 60)).padStart(2, "0");
+          const s = String(secs % 60).padStart(2, "0");
+          document.getElementById("liveCaptureTimer").textContent = `${m}:${s}`;
+        }, 500);
+
+        showToast("¡Capturando directo! Pulsa '✂️ Sacar Corte Ahora' cada vez que quieras guardar un clip.", "success");
+      } catch (e) {
+        showToast("Captura cancelada o sin permiso.", "info");
+      }
+    }
+
+    async function extractLiveBufferClip() {
+      if (!ytLiveState.isCapturing || !ytLiveState.recorder) return;
+      const rec = ytLiveState.recorder;
+      const elapsedSec = Math.max(1, Number(((Date.now() - ytLiveState.captureStartMs) / 1000).toFixed(1)));
+      const savedChunks = ytLiveState.chunks;
+
+      const stoppedPromise = new Promise((resolve) => {
+        rec.onstop = resolve;
       });
+      try {
+        rec.stop();
+      } catch (e) {}
+      await stoppedPromise;
 
-      syncFramingSliders();
-      updateTimelineUI();
+      const blob = new Blob(savedChunks, { type: "video/webm" });
+      if (blob.size > 1024) {
+        const clipUrl = URL.createObjectURL(blob);
+        const clipNum = ytLiveState.capturedClips.length + 1;
+        const clipName = `Corte_Directo_${clipNum}.webm`;
+        ytLiveState.capturedClips.unshift({
+          id: `live-${Date.now()}`,
+          type: "video",
+          title: `Corte en Directo #${clipNum}`,
+          duration: elapsedSec,
+          blob,
+          url: clipUrl,
+          fileName: clipName,
+          createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        });
+        renderLiveExtractedClips();
+        showToast(`¡Corte #${clipNum} (${elapsedSec}s) extraído! Sigue capturando el siguiente...`, "success");
+      } else {
+        showToast("Espera al menos 2 segundos antes de sacar el corte.", "info");
+      }
+
+      if (ytLiveState.isCapturing && ytLiveState.stream) {
+        startFreshLiveRecorderSegment();
+      }
+    }
+
+    function addManualLiveMarker() {
+      const nowStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const idx = ytLiveState.capturedClips.length + 1;
+      ytLiveState.capturedClips.unshift({
+        id: `mark-${Date.now()}`,
+        type: "marker",
+        title: `Marca Viral #${idx} (${ytLiveState.title || "Directo"})`,
+        duration: 0,
+        createdAt: nowStr,
+      });
+      renderLiveExtractedClips();
+      showToast(`Momento marcado a las ${nowStr}`, "info");
+    }
+
+    function renderLiveExtractedClips() {
+      const list = document.getElementById("liveExtractedClipsList");
+      document.getElementById("liveClipsCountBadge").textContent = `${ytLiveState.capturedClips.length} cortes`;
+      if (!ytLiveState.capturedClips.length) {
+        list.innerHTML = `<div class="text-center py-4 text-[11px] text-slate-400">Los cortes que saques del directo aparecerán aquí listos para editar, visualizar y descargar.</div>`;
+        return;
+      }
+
+      list.innerHTML = ytLiveState.capturedClips
+        .map((item, idx) => {
+          if (item.type === "marker") {
+            return `
+              <div class="p-2.5 rounded-xl bg-pro-bg border border-amber-500/35 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="text-[11px] font-extrabold text-amber-300 truncate">⚡ ${escapeHtml(item.title)}</div>
+                  <div class="text-[10px] text-slate-400">Marcado a las ${escapeHtml(item.createdAt)}</div>
+                </div>
+                <button type="button" onclick="deleteLiveClipItem(${idx})" class="text-[10px] font-bold text-rose-400 hover:text-rose-300 shrink-0">Quitar</button>
+              </div>`;
+          }
+          return `
+            <div class="p-2.5 rounded-xl bg-pro-bg border border-cyan-500/35 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="text-xs font-extrabold text-white truncate">${escapeHtml(item.title)}</div>
+                  <div class="text-[10px] text-cyan-300 font-mono">${item.duration}s • ${(item.blob.size / (1024 * 1024)).toFixed(2)} MB • ${escapeHtml(item.createdAt)}</div>
+                </div>
+                <button type="button" onclick="deleteLiveClipItem(${idx})" class="text-[10px] font-bold text-rose-400 hover:text-rose-300">✕</button>
+              </div>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button type="button" onclick="loadLiveClipIntoStudio(${idx})" class="py-1.5 px-2 rounded-lg grad-violet-cyan text-white text-[10px] font-extrabold transition">Editar</button>
+                <button type="button" onclick="previewLiveClipByIndex(${idx})" class="py-1.5 px-2 rounded-lg bg-pro-card hover:bg-pro-elevated border border-pro-border text-cyan-300 text-[10px] font-bold transition">Visualizar</button>
+                <button type="button" onclick="downloadLiveClipByIndex(${idx})" class="py-1.5 px-2 rounded-lg bg-pro-card hover:bg-pro-elevated border border-pro-border text-emerald-300 text-[10px] font-bold transition">Descargar</button>
+              </div>
+            </div>`;
+        })
+        .join("");
+    }
+
+    function loadLiveClipIntoStudio(idx) {
+      const item = ytLiveState.capturedClips[idx];
+      if (!item || !item.blob) return;
+      const file = new File([item.blob], item.fileName || "corte_directo.webm", { type: "video/webm" });
+      loadLocalVideoFile(file);
+      toggleYoutubeLivePanel(false);
+      showToast(`"${item.title}" cargado en el Estudio de Cortes para editar.`, "success");
+    }
+
+    function previewLiveClipByIndex(idx) {
+      const item = ytLiveState.capturedClips[idx];
+      if (!item || !item.blob) return;
+      openClipPreviewModal(item.url, item.fileName, item.duration, item.blob.size, "Directo");
+    }
+
+    function downloadLiveClipByIndex(idx) {
+      const item = ytLiveState.capturedClips[idx];
+      if (!item || !item.url) return;
+      const a = document.createElement("a");
+      a.href = item.url;
+      a.download = item.fileName || `corte_directo_${Date.now()}.webm`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast("Corte del directo descargado.", "success");
+    }
+
+    function deleteLiveClipItem(idx) {
+      const item = ytLiveState.capturedClips[idx];
+      if (item?.url) URL.revokeObjectURL(item.url);
+      ytLiveState.capturedClips.splice(idx, 1);
+      renderLiveExtractedClips();
+    }
+
+    function createStylizedFallbackFrame(titleText) {
+      const c = document.createElement("canvas");
+      c.width = 1280;
+      c.height = 720;
+      const ctx = c.getContext("2d");
+      const grad = ctx.createLinearGradient(0, 0, 1280, 720);
+      grad.addColorStop(0, "#1e1b4b");
+      grad.addColorStop(0.5, "#0f172a");
+      grad.addColorStop(1, "#be123c");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1280, 720);
+      const glow = ctx.createRadialGradient(640, 320, 30, 640, 320, 480);
+      glow.addColorStop(0, "rgba(34, 211, 238, 0.35)");
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, 1280, 720);
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      ctx.font = "900 44px Montserrat, Inter, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(String(titleText || "YOUTUBE LIVE").slice(0, 32).toUpperCase(), 640, 340);
+      const img = new Image();
+      img.src = c.toDataURL("image/png");
+      return img;
+    }
+
+    async function analyzeYoutubeLinkWithAI() {
+      const urlInput = document.getElementById("ytUrlInput").value.trim();
+      if (!ytLiveState.videoId && urlInput) {
+        await loadYoutubeLink();
+      }
+      if (!ytLiveState.videoId) {
+        showToast("Pega primero un link válido de YouTube.", "info");
+        return;
+      }
+
+      const btn = document.getElementById("btnYtAiPlan");
+      btn.disabled = true;
+      btn.textContent = "Analizando Link...";
+
+      const notes = document.getElementById("ytLiveNotesInput").value.trim();
+      try {
+        const payload = {
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: `Eres un estratega de clips virales. El usuario compartió este enlace de YouTube/Directo:
+- URL: ${ytLiveState.url}
+- Título detectado: "${ytLiveState.title}"
+- Canal: "${ytLiveState.author}"
+${notes ? `- Notas / momentos del creador: "${notes}"` : ""}
+
+Diseña exactamente 3 cortes virales ideales para YouTube Shorts, Instagram Reels y TikTok basados en este video/directo.
+Devuelve JSON estricto con: resumenVideo, puntajeGeneral (75-99), diagnosticoTecnico, y cortes (array de 3 objetos con titulo, inicio en segundos, fin en segundos, puntajeViral, ganchoSuperior en MAYÚSCULAS max 6 palabras, razonViral, subtitulos array de 4 bloques {inicio, fin, texto}, y miniatura {segundoClave, textoPrincipal con 2 líneas separadas por \\n, etiqueta, estilo}).`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                resumenVideo: { type: "STRING" },
+                puntajeGeneral: { type: "INTEGER" },
+                diagnosticoTecnico: { type: "STRING" },
+                cortes: {
+                  type: "ARRAY",
+                  items: {
+                    type: "OBJECT",
+                    properties: {
+                      titulo: { type: "STRING" },
+                      inicio: { type: "NUMBER" },
+                      fin: { type: "NUMBER" },
+                      puntajeViral: { type: "INTEGER" },
+                      ganchoSuperior: { type: "STRING" },
+                      razonViral: { type: "STRING" },
+                      subtitulos: {
+                        type: "ARRAY",
+                        items: {
+                          type: "OBJECT",
+                          properties: {
+                            inicio: { type: "NUMBER" },
+                            fin: { type: "NUMBER" },
+                            texto: { type: "STRING" },
+                          },
+                          required: ["inicio", "fin", "texto"],
+                        },
+                      },
+                      miniatura: {
+                        type: "OBJECT",
+                        properties: {
+                          segundoClave: { type: "NUMBER" },
+                          textoPrincipal: { type: "STRING" },
+                          etiqueta: { type: "STRING" },
+                          estilo: { type: "STRING" },
+                        },
+                        required: ["segundoClave", "textoPrincipal", "etiqueta", "estilo"],
+                      },
+                    },
+                    required: ["titulo", "inicio", "fin", "puntajeViral", "ganchoSuperior", "razonViral", "subtitulos", "miniatura"],
+                  },
+                },
+              },
+              required: ["resumenVideo", "puntajeGeneral", "diagnosticoTecnico", "cortes"],
+            },
+          },
+        };
+
+        const res = await callGeminiAPI(GEMINI_TEXT_MODEL, payload);
+        const rawJson = res?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!rawJson) throw new Error("Sin respuesta");
+        const parsed = JSON.parse(rawJson);
+
+        const baseImg = createStylizedFallbackFrame(ytLiveState.title);
+        await new Promise((r) => {
+          if (baseImg.complete) r();
+          else baseImg.onload = r;
+        });
+
+        const cuts = (parsed.cortes || []).slice(0, 3).map((cut, idx) => {
+          const composed = composeAutoThumbnailDataUrl(baseImg, cut.miniatura);
+          return {
+            titulo: cut.titulo || `Corte YouTube #${idx + 1}`,
+            inicio: Math.max(0, Number(cut.inicio) || idx * 15),
+            fin: Math.max(5, Number(cut.fin) || idx * 15 + 25),
+            puntajeViral: Math.min(99, Math.max(72, Number(cut.puntajeViral) || 90)),
+            ganchoSuperior: cut.ganchoSuperior || "MOMENTO CLAVE DEL DIRECTO",
+            razonViral: cut.razonViral || "Alto potencial de retención en formato vertical.",
+            subtitulos: (cut.subtitulos || []).map((s, sIdx) => ({
+              start: Number(s.inicio) || sIdx * 2.5,
+              end: Number(s.fin) || sIdx * 2.5 + 2.4,
+              text: String(s.texto || "").trim(),
+            })),
+            miniatura: cut.miniatura || { segundoClave: 5, textoPrincipal: "MOMENTO\nVIRAL", etiqueta: "EN VIVO", estilo: "viral" },
+            frameImg: baseImg,
+            rawFrameDataUrl: baseImg.src,
+            composedThumbDataUrl: composed,
+          };
+        });
+
+        autoAnalysisData = {
+          resumenVideo: parsed.resumenVideo || `Plan de cortes para: ${ytLiveState.title}`,
+          puntajeGeneral: Number(parsed.puntajeGeneral) || 90,
+          diagnosticoTecnico: parsed.diagnosticoTecnico || "Usa 'Iniciar Captura del Directo' para grabar el tramo y aplicar estos subtítulos y miniaturas.",
+          audioSummary: "Enlace de YouTube / Directo conectado",
+          highlightClip: 0,
+          shadowClip: 0,
+          cortes: cuts,
+        };
+
+        document.getElementById("autoAnalysisPanel").classList.remove("hidden");
+        setPipelineStepState(1, "done", "Link YouTube leído");
+        setPipelineStepState(2, "done", `${cuts.length} cortes propuestos`);
+        setPipelineStepState(3, "done", "Subtítulos listos");
+        setPipelineStepState(4, "done", "3 miniaturas CTR");
+        document.getElementById("autoViralScoreBadge").textContent = `Puntaje Viral: ${autoAnalysisData.puntajeGeneral}/100`;
+        document.getElementById("autoViralScoreBadge").classList.remove("hidden");
+        document.getElementById("autoVideoSummaryText").textContent = autoAnalysisData.resumenVideo;
+        document.getElementById("autoSignalMetricsText").innerHTML = `<div>• Fuente: <strong>YouTube (${escapeHtml(ytLiveState.author)})</strong></div><div>• Usa captura en directo o sube el video para exportar.</div>`;
+        document.getElementById("autoTechDiagnosisText").textContent = autoAnalysisData.diagnosticoTecnico;
+        document.getElementById("autoTelemetryBar").classList.remove("hidden");
+        document.getElementById("autoAnalysisSubtitle").textContent = "¡Listo! 3 cortes, guion de subtítulos y 3 miniaturas generadas a partir de tu enlace de YouTube:";
+        renderAutoAnalysisCards();
+        showToast("¡Cortes IA, subtítulos y miniaturas generados desde tu enlace de YouTube!", "success");
+      } catch (e) {
+        showToast("No se pudo analizar el enlace de YouTube con IA.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "✨ Sacar Cortes IA del Link";
+      }
+    }
+
+    /* =========================================================================
+       4C. MOTOR DE CAPAS PNG / FOTOS SIN FONDO CON QUITAFONDO AUTOMÁTICO
+       ========================================================================= */
+    function processOverlayTransparency(overlay) {
+      if (!overlay?.originalImg) return;
+      const img = overlay.originalImg;
+      const c = document.createElement("canvas");
+      const maxDim = 900;
+      const ratio = Math.min(1, maxDim / Math.max(img.width || 1, img.height || 1));
+      c.width = Math.max(1, Math.round(img.width * ratio));
+      c.height = Math.max(1, Math.round(img.height * ratio));
+      const ctx = c.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+
+      if (overlay.removeBg) {
+        const imageData = ctx.getImageData(0, 0, c.width, c.height);
+        const d = imageData.data;
+        let targetR = 255;
+        let targetG = 255;
+        let targetB = 255;
+
+        if (overlay.bgMode === "green") {
+          targetR = 20; targetG = 220; targetB = 40;
+        } else if (overlay.bgMode === "black") {
+          targetR = 8; targetG = 8; targetB = 8;
+        } else if (overlay.bgMode === "auto") {
+          // Promedio de las 4 esquinas para detectar el color de fondo automáticamente
+          const corners = [
+            0,
+            (c.width - 1) * 4,
+            (c.height - 1) * c.width * 4,
+            ((c.height - 1) * c.width + (c.width - 1)) * 4,
+          ];
+          let sr = 0, sg = 0, sb = 0;
+          corners.forEach((p) => {
+            sr += d[p] || 0;
+            sg += d[p + 1] || 0;
+            sb += d[p + 2] || 0;
+          });
+          targetR = sr / 4;
+          targetG = sg / 4;
+          targetB = sb / 4;
+        }
+
+        const tol = Number(overlay.bgTolerance) || 42;
+        const softRange = tol + 28;
+
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i + 3] === 0) continue;
+          const dr = d[i] - targetR;
+          const dg = d[i + 1] - targetG;
+          const db = d[i + 2] - targetB;
+          const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+
+          if (overlay.bgMode === "green") {
+            const greenDom = d[i + 1] - Math.max(d[i], d[i + 2]);
+            if (greenDom > Math.max(15, 95 - tol * 0.6)) {
+              d[i + 3] = 0;
+              continue;
+            }
+          }
+
+          if (dist < tol) {
+            d[i + 3] = 0;
+          } else if (dist < softRange) {
+            const factor = (dist - tol) / (softRange - tol);
+            d[i + 3] = Math.round(d[i + 3] * factor);
+          }
+        }
+        ctx.putImageData(imageData, 0, 0);
+      }
+
+      overlay.processedCanvas = c;
+    }
+
+    function addOverlayImageFiles(fileList) {
+      const files = Array.from(fileList || []).filter((f) => f.type.startsWith("image/"));
+      if (!files.length) return;
+
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const isJpg = /jpe?g/i.test(file.type) || /\.jpe?g$/i.test(file.name);
+            const ov = {
+              id: `ov-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+              name: file.name,
+              originalImg: img,
+              processedCanvas: null,
+              removeBg: isJpg,
+              bgMode: "auto",
+              bgTolerance: 42,
+              x: 50,
+              y: 45,
+              scale: 42,
+              rotation: 0,
+              opacity: 100,
+              startTime: Number(clipState.startTime.toFixed(1)),
+              endTime: Number(clipState.endTime.toFixed(1)),
+              visible: true,
+            };
+            processOverlayTransparency(ov);
+            clipState.overlays.push(ov);
+            clipState.selectedOverlayId = ov.id;
+            renderOverlayLayersUI();
+            renderStudioFrame();
+            showToast(`Foto "${file.name}" añadida al video${isJpg ? " (quitafondo activado)" : " (transparencia PNG lista)"}`, "success");
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function getSelectedOverlay() {
+      return clipState.overlays.find((o) => o.id === clipState.selectedOverlayId) || null;
+    }
+
+    function selectOverlayById(id) {
+      clipState.selectedOverlayId = id;
+      renderOverlayLayersUI();
+    }
+
+    function toggleOverlayVisibleById(id) {
+      const ov = clipState.overlays.find((o) => o.id === id);
+      if (!ov) return;
+      ov.visible = !ov.visible;
+      renderOverlayLayersUI();
       renderStudioFrame();
     }
 
-    function loadDemoVideo() {
-      stopPlaybackEngine();
-      clipState.sourceType = "demo";
-      clipState.rawFile = null;
-      clipState.fileName = "Video_Demo_ClipHub";
-      enableClipControls("Video Demo Interactivo (15.0s • 30fps)", 15.0);
-      renderSubtitleEditorList();
-      startPlaybackEngine();
-      showToast("Video Demo cargado. Pulsa 'Auto-Analizar Todo (IA)' para ver cortes, subtítulos y miniaturas.", "success");
+    function deleteSelectedOverlay() {
+      if (!clipState.selectedOverlayId) return;
+      clipState.overlays = clipState.overlays.filter((o) => o.id !== clipState.selectedOverlayId);
+      clipState.selectedOverlayId = clipState.overlays[0]?.id || null;
+      renderOverlayLayersUI();
+      renderStudioFrame();
+      showToast("Foto eliminada del video.", "info");
     }
 
-    function loadLocalVideoFile(file) {
-      if (!file || !file.type.startsWith("video/")) {
-        showToast("Selecciona un archivo de video válido (MP4, MOV o WebM).", "error");
+    function setOverlayQuickPos(xPct, yPct) {
+      const ov = getSelectedOverlay();
+      if (!ov) return;
+      ov.x = xPct;
+      ov.y = yPct;
+      syncSelectedOverlayControls();
+      renderStudioFrame();
+    }
+
+    function syncSelectedOverlayControls() {
+      const ov = getSelectedOverlay();
+      const box = document.getElementById("activeOverlayControls");
+      if (!ov) {
+        box.classList.add("hidden");
         return;
       }
-      stopPlaybackEngine();
-      clipState.rawFile = file;
-      const url = URL.createObjectURL(file);
-      nativeVideo.src = url;
-      nativeVideo.load();
-
-      let initialized = false;
-      const onReady = () => {
-        if (initialized) return;
-        initialized = true;
-        clipState.sourceType = "video";
-        clipState.fileName = file.name;
-        enableClipControls(file.name, nativeVideo.duration || 10);
-        try {
-          nativeVideo.currentTime = 0.05;
-        } catch (e) {}
-        renderSubtitleEditorList();
-        showToast(`Video "${file.name}" cargado.`, "success");
-
-        if (clipState.autoAnalyzeOnUpload) {
-          setTimeout(() => {
-            runFullAutoAnalysis();
-          }, 250);
-        }
-      };
-
-      nativeVideo.onloadeddata = onReady;
-      nativeVideo.onloadedmetadata = () => {
-        if (nativeVideo.readyState >= 2) onReady();
-      };
-      nativeVideo.onerror = () => {
-        showToast("No se pudo leer este formato de video en el navegador.", "error");
-      };
+      box.classList.remove("hidden");
+      document.getElementById("activeOverlayName").textContent = ov.name;
+      document.getElementById("ovRemoveBgToggle").checked = ov.removeBg;
+      document.getElementById("ovBgModeSelect").value = ov.bgMode;
+      document.getElementById("ovBgToleranceSlider").value = ov.bgTolerance;
+      document.getElementById("ovBgToleranceVal").textContent = String(ov.bgTolerance);
+      document.getElementById("ovPosXSlider").value = ov.x;
+      document.getElementById("ovPosXVal").textContent = `${Math.round(ov.x)}%`;
+      document.getElementById("ovPosYSlider").value = ov.y;
+      document.getElementById("ovPosYVal").textContent = `${Math.round(ov.y)}%`;
+      document.getElementById("ovScaleSlider").value = ov.scale;
+      document.getElementById("ovScaleVal").textContent = `${Math.round(ov.scale)}%`;
+      document.getElementById("ovRotSlider").value = ov.rotation;
+      document.getElementById("ovRotVal").textContent = `${Math.round(ov.rotation)}°`;
+      document.getElementById("ovOpacitySlider").value = ov.opacity;
+      document.getElementById("ovOpacityVal").textContent = `${Math.round(ov.opacity)}%`;
+      document.getElementById("ovStartTimeInput").value = ov.startTime;
+      document.getElementById("ovEndTimeInput").value = ov.endTime;
     }
 
-    /* =========================================================================
-       5. MOTOR DE AUTO-ANÁLISIS IA (FOTOGRAMAS + AUDIO REAL + CORTES + SUBS + MINIATURAS)
-       ========================================================================= */
-    function toggleAutoAnalysisPanel() {
-      document.getElementById("autoAnalysisPanel").classList.add("hidden");
-    }
-
-    function setPipelineStepState(stepNum, state, descText) {
-      const card = document.getElementById(`stepCard${stepNum}`);
-      const icon = document.getElementById(`stepIcon${stepNum}`);
-      const desc = document.getElementById(`stepDesc${stepNum}`);
-      if (!card || !icon || !desc) return;
-      desc.textContent = descText;
-
-      if (state === "active") {
-        card.className = "p-3 rounded-xl bg-pro-card border ai-loading-card flex items-center gap-2.5 transition";
-        icon.className = "w-6 h-6 rounded-full bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-[11px] font-black text-cyan-300 shrink-0 animate-pulse";
-        icon.textContent = "…";
-      } else if (state === "done") {
-        card.className = "p-3 rounded-xl bg-emerald-950/35 border border-emerald-500/45 flex items-center gap-2.5 transition";
-        icon.className = "w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-[11px] font-black text-slate-950 shrink-0";
-        icon.textContent = "✓";
-      } else if (state === "error") {
-        card.className = "p-3 rounded-xl bg-rose-950/35 border border-rose-500/45 flex items-center gap-2.5 transition";
-        icon.className = "w-6 h-6 rounded-full bg-rose-500 flex items-center justify-center text-[11px] font-black text-white shrink-0";
-        icon.textContent = "!";
-      } else {
-        card.className = "p-3 rounded-xl bg-pro-card border border-pro-border flex items-center gap-2.5 transition";
-        icon.className = "w-6 h-6 rounded-full bg-pro-bg border border-pro-border flex items-center justify-center text-[11px] font-black text-slate-400 shrink-0";
-        icon.textContent = String(stepNum);
+    function renderOverlayLayersUI() {
+      const listEl = document.getElementById("overlayLayersList");
+      if (!clipState.overlays.length) {
+        listEl.innerHTML = `<div class="text-center py-4 text-[11px] text-slate-400">Aún no has añadido fotos. Sube un PNG sin fondo o cualquier imagen para recortarle el fondo automáticamente.</div>`;
+        syncSelectedOverlayControls();
+        return;
       }
+
+      listEl.innerHTML = clipState.overlays
+        .map((ov) => {
+          const active = ov.id === clipState.selectedOverlayId;
+          const thumbSrc = ov.processedCanvas ? ov.processedCanvas.toDataURL("image/png") : ov.originalImg.src;
+          return `
+            <div onclick="selectOverlayById('${escapeHtml(ov.id)}')" class="cursor-pointer p-2 rounded-xl border flex items-center justify-between gap-2 transition ${active ? "bg-cyan-500/15 border-cyan-400" : "bg-pro-bg border-pro-border hover:bg-pro-elevated"}">
+              <div class="flex items-center gap-2 min-w-0">
+                <img src="${thumbSrc}" alt="Capa" class="w-9 h-9 rounded-lg object-contain bg-black/50 border border-white/10 shrink-0 p-0.5" />
+                <div class="min-w-0">
+                  <div class="text-[11px] font-bold text-white truncate">${escapeHtml(ov.name)}</div>
+                  <div class="text-[9px] text-slate-400">${ov.startTime}s → ${ov.endTime}s ${ov.removeBg ? "• Sin fondo ON" : ""}</div>
+                </div>
+              </div>
+              <button type="button" onclick="event.stopPropagation(); toggleOverlayVisibleById('${escapeHtml(ov.id)}')" class="px-2 py-1 rounded-lg bg-pro-surface border border-pro-border text-[10px] font-bold ${ov.visible ? "text-emerald-300" : "text-slate-500"}">
+                ${ov.visible ? "Visible" : "Oculta"}
+              </button>
+            </div>`;
+        })
+        .join("");
+
+      syncSelectedOverlayControls();
     }
 
-    function uint8ToBase64(bytes) {
-      let binary = "";
-      const chunkSize = 8192;
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        const sub = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
-        binary += String.fromCharCode.apply(null, sub);
-      }
-      return btoa(binary);
-    }
+    function drawImageOverlaysOnCanvas(ctx, w, h, currentTime) {
+      if (!clipState.overlays.length) return;
+      clipState.overlays.forEach((ov) => {
+        if (!ov.visible) return;
+        if (currentTime < ov.startTime || currentTime > ov.endTime) return;
+        const src = ov.processedCanvas || ov.originalImg;
+        if (!src || !src.width || !src.height) return;
 
-    function seekNativeVideoSafe(timeSec) {
-      return new Promise((resolve) => {
-        if (clipState.sourceType !== "video") {
-          resolve();
-          return;
-        }
-        const target = Math.max(0.05, Math.min((nativeVideo.duration || 1) - 0.05, Number(timeSec) || 0.05));
-        if (Math.abs(nativeVideo.currentTime - target) < 0.04 && nativeVideo.readyState >= 2) {
-          resolve();
-          return;
-        }
-        let finished = false;
-        const done = () => {
-          if (finished) return;
-          finished = true;
-          nativeVideo.removeEventListener("seeked", done);
-          resolve();
-        };
-        nativeVideo.addEventListener("seeked", done, { once: true });
-        try {
-          nativeVideo.currentTime = target;
-        } catch (e) {
-          done();
-        }
-        setTimeout(done, 1200);
+        const drawW = w * (ov.scale / 100);
+        const drawH = drawW * (src.height / src.width);
+        const cx = w * (ov.x / 100);
+        const cy = h * (ov.y / 100);
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0.05, Math.min(1, ov.opacity / 100));
+        ctx.translate(cx, cy);
+        ctx.rotate((ov.rotation * Math.PI) / 180);
+        ctx.drawImage(src, -drawW / 2, -drawH / 2, drawW, drawH);
+        ctx.restore();
       });
     }
 
@@ -2542,6 +2973,9 @@ DEVUELVE EXACTAMENTE un JSON con:
         clipCtx.drawImage(sourceEl, offsetX, offsetY, drawW, drawH);
       }
 
+      // Capas de Fotos sin Fondo (PNG / Stickers / Logos)
+      drawImageOverlaysOnCanvas(clipCtx, w, h, clipState.currentTime);
+
       // Gancho Viral Superior
       if (clipState.topHookEnabled && clipState.topHookText.trim()) {
         clipCtx.save();
@@ -2673,8 +3107,82 @@ DEVUELVE EXACTAMENTE un JSON con:
     }
 
     /* =========================================================================
-       8. CAPTURA A MINIATURAS Y EXPORTACIÓN DIRECTA DE CLIP
+       8. CAPTURA A MINIATURAS, EXPORTACIÓN CON AUDIO Y VISTA PREVIA PRE-PUBLICACIÓN
        ========================================================================= */
+    let sharedAudioCtx = null;
+    let sharedAudioSource = null;
+    let sharedAudioDest = null;
+
+    function getNativeVideoAudioTrack() {
+      if (clipState.sourceType !== "video") return null;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return null;
+        if (!sharedAudioCtx) {
+          sharedAudioCtx = new AudioCtx();
+          sharedAudioSource = sharedAudioCtx.createMediaElementSource(nativeVideo);
+          sharedAudioDest = sharedAudioCtx.createMediaStreamDestination();
+          sharedAudioSource.connect(sharedAudioDest);
+          sharedAudioSource.connect(sharedAudioCtx.destination);
+        }
+        if (sharedAudioCtx.state === "suspended") {
+          sharedAudioCtx.resume().catch(() => {});
+        }
+        return sharedAudioDest.stream.getAudioTracks()[0] || null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function openClipPreviewModal(videoUrl, fileName, durationSec, sizeBytes, aspectLabel) {
+      clipState.lastExportedUrl = videoUrl;
+      clipState.lastExportedName = fileName || `cliphub_corte_${Date.now()}.webm`;
+      clipState.lastExportedDuration = durationSec || 0;
+
+      const previewVid = document.getElementById("exportedPreviewVideo");
+      previewVid.src = videoUrl;
+      previewVid.load();
+      previewVid.play().catch(() => {});
+
+      document.getElementById("previewMetaAspect").textContent = aspectLabel || clipState.aspect;
+      document.getElementById("previewMetaDuration").textContent = `${Number(durationSec || 0).toFixed(1)}s`;
+      document.getElementById("previewMetaSize").textContent = `${((sizeBytes || 0) / (1024 * 1024)).toFixed(2)} MB`;
+
+      document.getElementById("clipPreviewModal").classList.remove("hidden");
+    }
+
+    function closeClipPreviewModal() {
+      const previewVid = document.getElementById("exportedPreviewVideo");
+      try {
+        previewVid.pause();
+      } catch (e) {}
+      document.getElementById("clipPreviewModal").classList.add("hidden");
+    }
+
+    function downloadLastExportedClip() {
+      if (!clipState.lastExportedUrl) return;
+      const a = document.createElement("a");
+      a.href = clipState.lastExportedUrl;
+      a.download = clipState.lastExportedName || `cliphub_corte_${Date.now()}.webm`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast("¡Clip descargado en tu equipo!", "success");
+    }
+
+    function sendExportedClipToSocial() {
+      closeClipPreviewModal();
+      const snap = clipCanvas.toDataURL("image/jpeg", 0.85);
+      appState.attachedThumbDataUrl = snap;
+      document.getElementById("socialAttachedThumbImg").src = snap;
+      document.getElementById("socialAttachedThumbBox").classList.remove("hidden");
+      if (!document.getElementById("socialTitle").value.trim()) {
+        document.getElementById("socialTitle").value = clipState.topHookText || "Nuevo Clip Editado";
+      }
+      switchModule("social");
+      showToast("Clip revisado y miniatura enviados al programador de Redes Sociales.", "success");
+    }
+
     async function captureFrameToThumbnailModule() {
       if (!clipState.sourceType) return;
       const captured = await captureFrameImageAtTime(clipState.currentTime);
@@ -2696,14 +3204,21 @@ DEVUELVE EXACTAMENTE un JSON con:
       const btn = document.getElementById("exportVideoBtn");
       const btnText = document.getElementById("exportVideoBtnText");
       btn.disabled = true;
-      btnText.textContent = "Exportando...";
+      btnText.textContent = "Renderizando...";
 
       try {
-        const stream = clipCanvas.captureStream(30);
-        const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-          ? "video/webm;codecs=vp9"
-          : "video/webm";
-        const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 4500000 });
+        const canvasStream = clipCanvas.captureStream(30);
+        const combinedTracks = [...canvasStream.getVideoTracks()];
+        const audioTrack = getNativeVideoAudioTrack();
+        if (audioTrack) combinedTracks.push(audioTrack);
+        const finalStream = new MediaStream(combinedTracks);
+
+        const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
+          ? "video/webm;codecs=vp9,opus"
+          : MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+            ? "video/webm;codecs=vp9"
+            : "video/webm";
+        const recorder = new MediaRecorder(finalStream, { mimeType, videoBitsPerSecond: 4500000 });
         const chunks = [];
 
         recorder.ondataavailable = (e) => {
@@ -2714,12 +3229,12 @@ DEVUELVE EXACTAMENTE un JSON con:
           recorder.onstop = resolve;
         });
 
+        const clipDurationSec = Math.max(1, Number((clipState.endTime - clipState.startTime).toFixed(1)));
         setPlaybackTime(clipState.startTime);
         recorder.start();
         startPlaybackEngine();
 
-        const clipDurationMs = Math.max(1000, (clipState.endTime - clipState.startTime) * 1000);
-        await new Promise((r) => setTimeout(r, clipDurationMs));
+        await new Promise((r) => setTimeout(r, clipDurationSec * 1000));
 
         stopPlaybackEngine();
         recorder.stop();
@@ -2727,21 +3242,16 @@ DEVUELVE EXACTAMENTE un JSON con:
 
         const blob = new Blob(chunks, { type: "video/webm" });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `cliphub_corte_${Date.now()}.webm`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        const fileName = `cliphub_corte_${Date.now()}.webm`;
 
-        showToast("¡Clip exportado con gancho y subtítulos animados!", "success");
+        openClipPreviewModal(url, fileName, clipDurationSec, blob.size, clipState.aspect);
+        showToast("¡Clip renderizado! Revísalo y descárgalo cuando estés listo.", "success");
       } catch (e) {
-        showToast("No se pudo completar la exportación del clip.", "error");
+        showToast("No se pudo completar el renderizado del clip.", "error");
       } finally {
         clipState.isExporting = false;
         btn.disabled = false;
-        btnText.textContent = "Exportar Clip";
+        btnText.textContent = "Visualizar y Descargar";
         renderStudioFrame();
       }
     }
@@ -3278,26 +3788,130 @@ DEVUELVE EXACTAMENTE un JSON con:
         renderStudioFrame();
       });
 
-      // Arrastre interactivo (ratón y táctil) sobre el canvas para ajustar Pan X/Y
+      // Eventos de Fotos sin Fondo / Capas PNG
+      document.getElementById("overlayFileInput").addEventListener("change", (e) => {
+        if (e.target.files?.length) {
+          addOverlayImageFiles(e.target.files);
+          e.target.value = "";
+        }
+      });
+
+      document.getElementById("ovRemoveBgToggle").addEventListener("change", (e) => {
+        const ov = getSelectedOverlay();
+        if (!ov) return;
+        ov.removeBg = e.target.checked;
+        processOverlayTransparency(ov);
+        renderOverlayLayersUI();
+        renderStudioFrame();
+      });
+      document.getElementById("ovBgModeSelect").addEventListener("change", (e) => {
+        const ov = getSelectedOverlay();
+        if (!ov) return;
+        ov.bgMode = e.target.value;
+        processOverlayTransparency(ov);
+        renderOverlayLayersUI();
+        renderStudioFrame();
+      });
+      document.getElementById("ovBgToleranceSlider").addEventListener("input", (e) => {
+        const ov = getSelectedOverlay();
+        if (!ov) return;
+        ov.bgTolerance = Number(e.target.value);
+        document.getElementById("ovBgToleranceVal").textContent = String(ov.bgTolerance);
+        processOverlayTransparency(ov);
+        renderStudioFrame();
+      });
+      document.getElementById("ovPosXSlider").addEventListener("input", (e) => {
+        const ov = getSelectedOverlay();
+        if (!ov) return;
+        ov.x = Number(e.target.value);
+        document.getElementById("ovPosXVal").textContent = `${Math.round(ov.x)}%`;
+        renderStudioFrame();
+      });
+      document.getElementById("ovPosYSlider").addEventListener("input", (e) => {
+        const ov = getSelectedOverlay();
+        if (!ov) return;
+        ov.y = Number(e.target.value);
+        document.getElementById("ovPosYVal").textContent = `${Math.round(ov.y)}%`;
+        renderStudioFrame();
+      });
+      document.getElementById("ovScaleSlider").addEventListener("input", (e) => {
+        const ov = getSelectedOverlay();
+        if (!ov) return;
+        ov.scale = Number(e.target.value);
+        document.getElementById("ovScaleVal").textContent = `${Math.round(ov.scale)}%`;
+        renderStudioFrame();
+      });
+      document.getElementById("ovRotSlider").addEventListener("input", (e) => {
+        const ov = getSelectedOverlay();
+        if (!ov) return;
+        ov.rotation = Number(e.target.value);
+        document.getElementById("ovRotVal").textContent = `${Math.round(ov.rotation)}°`;
+        renderStudioFrame();
+      });
+      document.getElementById("ovOpacitySlider").addEventListener("input", (e) => {
+        const ov = getSelectedOverlay();
+        if (!ov) return;
+        ov.opacity = Number(e.target.value);
+        document.getElementById("ovOpacityVal").textContent = `${Math.round(ov.opacity)}%`;
+        renderStudioFrame();
+      });
+      document.getElementById("ovStartTimeInput").addEventListener("change", (e) => {
+        const ov = getSelectedOverlay();
+        if (!ov) return;
+        ov.startTime = Math.max(0, Number(e.target.value) || 0);
+        renderOverlayLayersUI();
+        renderStudioFrame();
+      });
+      document.getElementById("ovEndTimeInput").addEventListener("change", (e) => {
+        const ov = getSelectedOverlay();
+        if (!ov) return;
+        ov.endTime = Math.max(ov.startTime, Number(e.target.value) || clipState.duration);
+        renderOverlayLayersUI();
+        renderStudioFrame();
+      });
+
+      // Arrastre interactivo (ratón y táctil) sobre el canvas: mueve la foto PNG si estás en la pestaña "Fotos PNG", o el encuadre del video
       const canvasWrapper = document.getElementById("clipCanvasWrapper");
       let isDragging = false;
+      let dragMode = "video";
       let dragStartX = 0;
       let dragStartY = 0;
       let initPanX = 50;
       let initPanY = 50;
+      let initOvX = 50;
+      let initOvY = 45;
 
       const startDrag = (clientX, clientY) => {
         if (!clipState.sourceType) return;
         isDragging = true;
         dragStartX = clientX;
         dragStartY = clientY;
-        initPanX = clipState.panX;
-        initPanY = clipState.panY;
+        const selOv = clipState.activeSideTab === "overlays" ? getSelectedOverlay() : null;
+        if (selOv && selOv.visible) {
+          dragMode = "overlay";
+          initOvX = selOv.x;
+          initOvY = selOv.y;
+        } else {
+          dragMode = "video";
+          initPanX = clipState.panX;
+          initPanY = clipState.panY;
+        }
       };
       const moveDrag = (clientX, clientY) => {
         if (!isDragging) return;
         const dx = clientX - dragStartX;
         const dy = clientY - dragStartY;
+        if (dragMode === "overlay") {
+          const selOv = getSelectedOverlay();
+          if (selOv) {
+            const rect = canvasWrapper.getBoundingClientRect();
+            selOv.x = Math.max(0, Math.min(100, initOvX + (dx / Math.max(1, rect.width)) * 100));
+            selOv.y = Math.max(0, Math.min(100, initOvY + (dy / Math.max(1, rect.height)) * 100));
+            syncSelectedOverlayControls();
+            renderStudioFrame();
+          }
+          return;
+        }
         clipState.panX = Math.max(0, Math.min(100, initPanX - dx * 0.4));
         clipState.panY = Math.max(0, Math.min(100, initPanY - dy * 0.4));
         syncFramingSliders();
