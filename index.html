@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ClipHub Studio Pro — Cortes IA, Subtítulos, Miniaturas y Redes</title>
+  <title>ClipHub Studio Pro — Cortes IA, Editor, Miniaturas IA y Redes</title>
   <style>
     :root {
       --bg: #070b14;
@@ -24,12 +24,13 @@
       background: radial-gradient(circle at top right, #131c35, var(--bg) 55%);
       color: var(--text);
       min-height: 100vh;
+      overflow-x: hidden;
     }
     header {
       position: sticky; top: 0; z-index: 40;
       display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
       padding: 14px 22px;
-      background: rgba(7, 11, 20, 0.9);
+      background: rgba(7, 11, 20, 0.92);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
     }
@@ -47,8 +48,9 @@
     .ai-btn {
       display: flex; align-items: center; gap: 8px; background: var(--panel);
       color: var(--text); border: 1px solid var(--border); padding: 8px 14px;
-      border-radius: 10px; cursor: pointer; font-weight: 600;
+      border-radius: 10px; cursor: pointer; font-weight: 600; transition: .18s;
     }
+    .ai-btn:hover { border-color: var(--accent); }
     .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--amber); }
     .dot.ok { background: var(--green); box-shadow: 0 0 8px var(--green); }
 
@@ -71,10 +73,12 @@
       padding: 9px 14px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.88rem;
       transition: .18s; display: inline-flex; align-items: center; gap: 6px;
     }
-    .btn:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .btn:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
     .btn-primary { background: linear-gradient(135deg, #0ea5e9, #6366f1); border: none; color: #fff; }
     .btn-green { background: linear-gradient(135deg, #10b981, #059669); border: none; color: #fff; }
     .btn-amber { background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: #090d16; }
+    .btn-purple { background: linear-gradient(135deg, #8b5cf6, #ec4899); border: none; color: #fff; }
     .btn-danger { background: rgba(239,68,68,.15); border-color: var(--red); color: #fca5a5; }
     .btn-sm { padding: 6px 10px; font-size: 0.8rem; }
 
@@ -99,13 +103,15 @@
     }
     .pipe-step.done .pipe-ico { background: rgba(16,185,129,.2); color: var(--green); }
     .pipe-step.run .pipe-ico { background: rgba(56,189,248,.2); color: var(--accent); }
+    .pipe-step.err .pipe-ico { background: rgba(239,68,68,.2); color: var(--red); }
 
     .frames-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 10px; }
+    @media (max-width: 640px) { .frames-strip { grid-template-columns: repeat(3, 1fr); } }
     .frame-box {
       position: relative; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden;
-      background: #050811; border: 1px solid var(--border); cursor: pointer;
+      background: #050811; border: 1px solid var(--border); cursor: pointer; transition: .18s;
     }
-    .frame-box:hover { border-color: var(--accent); }
+    .frame-box:hover { border-color: var(--accent); transform: scale(1.02); }
     .frame-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .frame-ts {
       position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,.78);
@@ -117,12 +123,13 @@
       display: flex; flex-direction: column; align-items: center; gap: 10px;
       background: #050811; border: 1px solid var(--border); border-radius: 14px; padding: 14px;
     }
-    #previewCanvas {
+    #previewCanvas, #editorCanvas {
       width: 100%; max-width: 310px; aspect-ratio: 9/16; background: #000;
       border-radius: 12px; box-shadow: 0 12px 35px rgba(0,0,0,.55);
       touch-action: none;
     }
-    #previewCanvas.landscape { max-width: 100%; aspect-ratio: 16/9; }
+    #previewCanvas.landscape, #editorCanvas.landscape { max-width: 100%; aspect-ratio: 16/9; }
+    #previewCanvas.square, #editorCanvas.square { max-width: 340px; aspect-ratio: 1/1; }
 
     /* Cuts list */
     .cut-item {
@@ -136,17 +143,37 @@
     }
     .badge.green { background: rgba(16,185,129,.18); color: var(--green); }
     .badge.amber { background: rgba(245,158,11,.18); color: var(--amber); }
+    .badge.purple { background: rgba(139,92,246,.22); color: #c4b5fd; }
 
     /* Thumbnails */
-    .thumb-card { background: #0b1222; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-    .thumb-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: #000; }
-    .thumb-body { padding: 12px; }
+    .thumb-card {
+      background: #0b1222; border: 1px solid var(--border); border-radius: 14px;
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+    .thumb-img-wrap {
+      position: relative; width: 100%; aspect-ratio: 16/9; background: #050811; overflow: hidden;
+    }
+    .thumb-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb-loader {
+      position: absolute; inset: 0; background: rgba(5, 8, 17, 0.85);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+      font-size: 0.85rem; font-weight: 700; color: var(--accent); text-align: center; padding: 12px;
+    }
+    .spinner {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 3px solid rgba(56,189,248,.22); border-top-color: var(--accent);
+      animation: spin .85s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .thumb-body { padding: 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 
     /* Calendar / Social */
     .social-card {
       background: #0b1222; border: 1px solid var(--border); border-radius: 14px; padding: 14px;
-      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      display: flex; flex-direction: column; align-items: stretch; gap: 12px;
     }
+    .social-card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .social-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     .sched-item {
       background: #0b1222; border: 1px solid var(--border); border-radius: 12px; padding: 12px;
       margin-bottom: 10px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center;
@@ -162,6 +189,7 @@
       background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
       padding: 20px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto;
     }
+    .modal-lg { max-width: 600px; }
     .progress-bar { width: 100%; height: 10px; background: #09101f; border-radius: 999px; overflow: hidden; margin: 12px 0; }
     .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width .25s; }
     .muted { color: var(--muted); font-size: 0.84rem; }
@@ -173,13 +201,13 @@
       background: #10203a; border: 1px solid var(--accent); color: #e0f2fe;
       box-shadow: 0 12px 30px rgba(0,0,0,.55);
       opacity: 0; transform: translateY(16px); pointer-events: none; transition: .25s;
+      max-width: 360px;
     }
     #toastBox.show { opacity: 1; transform: translateY(0); }
     #toastBox.ok { background: #064e3b; border-color: var(--green); color: #d1fae5; }
     #toastBox.warn { background: #451a03; border-color: var(--amber); color: #fef3c7; }
 
     /* Configuración Avanzada IA & Redes */
-    .modal-lg { max-width: 600px; }
     .modal-tabs {
       display: flex; gap: 6px; margin-bottom: 14px;
       background: #080e1c; padding: 5px; border-radius: 12px; border: 1px solid var(--border);
@@ -207,9 +235,60 @@
       border: 1px solid rgba(245,158,11,.35); border-radius: 10px; padding: 9px 11px;
       margin-top: 8px; line-height: 1.45;
     }
-    .social-card { flex-direction: column; align-items: stretch; gap: 12px; }
-    .social-card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-    .social-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+    /* Selector de segundos para cortes */
+    .dur-bar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+      margin-top: 12px; padding: 10px 12px; border-radius: 12px;
+      background: #0a1122; border: 1px solid var(--border);
+    }
+    .dur-pill {
+      background: var(--panel-2); color: var(--muted); border: 1px solid var(--border);
+      padding: 6px 11px; border-radius: 999px; cursor: pointer; font-weight: 700; font-size: 0.8rem;
+      transition: .18s;
+    }
+    .dur-pill:hover { color: #fff; border-color: var(--accent); }
+    .dur-pill.active {
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: #fff; border-color: transparent;
+    }
+
+    /* Editor de Video */
+    .editor-grid { display: grid; grid-template-columns: 390px 1fr; gap: 18px; align-items: start; }
+    @media (max-width: 980px) { .editor-grid { grid-template-columns: 1fr; } }
+    .timeline-box {
+      width: 100%; background: #091020; border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px;
+    }
+    .timeline-track {
+      position: relative; height: 34px; border-radius: 8px; cursor: pointer;
+      background: linear-gradient(90deg, #111c33 0%, #172542 50%, #111c33 100%);
+      border: 1px solid var(--border); overflow: hidden; user-select: none; touch-action: none;
+    }
+    .timeline-selection {
+      position: absolute; top: 0; bottom: 0; left: 0%; width: 100%;
+      background: rgba(56,189,248,0.28);
+      border-left: 3px solid var(--accent); border-right: 3px solid var(--accent);
+      pointer-events: none;
+    }
+    .timeline-playhead {
+      position: absolute; top: 0; bottom: 0; left: 0%; width: 3px;
+      background: #facc15; box-shadow: 0 0 8px #facc15;
+      pointer-events: none;
+    }
+    .editor-section-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;
+    }
+    .ed-panel {
+      background: #0b1222; border: 1px solid var(--border); border-radius: 14px; padding: 14px;
+    }
+    .ed-panel h3 {
+      font-size: 0.92rem; margin-bottom: 10px; color: #e2e8f0;
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    }
+    .range-row { margin-bottom: 9px; }
+    .range-head { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); margin-bottom: 3px; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 
     /* Video fuente oculto visualmente pero decodificado por GPU (evita frames negros) */
     #sourceVideo {
@@ -226,17 +305,18 @@
     <span class="brand-badge">PRO IA</span>
   </div>
   <nav>
-    <button class="tab-btn active" data-tab="studio">✂️ Estudio de Cortes</button>
-    <button class="tab-btn" data-tab="thumbs">🖼️ Miniaturas IA</button>
-    <button class="tab-btn" data-tab="social">📅 Redes & Calendario</button>
+    <button type="button" class="tab-btn active" data-tab="studio">✂️ Estudio de Cortes</button>
+    <button type="button" class="tab-btn" data-tab="editor">🎬 Editor de Video</button>
+    <button type="button" class="tab-btn" data-tab="thumbs">🖼️ Miniaturas IA</button>
+    <button type="button" class="tab-btn" data-tab="social">📅 Redes & Calendario</button>
   </nav>
-  <button class="ai-btn" id="openAiModal">
+  <button type="button" class="ai-btn" id="openAiModal">
     <span class="dot" id="aiDot"></span>
     <span id="aiStatusText">Configurar IA</span>
   </button>
 </header>
 
-<video id="sourceVideo" playsinline preload="auto" crossorigin="anonymous"></video>
+<video id="sourceVideo" playsinline preload="auto"></video>
 
 <main>
   <!-- ==================== TAB 1: ESTUDIO DE CORTES ==================== -->
@@ -248,22 +328,37 @@
             📁 Subir Video
             <input type="file" id="videoInput" accept="video/*" hidden />
           </label>
-          <button class="btn" id="loadDemoBtn">✨ Cargar Video Demo</button>
-          <button class="btn btn-green" id="analyzeBtn">🚀 Auto-Analizar Todo (IA)</button>
+          <button type="button" class="btn" id="loadDemoBtn">✨ Cargar Video Demo</button>
+          <button type="button" class="btn btn-green" id="analyzeBtn">🚀 Auto-Analizar Todo (IA)</button>
           <label style="display:flex; align-items:center; gap:6px; margin:0; cursor:pointer;">
             <input type="checkbox" id="autoAnalyzeCheck" checked style="width:auto;" />
             Auto al subir
           </label>
         </div>
-        <button class="btn" id="toggleYtBtn">🔴 YouTube / En Directo</button>
+        <button type="button" class="btn" id="toggleYtBtn">🔴 YouTube / En Directo</button>
+      </div>
+
+      <!-- Selector de duración en segundos para los cortes -->
+      <div class="dur-bar">
+        <span style="font-size:0.82rem; font-weight:700; color:#e2e8f0;">⏱️ Segundos por corte:</span>
+        <button type="button" class="dur-pill" data-dur="10">10s</button>
+        <button type="button" class="dur-pill active" data-dur="15">15s</button>
+        <button type="button" class="dur-pill" data-dur="30">30s</button>
+        <button type="button" class="dur-pill" data-dur="45">45s</button>
+        <button type="button" class="dur-pill" data-dur="60">60s</button>
+        <div class="row" style="gap:6px; flex-wrap:nowrap;">
+          <input type="number" id="cutDurationInput" value="15" min="3" max="300" step="1" style="width:78px; padding:6px 8px;" title="Segundos personalizados por corte" />
+          <button type="button" class="btn btn-sm btn-primary" id="applyCutDurationBtn">Aplicar seg</button>
+          <button type="button" class="btn btn-sm btn-amber" id="addManualCutBtn">➕ Crear Corte Aquí</button>
+        </div>
       </div>
 
       <!-- Panel YouTube Directo -->
       <div id="ytPanel" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
         <div class="row">
           <input type="url" id="ytUrlInput" placeholder="Pega el enlace de YouTube o directo (ej. https://www.youtube.com/watch?v=...)" style="flex:1; min-width:240px;" />
-          <button class="btn btn-primary" id="loadYtEmbedBtn">Cargar Video/Directo</button>
-          <button class="btn btn-amber" id="ytQuickCutBtn">✂️ Sacar Corte del Directo</button>
+          <button type="button" class="btn btn-primary" id="loadYtEmbedBtn">Cargar Video/Directo</button>
+          <button type="button" class="btn btn-amber" id="ytQuickCutBtn">✂️ Sacar Corte del Directo</button>
         </div>
         <div id="ytEmbedWrap" style="margin-top:10px; display:none;">
           <iframe id="ytIframe" width="100%" height="260" style="border-radius:12px; border:1px solid var(--border);" allowfullscreen></iframe>
@@ -275,9 +370,9 @@
         <div class="pipe-step" id="pStep1"><div class="pipe-ico">1</div><div><strong>Fotogramas</strong><div class="muted" id="pSub1">Esperando video</div></div></div>
         <div class="pipe-step" id="pStep2"><div class="pipe-ico">2</div><div><strong>Mejores Cortes</strong><div class="muted" id="pSub2">En cola</div></div></div>
         <div class="pipe-step" id="pStep3"><div class="pipe-ico">3</div><div><strong>Subtítulos Auto</strong><div class="muted" id="pSub3">En cola</div></div></div>
-        <div class="pipe-step" id="pStep4"><div class="pipe-ico">4</div><div><strong>Miniaturas CTR</strong><div class="muted" id="pSub4">En cola</div></div></div>
+        <div class="pipe-step" id="pStep4"><div class="pipe-ico">4</div><div><strong>Miniaturas IA</strong><div class="muted" id="pSub4">En cola</div></div></div>
       </div>
-      <div class="muted" id="pipelineMsg">Sube un video o carga el demo para extraer fotogramas reales, subtítulos en vivo y miniaturas creativas.</div>
+      <div class="muted" id="pipelineMsg">Sube un video o pulsa "✨ Cargar Video Demo" para extraer fotogramas reales, cortes, subtítulos en vivo y miniaturas generadas por IA.</div>
 
       <div class="frames-strip" id="framesStrip">
         <div class="frame-box"></div><div class="frame-box"></div><div class="frame-box"></div><div class="frame-box"></div><div class="frame-box"></div>
@@ -291,23 +386,25 @@
         <div class="stage-wrap">
           <canvas id="previewCanvas" width="540" height="960"></canvas>
           <div class="row" style="width:100%; justify-content:center;">
-            <button class="btn btn-primary btn-sm" id="playPauseBtn">▶ Reproducir</button>
-            <button class="btn btn-sm" id="loopCutBtn" style="border-color: var(--green);">🔁 Loop Corte</button>
+            <button type="button" class="btn btn-primary btn-sm" id="playPauseBtn">▶ Reproducir</button>
+            <button type="button" class="btn btn-sm" id="loopCutBtn" style="border-color: var(--green);">🔁 Loop Corte</button>
             <select id="aspectSelect" style="width:auto; padding:6px 8px;">
               <option value="9:16">9:16 Vertical</option>
               <option value="16:9">16:9 Horizontal</option>
+              <option value="1:1">1:1 Cuadrado</option>
             </select>
           </div>
           <input type="range" id="seekBar" min="0" max="100" value="0" step="0.1" />
           <div class="row" style="width:100%; justify-content:space-between; font-size:.78rem; color:var(--muted);">
             <span id="timeNow">00:00.0</span>
-            <span id="cutRangeLabel">Corte: 00:00 - 00:15</span>
+            <span id="cutRangeLabel">Corte: 00:00.0 - 00:15.0</span>
             <span id="timeTotal">00:00.0</span>
           </div>
           <div class="row" style="width:100%;">
-            <button class="btn btn-green" id="exportClipBtn" style="flex:1; justify-content:center;">⬇️ Visualizar y Descargar</button>
-            <button class="btn btn-amber" id="sendCutToSchedBtn" style="flex:1; justify-content:center;">📅 Programar Corte</button>
+            <button type="button" class="btn btn-green" id="exportClipBtn" style="flex:1; justify-content:center;">⬇️ Visualizar y Descargar</button>
+            <button type="button" class="btn btn-amber" id="sendCutToSchedBtn" style="flex:1; justify-content:center;">📅 Programar Corte</button>
           </div>
+          <button type="button" class="btn btn-sm" id="openEditorFromStudioBtn" style="width:100%; justify-content:center;">🎬 Abrir en Editor de Video Avanzado</button>
         </div>
       </div>
 
@@ -316,9 +413,9 @@
         <div class="card">
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
             <h2 style="margin:0;">🔥 Cortes Detectados (Haz clic para reproducir)</h2>
-            <button class="btn btn-sm" id="autoScheduleAllBtn">⚡ Auto-Programar los 3 Cortes</button>
+            <button type="button" class="btn btn-sm" id="autoScheduleAllBtn">⚡ Auto-Programar los Cortes</button>
           </div>
-          <div id="cutsContainer" class="muted">Aún no hay cortes generados. Pulsa "Auto-Analizar Todo (IA)".</div>
+          <div id="cutsContainer" class="muted">Aún no hay cortes generados. Sube un video o pulsa "✨ Cargar Video Demo".</div>
         </div>
 
         <div class="card">
@@ -345,7 +442,7 @@
           <label>Texto de subtítulos (una línea por bloque — se muestran automáticamente durante todo el corte)</label>
           <textarea id="subsTextarea" rows="4" placeholder="Escribe o edita las frases del corte..."></textarea>
           <div class="row" style="margin-top:8px;">
-            <button class="btn btn-sm btn-primary" id="applySubsBtn">✅ Aplicar y Cubrir Todo el Corte</button>
+            <button type="button" class="btn btn-sm btn-primary" id="applySubsBtn">✅ Aplicar y Cubrir Todo el Corte</button>
             <label style="display:flex; align-items:center; gap:6px; margin:0; cursor:pointer;">
               <input type="checkbox" id="showSubsCheck" checked style="width:auto;" />
               Mostrar subtítulos en vivo
@@ -366,7 +463,7 @@
               <option value="green">Quitar pantalla verde</option>
               <option value="black">Quitar fondo negro</option>
             </select>
-            <button class="btn btn-sm btn-danger" id="clearPngBtn">Quitar Foto</button>
+            <button type="button" class="btn btn-sm btn-danger" id="clearPngBtn">Quitar Foto</button>
           </div>
           <div class="row">
             <div style="flex:1;"><label>Pos X (%)</label><input type="range" id="pngX" min="5" max="95" value="50" /></div>
@@ -378,19 +475,216 @@
     </div>
   </section>
 
-  <!-- ==================== TAB 2: MINIATURAS IA ==================== -->
-  <section id="tab-thumbs" class="view">
+  <!-- ==================== TAB 1B: EDITOR DE VIDEO COMPLETO ==================== -->
+  <section id="tab-editor" class="view">
     <div class="card">
       <div class="row" style="justify-content:space-between;">
         <div>
-          <h2 style="margin-bottom:4px;">🎨 Miniaturas Creativas y Dinámicas (Alto CTR)</h2>
-          <div class="muted">Cada miniatura usa un estilo visual distinto, fotograma real mejorado y ganchos variados sin repetir mensajes.</div>
+          <h2 style="margin-bottom:4px;">🎬 Editor de Video Profesional</h2>
+          <div class="muted">Recorta, divide, cambia la velocidad, aplica filtros de color, zoom, gancho superior y marca de agua en vivo. Todos los cambios se incluyen al exportar.</div>
         </div>
-        <button class="btn btn-amber" id="regenThumbsBtn">🎲 Regenerar Creatividad y Estilos</button>
+        <div class="row">
+          <button type="button" class="btn btn-sm" id="edResetBtn">🔄 Restablecer Ajustes</button>
+          <button type="button" class="btn btn-sm btn-green" id="edExportBtn">⬇️ Exportar Video Editado</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="editor-grid">
+      <!-- Visor y Línea de Tiempo -->
+      <div class="card">
+        <h2>🖥️ Monitor del Editor</h2>
+        <div class="stage-wrap">
+          <canvas id="editorCanvas" width="540" height="960"></canvas>
+
+          <div class="row" style="width:100%; justify-content:center;">
+            <button type="button" class="btn btn-primary btn-sm" id="edPlayPauseBtn">▶ Reproducir</button>
+            <button type="button" class="btn btn-sm" id="edLoopCutBtn" style="border-color: var(--green);">🔁 Loop</button>
+            <select id="edAspectSelect" style="width:auto; padding:6px 8px;">
+              <option value="9:16">9:16 Vertical</option>
+              <option value="16:9">16:9 Horizontal</option>
+              <option value="1:1">1:1 Cuadrado</option>
+            </select>
+          </div>
+
+          <!-- Línea de tiempo visual interactiva -->
+          <div class="timeline-box">
+            <div class="row" style="justify-content:space-between; font-size:.76rem; color:var(--muted); margin-bottom:6px;">
+              <span id="edTimeNow">00:00.0</span>
+              <span id="edCutRangeLabel">Corte: 00:00.0 - 00:15.0</span>
+              <span id="edTimeTotal">00:00.0</span>
+            </div>
+            <div class="timeline-track" id="timelineTrack" title="Haz clic o arrastra para moverte por el video">
+              <div class="timeline-selection" id="timelineSelection"></div>
+              <div class="timeline-playhead" id="timelinePlayhead"></div>
+            </div>
+            <div class="row" style="margin-top:10px; justify-content:center;">
+              <button type="button" class="btn btn-sm" id="edMarkStartBtn">⏮️ Inicio Aquí</button>
+              <button type="button" class="btn btn-sm" id="edMarkEndBtn">⏭️ Fin Aquí</button>
+              <button type="button" class="btn btn-sm btn-amber" id="edSplitCutBtn">✂️ Dividir Aquí</button>
+              <button type="button" class="btn btn-sm btn-primary" id="edSaveNewCutBtn">💾 Guardar Corte</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paneles de Herramientas de Edición -->
+      <div class="editor-section-grid">
+        <!-- 1. Duración, Velocidad y Audio -->
+        <div class="ed-panel">
+          <h3>⚡ Velocidad, Audio y Duración</h3>
+          <div class="field-block">
+            <label>Duración rápida del corte (segundos)</label>
+            <div class="chip-row">
+              <button type="button" class="dur-pill" data-dur="10">10s</button>
+              <button type="button" class="dur-pill active" data-dur="15">15s</button>
+              <button type="button" class="dur-pill" data-dur="30">30s</button>
+              <button type="button" class="dur-pill" data-dur="45">45s</button>
+              <button type="button" class="dur-pill" data-dur="60">60s</button>
+            </div>
+          </div>
+          <div class="field-block">
+            <label>Velocidad de reproducción</label>
+            <select id="edSpeedSelect">
+              <option value="0.5">0.5x (Cámara lenta)</option>
+              <option value="0.75">0.75x (Suave)</option>
+              <option value="1" selected>1.0x (Normal)</option>
+              <option value="1.25">1.25x (Dinámico)</option>
+              <option value="1.5">1.5x (Rápido)</option>
+              <option value="2">2.0x (Muy rápido)</option>
+            </select>
+          </div>
+          <div class="range-row">
+            <div class="range-head"><span>Volumen del video</span><span id="edVolumeVal">100%</span></div>
+            <input type="range" id="edVolumeRange" min="0" max="100" value="100" />
+          </div>
+          <button type="button" class="btn btn-sm" id="edMuteBtn" style="width:100%; justify-content:center;">🔊 Audio Activo (Clic para silenciar)</button>
+        </div>
+
+        <!-- 2. Encuadre, Zoom y Transformación -->
+        <div class="ed-panel">
+          <h3>📐 Encuadre, Zoom y Giro</h3>
+          <div class="range-row">
+            <div class="range-head"><span>Zoom</span><span id="edZoomVal">100%</span></div>
+            <input type="range" id="edZoomRange" min="100" max="220" value="100" />
+          </div>
+          <div class="range-row">
+            <div class="range-head"><span>Desplazar Horizontal (X)</span><span id="edPanXVal">0%</span></div>
+            <input type="range" id="edPanXRange" min="-50" max="50" value="0" />
+          </div>
+          <div class="range-row">
+            <div class="range-head"><span>Desplazar Vertical (Y)</span><span id="edPanYVal">0%</span></div>
+            <input type="range" id="edPanYRange" min="-50" max="50" value="0" />
+          </div>
+          <div class="row" style="margin-top:8px;">
+            <button type="button" class="btn btn-sm" id="edRotateBtn" style="flex:1; justify-content:center;">🔄 Girar 90°</button>
+            <button type="button" class="btn btn-sm" id="edFlipXBtn" style="flex:1; justify-content:center;">↔️ Espejo</button>
+          </div>
+        </div>
+
+        <!-- 3. Filtros y Color -->
+        <div class="ed-panel">
+          <h3>🎨 Color y Filtros Cinematográficos</h3>
+          <div class="field-block">
+            <label>Preset de Color</label>
+            <select id="edFilterPreset">
+              <option value="none">Original (Sin filtro)</option>
+              <option value="cine">Cine Pro (Alto contraste)</option>
+              <option value="vibrant">Viral Vibrante (+Color)</option>
+              <option value="warm">Cálido Sunset</option>
+              <option value="bw">Blanco y Negro Dramático</option>
+              <option value="cyber">Noche Cyber</option>
+            </select>
+          </div>
+          <div class="range-row">
+            <div class="range-head"><span>Brillo</span><span id="edBrightVal">100%</span></div>
+            <input type="range" id="edBrightRange" min="50" max="160" value="100" />
+          </div>
+          <div class="range-row">
+            <div class="range-head"><span>Contraste</span><span id="edContrastVal">100%</span></div>
+            <input type="range" id="edContrastRange" min="50" max="180" value="100" />
+          </div>
+          <div class="range-row">
+            <div class="range-head"><span>Saturación</span><span id="edSatVal">100%</span></div>
+            <input type="range" id="edSatRange" min="0" max="200" value="100" />
+          </div>
+        </div>
+
+        <!-- 4. Texto Gancho Superior y Marca de Agua -->
+        <div class="ed-panel">
+          <h3>🏷️ Gancho Superior y Marca de Agua</h3>
+          <div class="field-block">
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#e2e8f0;">
+              <input type="checkbox" id="edShowHookCheck" style="width:auto;" />
+              Mostrar barra de gancho superior
+            </label>
+            <input type="text" id="edHookInput" placeholder="Ej: ¡NO VAS A CREER EL FINAL! 🔥" style="margin-top:6px;" />
+          </div>
+          <div class="field-block">
+            <label>Color de la barra superior</label>
+            <select id="edHookColorSelect">
+              <option value="#f59e0b">Ámbar Viral</option>
+              <option value="#ef4444">Rojo Alerta</option>
+              <option value="#0ea5e9">Azul Eléctrico</option>
+              <option value="#8b5cf6">Violeta Pro</option>
+              <option value="#10b981">Verde Éxito</option>
+            </select>
+          </div>
+          <div class="form-grid-2 field-block">
+            <div>
+              <label>Marca de agua (@Usuario)</label>
+              <input type="text" id="edWatermarkInput" placeholder="@TuCanal" />
+            </div>
+            <div>
+              <label>Posición</label>
+              <select id="edWatermarkPos">
+                <option value="tr">Arriba Der.</option>
+                <option value="tl">Arriba Izq.</option>
+                <option value="br">Abajo Der.</option>
+                <option value="bl">Abajo Izq.</option>
+              </select>
+            </div>
+          </div>
+          <div class="range-row">
+            <div class="range-head"><span>Opacidad marca de agua</span><span id="edWmOpVal">75%</span></div>
+            <input type="range" id="edWatermarkOpacity" min="15" max="100" value="75" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== TAB 2: MINIATURAS IA ==================== -->
+  <section id="tab-thumbs" class="view">
+    <div class="card">
+      <div class="row" style="justify-content:space-between; margin-bottom:12px;">
+        <div>
+          <h2 style="margin-bottom:4px;">🎨 Miniaturas Generadas por IA (Estilos Únicos y Variados)</h2>
+          <div class="muted">Cada miniatura se genera con IA a partir de los fotogramas de tu video usando direcciones de arte, colores y ganchos diferentes cada vez.</div>
+        </div>
+        <button type="button" class="btn btn-purple" id="regenThumbsBtn">✨ Generar 3 Miniaturas Nuevas con IA</button>
+      </div>
+      <div class="row">
+        <div style="flex:1; min-width:210px;">
+          <label>Dirección de Arte IA</label>
+          <select id="thumbMoodSelect">
+            <option value="random">🎲 Aleatorio (3 estilos completamente distintos)</option>
+            <option value="viral">⚡ Ultra Viral Alto Contraste (Estilo YouTube Pro)</option>
+            <option value="cinema">🎬 Póster Cinematográfico Dramático</option>
+            <option value="cyber">🌃 Neón Cyberpunk & Energía</option>
+            <option value="mystery">🕵️ Misterio / Documental Suspenso</option>
+            <option value="comic">💥 Cómic Pop-Art Dinámico</option>
+            <option value="luxury">✨ Editorial Lujo Dorado</option>
+          </select>
+        </div>
+        <div style="flex:2; min-width:240px;">
+          <label>Idea o toque visual extra para la IA (Opcional)</label>
+          <input type="text" id="thumbCustomIdea" placeholder="Ej: expresión épica, rayos de luz, flecha roja apuntando al centro, fondo explosivo..." />
+        </div>
       </div>
     </div>
     <div class="grid-3" id="thumbsGrid">
-      <div class="card muted">Analiza un video en el Estudio de Cortes para generar automáticamente 3 miniaturas creativas.</div>
+      <div class="card muted">Analiza un video en el Estudio de Cortes para generar automáticamente 3 miniaturas únicas con IA.</div>
     </div>
   </section>
 
@@ -402,7 +696,7 @@
           <h2 style="margin-bottom:4px;">🔗 Centro de Conexión de Redes Sociales</h2>
           <div class="muted">Conecta cada red mediante <strong>Token / API Oficial</strong>, <strong>Webhook (Make / n8n / Zapier)</strong> o <strong>Perfil de acceso rápido</strong>.</div>
         </div>
-        <button class="btn btn-sm btn-primary" id="verifyAllAccountsBtn">⚡ Verificar Conexiones</button>
+        <button type="button" class="btn btn-sm btn-primary" id="verifyAllAccountsBtn">⚡ Verificar Conexiones</button>
       </div>
       <div class="grid-3" id="accountsGrid"></div>
     </div>
@@ -432,8 +726,8 @@
       <label>Descripción y Hashtags Dinámicos</label>
       <textarea id="schedCaption" rows="3" placeholder="Copy atractivo para la red social..."></textarea>
       <div class="row" style="margin-top:10px;">
-        <button class="btn btn-green" id="addScheduleBtn">📌 Guardar en Calendario</button>
-        <button class="btn btn-primary" id="genDynamicCopyBtn">✨ Variar Copy Creativo (IA)</button>
+        <button type="button" class="btn btn-green" id="addScheduleBtn">📌 Guardar en Calendario</button>
+        <button type="button" class="btn btn-primary" id="genDynamicCopyBtn">✨ Variar Copy Creativo (IA)</button>
       </div>
     </div>
 
@@ -455,16 +749,16 @@
   <div class="modal modal-lg">
     <div class="row" style="justify-content:space-between; margin-bottom:8px;">
       <h2 style="margin:0;">🤖 Configurar Proveedor de IA (Multi-IA)</h2>
-      <span class="badge" id="aiVisionBadge">Visión + Texto</span>
+      <span class="badge" id="aiVisionBadge">Visión + Texto + Imagen</span>
     </div>
-    <p class="muted" style="margin-bottom:14px;">Conecta cualquier motor de IA usando su API Key / Token. Todo se guarda localmente en tu navegador y si prefieres no usar clave, el motor creativo local sigue funcionando.</p>
+    <p class="muted" style="margin-bottom:14px;">Conecta cualquier motor de IA usando su API Key / Token. Todo se guarda localmente en tu navegador. Con <strong>Google Gemini</strong> también generas miniaturas reales con IA.</p>
 
     <div class="form-grid-2 field-block">
       <div>
         <label>Proveedor de IA</label>
         <select id="aiProviderSelect">
-          <option value="gemini">Google Gemini (Recomendado)</option>
-          <option value="openai">OpenAI (ChatGPT / GPT-4o)</option>
+          <option value="gemini">Google Gemini (Recomendado + Miniaturas IA)</option>
+          <option value="openai">OpenAI (ChatGPT / GPT-4o / DALL-E)</option>
           <option value="openrouter">OpenRouter (Claude, Llama, DeepSeek...)</option>
           <option value="anthropic">Anthropic (Claude)</option>
           <option value="groq">Groq (Ultra Rápido)</option>
@@ -475,7 +769,7 @@
       </div>
       <div>
         <label>Modelo</label>
-        <input type="text" id="aiModelInput" list="aiModelSuggestions" placeholder="Ej: gemini-2.5-flash" />
+        <input type="text" id="aiModelInput" list="aiModelSuggestions" placeholder="Ej: gemini-3-flash-preview" />
         <datalist id="aiModelSuggestions"></datalist>
       </div>
     </div>
@@ -518,7 +812,7 @@
     <div class="progress-bar"><div class="progress-fill" id="exportProgress"></div></div>
     <video id="exportedVideoPreview" controls style="width:100%; max-height:360px; border-radius:12px; display:none; background:#000;"></video>
     <div class="row" style="margin-top:14px; justify-content:flex-end;">
-      <button class="btn" id="closeExportModal">Seguir Editando</button>
+      <button type="button" class="btn" id="closeExportModal">Seguir Editando</button>
       <a class="btn btn-green" id="downloadExportBtn" style="display:none; text-decoration:none;" download="cliphub_corte.webm">⬇️ Descargar Video</a>
     </div>
   </div>
@@ -532,7 +826,6 @@
       <a id="accPortalLink" href="#" target="_blank" rel="noopener noreferrer" class="muted" style="color:var(--accent); text-decoration:none; font-weight:600;">Portal API Oficial ↗</a>
     </div>
 
-    <!-- Selector de método de conexión -->
     <div class="modal-tabs" id="accModeTabs">
       <button type="button" class="modal-tab active" data-acc-mode="token">🔑 Token / API</button>
       <button type="button" class="modal-tab" data-acc-mode="webhook">🔗 Webhook Auto</button>
@@ -542,7 +835,7 @@
     <div class="form-grid-2 field-block">
       <div>
         <label>Nombre del Canal o @Usuario</label>
-        <input type="text" id="accHandleInput" placeholder="Ej: @BrasiyNina" />
+        <input type="text" id="accHandleInput" placeholder="Ej: @TuCanal" />
       </div>
       <div>
         <label>ID de Canal / Cuenta (Opcional)</label>
@@ -565,7 +858,7 @@
       </div>
     </div>
 
-    <!-- Panel 2: Webhook (Make / n8n / Zapier) -->
+    <!-- Panel 2: Webhook -->
     <div id="accPaneWebhook" style="display:none;">
       <div class="field-block">
         <label>URL del Webhook (Make, n8n, Zapier o tu servidor)</label>
@@ -618,10 +911,10 @@
     <div class="progress-bar"><div class="progress-fill" id="pubProgress"></div></div>
     <div id="pubLinks" class="row" style="margin-top:12px; display:none;">
       <a class="btn btn-sm btn-primary" id="pubDirectStudioBtn" href="https://studio.youtube.com" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">Abrir Studio de esta Red ↗</a>
-      <button class="btn btn-sm btn-amber" id="pubCopyAgainBtn">📋 Copiar Descripción</button>
+      <button type="button" class="btn btn-sm btn-amber" id="pubCopyAgainBtn">📋 Copiar Descripción</button>
     </div>
     <div class="row" style="margin-top:14px; justify-content:flex-end;">
-      <button class="btn" id="closePubModal">Cerrar</button>
+      <button type="button" class="btn" id="closePubModal">Cerrar</button>
     </div>
   </div>
 </div>
@@ -630,17 +923,46 @@
 (() => {
   const $ = id => document.getElementById(id);
 
+  // ==================== ALMACENAMIENTO SEGURO ====================
+  function safeGet(key, fallback = null) {
+    try {
+      const val = window.localStorage.getItem(key);
+      return val !== null ? val : fallback;
+    } catch (_) { return fallback; }
+  }
+  function safeSet(key, val) {
+    try { window.localStorage.setItem(key, val); } catch (_) {}
+  }
+  function safeRemove(key) {
+    try { window.localStorage.removeItem(key); } catch (_) {}
+  }
+
+  // ==================== FETCH CON BACKOFF EXPONENCIAL ====================
+  async function fetchWithBackoff(url, options, maxRetries = 3) {
+    let delay = 1000;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      const res = await fetch(url, options);
+      if (res.ok) return res;
+      if ((res.status === 429 || res.status >= 500) && attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, delay));
+        delay *= 2;
+        continue;
+      }
+      return res;
+    }
+  }
+
   // ==================== PRESETS MULTI-IA ====================
   const AI_PROVIDERS = {
     gemini: {
       name: 'Google Gemini',
       short: 'Gemini',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: 'gemini-2.5-flash',
-      models: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'],
+      defaultModel: 'gemini-3-flash-preview',
+      models: ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-2.0-flash'],
       vision: true,
       portal: 'https://aistudio.google.com/apikey',
-      placeholder: 'AIzaSy...'
+      placeholder: 'AIzaSy... (o déjalo vacío en modo Canvas)'
     },
     openai: {
       name: 'OpenAI (ChatGPT)',
@@ -716,10 +1038,10 @@
 
   function loadAiConfig() {
     try {
-      const saved = JSON.parse(localStorage.getItem('cliphub_ai_config') || 'null');
+      const saved = JSON.parse(safeGet('cliphub_ai_config', 'null'));
       if (saved && saved.provider && AI_PROVIDERS[saved.provider]) return saved;
     } catch (_) {}
-    const legacyKey = localStorage.getItem('cliphub_gemini_key') || '';
+    const legacyKey = safeGet('cliphub_gemini_key', '');
     return {
       provider: 'gemini',
       apiKey: legacyKey,
@@ -738,7 +1060,7 @@
 
   function loadAccounts() {
     let saved = {};
-    try { saved = JSON.parse(localStorage.getItem('cliphub_accounts') || '{}'); } catch (_) {}
+    try { saved = JSON.parse(safeGet('cliphub_accounts', '{}')); } catch (_) {}
     const merged = {};
     for (const [k, def] of Object.entries(DEFAULT_ACCOUNTS)) {
       merged[k] = { ...def, ...(saved[k] || {}) };
@@ -746,11 +1068,20 @@
     return merged;
   }
 
+  function loadSchedule() {
+    try { return JSON.parse(safeGet('cliphub_schedule', '[]')) || []; }
+    catch (_) { return []; }
+  }
+
   // ==================== ESTADO GLOBAL ====================
   const state = {
     ai: loadAiConfig(),
+    activeTab: 'studio',
+    isAnalyzing: false,
+    isExporting: false,
     videoName: 'video_demo',
     duration: 0,
+    cutDuration: 15,
     frames: [],
     cuts: [],
     activeCutIdx: -1,
@@ -764,15 +1095,40 @@
     pngImg: null,
     pngProcessed: null,
     draggingPng: false,
+    draggingTimeline: false,
     thumbnails: [],
-    creativeSeed: 0,
+    creativeSeed: Math.floor(Math.random() * 9000),
+    edit: {
+      speed: 1,
+      volume: 1,
+      muted: false,
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      rotation: 0,
+      flipX: false,
+      filterPreset: 'none',
+      brightness: 100,
+      contrast: 100,
+      saturate: 100,
+      grayscale: 0,
+      sepia: 0,
+      showHook: false,
+      hookText: '',
+      hookColor: '#f59e0b',
+      watermark: '',
+      watermarkPos: 'tr',
+      watermarkOpacity: 0.75
+    },
     accounts: loadAccounts(),
-    schedule: JSON.parse(localStorage.getItem('cliphub_schedule') || '[]')
+    schedule: loadSchedule()
   };
 
   const video = $('sourceVideo');
   const canvas = $('previewCanvas');
   const ctx = canvas.getContext('2d');
+  const editorCanvas = $('editorCanvas');
+  const editorCtx = editorCanvas.getContext('2d');
 
   // ==================== TOAST Y PORTAPAPELES (SIN ALERT) ====================
   let toastTimer = null;
@@ -781,7 +1137,7 @@
     box.textContent = msg;
     box.className = 'show' + (type ? ' ' + type : '');
     if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { box.className = ''; }, 3200);
+    toastTimer = setTimeout(() => { box.className = ''; }, 3400);
   }
 
   function copyTextSafe(text) {
@@ -829,6 +1185,7 @@
 
   function setStep(num, status, text) {
     const el = $('pStep' + num);
+    if (!el) return;
     el.className = 'pipe-step' + (status ? ' ' + status : '');
     $('pSub' + num).textContent = text;
     el.querySelector('.pipe-ico').textContent = status === 'done' ? '✓' : status === 'err' ? '!' : num;
@@ -838,7 +1195,51 @@
     const ok = isAiConfigured();
     const prov = AI_PROVIDERS[state.ai.provider] || AI_PROVIDERS.gemini;
     $('aiDot').className = 'dot' + (ok ? ' ok' : '');
-    $('aiStatusText').textContent = ok ? `${prov.short} Conectada` : 'Configurar IA';
+    $('aiStatusText').textContent = ok ? `${prov.short} Conectada` : 'IA Lista (Gemini)';
+  }
+
+  function updateCutRangeLabel() {
+    const label = `Corte: ${fmtTime(state.startTime)} - ${fmtTime(state.endTime)} (${Math.max(0.5, state.endTime - state.startTime).toFixed(1)}s)`;
+    $('cutRangeLabel').textContent = label;
+    $('edCutRangeLabel').textContent = label;
+    updateTimelineUI();
+  }
+
+  function syncPlayButtons() {
+    const txt = video.paused ? '▶ Reproducir' : '⏸ Pausar';
+    $('playPauseBtn').textContent = txt;
+    $('edPlayPauseBtn').textContent = txt;
+  }
+
+  function syncLoopButtons() {
+    const color = state.loopCut ? 'var(--green)' : 'var(--border)';
+    $('loopCutBtn').style.borderColor = color;
+    $('edLoopCutBtn').style.borderColor = color;
+  }
+
+  function applyAspectRatio(val) {
+    state.aspect = val;
+    $('aspectSelect').value = val;
+    $('edAspectSelect').value = val;
+    const dims = val === '16:9' ? { w: 960, h: 540, cls: 'landscape' }
+      : val === '1:1' ? { w: 720, h: 720, cls: 'square' }
+      : { w: 540, h: 960, cls: '' };
+    [canvas, editorCanvas].forEach(el => {
+      el.width = dims.w;
+      el.height = dims.h;
+      el.classList.remove('landscape', 'square');
+      if (dims.cls) el.classList.add(dims.cls);
+    });
+  }
+
+  function updateTimelineUI() {
+    const dur = Math.max(0.1, state.duration || 15);
+    const startPct = Math.max(0, Math.min(100, (state.startTime / dur) * 100));
+    const endPct = Math.max(startPct, Math.min(100, (state.endTime / dur) * 100));
+    const nowPct = Math.max(0, Math.min(100, ((video.currentTime || 0) / dur) * 100));
+    $('timelineSelection').style.left = `${startPct}%`;
+    $('timelineSelection').style.width = `${Math.max(1, endPct - startPct)}%`;
+    $('timelinePlayhead').style.left = `${nowPct}%`;
   }
 
   // ==================== NAVEGACIÓN ====================
@@ -847,52 +1248,166 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
       btn.classList.add('active');
+      state.activeTab = btn.dataset.tab;
       $('tab-' + btn.dataset.tab).classList.add('active');
     });
   });
 
-  // ==================== VIDEO DEMO REAL (NUNCA NEGRO) ====================
+  $('openEditorFromStudioBtn').addEventListener('click', () => {
+    document.querySelector('[data-tab="editor"]').click();
+  });
+
+  // ==================== SELECTOR DE SEGUNDOS POR CORTE ====================
+  function setCutDuration(secs, applyToCurrent = true) {
+    const clean = Math.max(3, Math.min(300, Math.round(Number(secs) || 15)));
+    state.cutDuration = clean;
+    $('cutDurationInput').value = clean;
+    document.querySelectorAll('.dur-pill').forEach(p => {
+      p.classList.toggle('active', Number(p.dataset.dur) === clean);
+    });
+    if (applyToCurrent && state.duration > 0) {
+      const targetEnd = Math.min(state.duration, state.startTime + clean);
+      state.endTime = targetEnd > state.startTime + 0.5 ? targetEnd : state.duration;
+      $('endInput').value = state.endTime.toFixed(1);
+      if (state.activeCutIdx >= 0 && state.cuts[state.activeCutIdx]) {
+        state.cuts[state.activeCutIdx].end = state.endTime;
+        state.subtitles = buildTimedSubtitles(state.cuts[state.activeCutIdx].lines, state.startTime, state.endTime);
+        renderCutsList();
+      } else if (state.subtitles.length) {
+        state.subtitles = buildTimedSubtitles(state.subtitles.map(s => s.text), state.startTime, state.endTime);
+      }
+      updateCutRangeLabel();
+    }
+  }
+
+  document.querySelectorAll('.dur-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      setCutDuration(Number(pill.dataset.dur), true);
+      showToast(`Duración de cortes ajustada a ${state.cutDuration}s`, 'ok');
+    });
+  });
+
+  $('applyCutDurationBtn').addEventListener('click', () => {
+    setCutDuration($('cutDurationInput').value, true);
+    showToast(`Duración aplicada: ${state.cutDuration} segundos por corte`, 'ok');
+  });
+
+  $('addManualCutBtn').addEventListener('click', () => {
+    if (!video.src) {
+      showToast('Primero sube un video o carga el demo', 'warn');
+      return;
+    }
+    const start = Number(Math.max(0, Math.min(Math.max(0, state.duration - 1), video.currentTime || 0)).toFixed(1));
+    const end = Number(Math.min(state.duration || state.cutDuration, start + state.cutDuration).toFixed(1));
+    const idx = state.cuts.length;
+    const fresh = getUniqueCreativePack(idx + Date.now());
+    state.cuts.push({
+      title: `Corte Manual #${idx + 1} (${fmtTime(start)})`,
+      hookText: fresh.hook,
+      badge: fresh.badge,
+      score: 91 + (idx % 8),
+      start,
+      end: end > start + 0.5 ? end : state.duration,
+      frameIdx: Math.min(Math.max(0, state.frames.length - 1), Math.floor((start / Math.max(1, state.duration)) * Math.max(1, state.frames.length))),
+      lines: fresh.lines
+    });
+    renderCutsList();
+    loadCutIntoPlayer(idx, true);
+    showToast(`Corte manual creado (${fmtTime(start)} → ${fmtTime(end)})`, 'ok');
+  });
+
+  // ==================== VIDEO DEMO REAL (3 ESCENAS COLORIDAS + AUDIO) ====================
   async function generateDemoVideoBlob() {
     const c = document.createElement('canvas');
     c.width = 640; c.height = 360;
     const g = c.getContext('2d');
-    const stream = c.captureStream(30);
-    const mimeOpt = (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/webm'))
-      ? { mimeType: 'video/webm' }
-      : undefined;
-    const rec = mimeOpt ? new MediaRecorder(stream, mimeOpt) : new MediaRecorder(stream);
+    const canvasStream = c.captureStream(30);
+    const tracks = [...canvasStream.getVideoTracks()];
+
+    // Audio suave opcional generado en WebAudio
+    let audioCtx = null;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const dest = audioCtx.createMediaStreamDestination();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(330, audioCtx.currentTime + 2);
+      osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 4);
+      gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+      osc.connect(gain);
+      gain.connect(dest);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 4.3);
+      tracks.push(...dest.stream.getAudioTracks());
+    } catch (_) {}
+
+    const combined = new MediaStream(tracks);
+    const mimeTypes = ['video/webm;codecs=vp8,opus', 'video/webm'];
+    const chosen = mimeTypes.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
+    const rec = chosen ? new MediaRecorder(combined, { mimeType: chosen }) : new MediaRecorder(combined);
     const chunks = [];
     rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
     rec.start();
 
     const start = performance.now();
-    const totalMs = 4500;
+    const totalMs = 4200;
     await new Promise(resolve => {
       function tick(now) {
         const t = (now - start) / 1000;
-        const grad = g.createLinearGradient(0, 0, 640, 360);
-        grad.addColorStop(0, `hsl(${(t * 45 + 210) % 360}, 75%, 24%)`);
-        grad.addColorStop(1, `hsl(${(t * 45 + 290) % 360}, 80%, 16%)`);
-        g.fillStyle = grad;
-        g.fillRect(0, 0, 640, 360);
-
-        g.fillStyle = '#fbbf24';
-        g.beginPath();
-        g.arc(160 + t * 80, 145 + Math.sin(t * 2.5) * 28, 44, 0, Math.PI * 2);
-        g.fill();
-
-        g.fillStyle = '#0f172a';
-        g.beginPath();
-        g.moveTo(0, 265); g.lineTo(190, 160); g.lineTo(380, 265);
-        g.lineTo(540, 175); g.lineTo(640, 265); g.lineTo(640, 360); g.lineTo(0, 360);
-        g.fill();
-
-        g.fillStyle = 'rgba(56,189,248,0.35)';
-        g.fillRect(0, 265, 640, 95);
-
-        g.fillStyle = '#fff';
-        g.font = 'bold 28px Segoe UI';
-        g.fillText(`ESCENA ${Math.min(3, Math.floor(t / 1.4) + 1)} • DEMO CLIPHUB`, 145, 70);
+        if (t < 1.4) {
+          // Escena 1: Atardecer Tropical
+          const grad = g.createLinearGradient(0, 0, 0, 360);
+          grad.addColorStop(0, '#311068');
+          grad.addColorStop(0.55, '#db2777');
+          grad.addColorStop(1, '#f59e0b');
+          g.fillStyle = grad; g.fillRect(0, 0, 640, 360);
+          g.fillStyle = '#fde047';
+          g.beginPath(); g.arc(320 + Math.sin(t * 2) * 50, 175, 58, 0, Math.PI * 2); g.fill();
+          g.fillStyle = '#0f172a';
+          g.beginPath(); g.moveTo(0, 265); g.lineTo(180, 170); g.lineTo(360, 265); g.lineTo(520, 180); g.lineTo(640, 265); g.lineTo(640, 360); g.lineTo(0, 360); g.fill();
+          g.fillStyle = 'rgba(14,165,233,0.45)'; g.fillRect(0, 265, 640, 95);
+          g.fillStyle = '#fff'; g.font = '900 28px Segoe UI';
+          g.fillText('ESCENA 1 • ATARDECER ÉPICO', 120, 62);
+        } else if (t < 2.8) {
+          // Escena 2: Ciudad Neón Cyber
+          const grad = g.createLinearGradient(0, 0, 640, 360);
+          grad.addColorStop(0, '#020617');
+          grad.addColorStop(1, '#1e1b4b');
+          g.fillStyle = grad; g.fillRect(0, 0, 640, 360);
+          for (let b = 0; b < 9; b++) {
+            const bh = 110 + ((b * 43) % 130);
+            g.fillStyle = b % 2 ? '#0f172a' : '#172554';
+            g.fillRect(b * 74, 360 - bh, 64, bh);
+            g.fillStyle = b % 2 ? '#38bdf8' : '#f43f5e';
+            for (let wy = 360 - bh + 16; wy < 340; wy += 24) {
+              g.fillRect(b * 74 + 12, wy, 14, 10);
+              g.fillRect(b * 74 + 38, wy, 14, 10);
+            }
+          }
+          g.strokeStyle = '#38bdf8'; g.lineWidth = 4;
+          g.beginPath(); g.moveTo(0, 120 + Math.sin(t * 8) * 12); g.lineTo(640, 120 + Math.cos(t * 8) * 12); g.stroke();
+          g.fillStyle = '#38bdf8'; g.font = '900 28px Segoe UI';
+          g.fillText('ESCENA 2 • CIUDAD CYBER', 145, 62);
+        } else {
+          // Escena 3: Espacio & Energía Dorada
+          const grad = g.createRadialGradient(320, 180, 20, 320, 180, 360);
+          grad.addColorStop(0, '#7c3aed');
+          grad.addColorStop(0.5, '#1e1b4b');
+          grad.addColorStop(1, '#020617');
+          g.fillStyle = grad; g.fillRect(0, 0, 640, 360);
+          for (let s = 0; s < 35; s++) {
+            g.fillStyle = '#fff';
+            g.fillRect((s * 97 + t * 60) % 640, (s * 53) % 360, 3, 3);
+          }
+          g.fillStyle = '#f59e0b';
+          g.beginPath(); g.arc(320, 200, 62, 0, Math.PI * 2); g.fill();
+          g.strokeStyle = '#fde047'; g.lineWidth = 6;
+          g.beginPath(); g.ellipse(320, 200, 115, 28, -0.2, 0, Math.PI * 2); g.stroke();
+          g.fillStyle = '#fde047'; g.font = '900 28px Segoe UI';
+          g.fillText('ESCENA 3 • CLÍMAX FINAL', 145, 62);
+        }
 
         if (now - start < totalMs) requestAnimationFrame(tick);
         else { rec.stop(); resolve(); }
@@ -900,144 +1415,193 @@
       requestAnimationFrame(tick);
     });
     await new Promise(r => { rec.onstop = r; });
+    if (audioCtx) { try { audioCtx.close(); } catch (_) {} }
     return new Blob(chunks, { type: 'video/webm' });
   }
 
+  // ==================== CARGA DE VIDEO ROBUSTA (NUNCA SE QUEDA CARGANDO) ====================
+  let activeVideoUrl = null;
+  let loadWatchdog = null;
+
   function loadVideoSrc(url, name, fallbackDuration = 15) {
-    state.videoName = name.replace(/\.[^.]+$/, '') || 'mi_video';
-    video.src = url;
-    video.muted = false;
-    video.load();
-    video.onloadeddata = async () => {
-      state.duration = (isFinite(video.duration) && video.duration > 0) ? video.duration : fallbackDuration;
+    if (loadWatchdog) clearTimeout(loadWatchdog);
+    if (activeVideoUrl && activeVideoUrl !== url) {
+      try { URL.revokeObjectURL(activeVideoUrl); } catch (_) {}
+    }
+    activeVideoUrl = url;
+    state.videoName = (name || 'mi_video').replace(/\.[^.]+$/, '') || 'mi_video';
+    $('pipelineMsg').textContent = `Cargando video "${state.videoName}"...`;
+    setStep(1, 'run', 'Cargando archivo...');
+
+    let handled = false;
+    const onReady = async () => {
+      if (handled) return;
+      handled = true;
+      if (loadWatchdog) clearTimeout(loadWatchdog);
+
+      // Corregir duración Infinity común en blobs WebM de MediaRecorder
+      let detectedDur = video.duration;
+      if (!isFinite(detectedDur) || detectedDur <= 0) {
+        detectedDur = fallbackDuration;
+      }
+      state.duration = detectedDur;
       $('timeTotal').textContent = fmtTime(state.duration);
+      $('edTimeTotal').textContent = fmtTime(state.duration);
       state.startTime = 0;
-      state.endTime = Math.min(state.duration, 15);
+      state.endTime = Math.min(state.duration, state.cutDuration);
       $('startInput').value = state.startTime.toFixed(1);
       $('endInput').value = state.endTime.toFixed(1);
       $('seekBar').max = state.duration;
+      $('seekBar').value = 0;
       updateCutRangeLabel();
-      showToast(`Video "${state.videoName}" cargado`, 'ok');
+      showToast(`Video "${state.videoName}" cargado (${fmtTime(state.duration)})`, 'ok');
+
       if ($('autoAnalyzeCheck').checked) {
         await runFullAnalysis();
+      } else {
+        setStep(1, 'done', 'Video cargado');
+        $('pipelineMsg').textContent = 'Video listo. Pulsa "🚀 Auto-Analizar Todo (IA)" o reprodúcelo directamente.';
       }
     };
+
+    video.onerror = () => {
+      if (loadWatchdog) clearTimeout(loadWatchdog);
+      setStep(1, 'err', 'Formato no compatible');
+      $('pipelineMsg').textContent = '⚠️ No se pudo decodificar este archivo. Prueba con MP4 (H.264) o WebM.';
+      showToast('Error al leer el archivo de video. Usa MP4 o WebM.', 'warn');
+    };
+    video.onloadedmetadata = () => {
+      if (video.readyState >= 1) onReady();
+    };
+    video.onloadeddata = onReady;
+    video.oncanplay = onReady;
+
+    // Watchdog de seguridad (si el navegador tarda en disparar eventos pero ya tiene datos)
+    loadWatchdog = setTimeout(() => {
+      if (!handled && video.src === url) {
+        if (video.readyState >= 1 || video.videoWidth > 0) {
+          onReady();
+        } else {
+          setStep(1, 'err', 'Tiempo agotado');
+          $('pipelineMsg').textContent = '⚠️ El video tardó demasiado en decodificar. Intenta con un archivo MP4 más ligero o pulsa "✨ Cargar Video Demo".';
+        }
+      }
+    }, 5000);
+
+    video.pause();
+    syncPlayButtons();
+    video.src = url;
+    video.muted = state.edit.muted;
+    video.volume = state.edit.volume;
+    video.playbackRate = state.edit.speed;
+    video.load();
   }
 
   $('videoInput').addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
-    loadVideoSrc(URL.createObjectURL(file), file.name);
+    loadVideoSrc(URL.createObjectURL(file), file.name, 15);
+    e.target.value = '';
   });
 
   $('loadDemoBtn').addEventListener('click', async () => {
-    $('pipelineMsg').textContent = 'Generando video demo colorido en tu navegador...';
-    const blob = await generateDemoVideoBlob();
-    loadVideoSrc(URL.createObjectURL(blob), 'historia_viral_demo', 4.5);
+    const btn = $('loadDemoBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Generando Demo...';
+    try {
+      $('pipelineMsg').textContent = 'Generando video demo de 3 escenas coloridas en tu navegador...';
+      const blob = await generateDemoVideoBlob();
+      loadVideoSrc(URL.createObjectURL(blob), 'historia_viral_demo', 4.2);
+    } catch (err) {
+      $('pipelineMsg').textContent = `⚠️ No se pudo crear el video demo: ${err.message}`;
+      showToast('No se pudo generar el video demo', 'warn');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '✨ Cargar Video Demo';
+    }
   });
 
-  // ==================== EXTRACCIÓN SEGURA DE FOTOGRAMAS (SIN CUADROS NEGROS) ====================
+  // ==================== EXTRACCIÓN SEGURA DE FOTOGRAMAS REALES ====================
   function isFrameMostlyBlack(c) {
     try {
       const g = c.getContext('2d');
       const data = g.getImageData(0, 0, c.width, c.height).data;
       let sum = 0;
-      const step = 4 * 16;
+      const step = 4 * 20;
       for (let i = 0; i < data.length; i += step) {
         sum += data[i] + data[i + 1] + data[i + 2];
       }
       const avg = sum / (data.length / step);
-      return avg < 12;
-    } catch (_) {
-      return false;
-    }
+      return avg < 10;
+    } catch (_) { return false; }
   }
 
-  function buildFallbackFrameCanvas(index, sec) {
-    const c = document.createElement('canvas');
-    c.width = 480; c.height = 270;
-    const g = c.getContext('2d');
-    const grad = g.createLinearGradient(0, 0, 480, 270);
-    grad.addColorStop(0, `hsl(${(index * 55 + 205) % 360}, 70%, 24%)`);
-    grad.addColorStop(1, `hsl(${(index * 55 + 275) % 360}, 78%, 14%)`);
-    g.fillStyle = grad;
-    g.fillRect(0, 0, 480, 270);
-    g.fillStyle = 'rgba(255,255,255,0.9)';
-    g.font = 'bold 22px Segoe UI';
-    g.fillText(`Escena #${index + 1} • ${fmtTime(sec)}`, 28, 145);
-    return c;
-  }
-
-  async function seekAndCapture(t, idx = 0) {
-    const maxSafe = Math.max(0.25, state.duration - 0.15);
-    const target = Math.min(Math.max(0.15, t), maxSafe);
+  async function seekAndCapture(t) {
+    const maxT = Math.max(0.2, state.duration - 0.15);
+    const target = Math.min(Math.max(0.15, t), maxT);
     await new Promise(resolve => {
       let done = false;
       const finish = () => { if (!done) { done = true; resolve(); } };
       video.addEventListener('seeked', finish, { once: true });
       try { video.currentTime = target; } catch (_) { finish(); }
-      setTimeout(finish, 950);
+      setTimeout(finish, 650);
     });
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
     const c = document.createElement('canvas');
     c.width = 480; c.height = 270;
     const g = c.getContext('2d');
-    if (video.videoWidth > 0 && video.readyState >= 2) {
+    if (video.videoWidth > 0 && video.videoHeight > 0) {
       g.drawImage(video, 0, 0, c.width, c.height);
     } else {
-      return { canvas: buildFallbackFrameCanvas(idx, target), time: target };
+      const gr = g.createLinearGradient(0, 0, 480, 270);
+      gr.addColorStop(0, '#1e293b'); gr.addColorStop(1, '#0f172a');
+      g.fillStyle = gr; g.fillRect(0, 0, 480, 270);
     }
     return { canvas: c, time: target };
   }
 
   async function extractRealFrames() {
-    setStep(1, 'run', 'Decodificando video...');
-    const wasPaused = video.paused;
+    setStep(1, 'run', 'Extrayendo fotogramas...');
     const prevMuted = video.muted;
     video.muted = true;
     try { await video.play(); } catch (_) {}
     await new Promise(r => setTimeout(r, 140));
     video.pause();
 
-    if (isFinite(video.duration) && video.duration > 0) {
-      state.duration = video.duration;
-      $('timeTotal').textContent = fmtTime(state.duration);
-      $('seekBar').max = state.duration;
-    }
+    const dur = (isFinite(video.duration) && video.duration > 0) ? video.duration : (state.duration || 12);
+    state.duration = dur;
+    $('timeTotal').textContent = fmtTime(dur);
+    $('edTimeTotal').textContent = fmtTime(dur);
+    $('seekBar').max = dur;
 
-    const dur = Math.max(1.5, state.duration || 4.5);
-    const ratios = [0.10, 0.28, 0.48, 0.68, 0.85];
+    const ratios = [0.10, 0.30, 0.50, 0.70, 0.88];
     const results = [];
 
     for (let i = 0; i < ratios.length; i++) {
-      let cap = await seekAndCapture(dur * ratios[i], i);
+      let cap = await seekAndCapture(dur * ratios[i]);
       if (isFrameMostlyBlack(cap.canvas)) {
-        cap = await seekAndCapture(Math.min(dur - 0.1, dur * ratios[i] + 0.35), i);
+        cap = await seekAndCapture(Math.min(dur - 0.15, dur * ratios[i] + 0.45));
       }
-      if (isFrameMostlyBlack(cap.canvas)) {
-        cap = { canvas: buildFallbackFrameCanvas(i, cap.time), time: cap.time };
-      }
-      results.push({ time: cap.time, dataUrl: cap.canvas.toDataURL('image/jpeg', 0.88) });
+      results.push({ time: cap.time, dataUrl: cap.canvas.toDataURL('image/jpeg', 0.86) });
     }
 
     video.muted = prevMuted;
-    if (!wasPaused) video.play().catch(() => {});
-
     state.frames = results;
+
     $('framesStrip').innerHTML = results.map((f, idx) => `
-      <div class="frame-box" data-frame-time="${f.time}" title="Ir a ${fmtTime(f.time)}">
-        <img src="${f.dataUrl}" alt="Fotograma ${idx + 1} (${fmtTime(f.time)})" />
+      <div class="frame-box" data-frame-time="${f.time}" title="Saltar al segundo ${fmtTime(f.time)}">
+        <img src="${f.dataUrl}" alt="Fotograma ${idx + 1}" />
         <span class="frame-ts">${fmtTime(f.time)}</span>
       </div>
     `).join('');
 
-    document.querySelectorAll('#framesStrip .frame-box').forEach(box => {
-      box.addEventListener('click', () => {
-        const ts = Number(box.dataset.frameTime);
-        if (isFinite(ts)) {
-          video.currentTime = ts;
-          showToast(`Saltando a ${fmtTime(ts)}`, '');
+    document.querySelectorAll('#framesStrip .frame-box').forEach(el => {
+      el.addEventListener('click', () => {
+        const t = Number(el.dataset.frameTime);
+        if (isFinite(t)) {
+          video.currentTime = t;
+          showToast(`Saltando a ${fmtTime(t)}`, '');
         }
       });
     });
@@ -1045,114 +1609,39 @@
     setStep(1, 'done', `${results.length} fotogramas reales`);
   }
 
-  // ==================== MOTOR CREATIVO DE CORTES, SUBTÍTULOS Y COPYS ====================
-  const CREATIVE_BANK = [
-    {
-      titles: ['El giro que cambia toda la historia', 'Nadie esperaba este segundo exacto', 'El detalle oculto que lo explica todo'],
-      hooks: ['¡MIRA ESTO!', 'NO LO CREERÁS', 'EL SECRETO'],
-      badges: ['MOMENTO CLAVE', 'ALTO IMPACTO', 'VIRAL 98%'],
-      subs: [
-        ['Quédate hasta el final porque aquí pasa algo increíble', 'Fíjate bien en este detalle que casi todos pasan por alto', 'Justo en este segundo la historia da un giro total', '¿Tú también lo viste? Déjamelo en los comentarios'],
-        ['Esto es lo que separa un video normal de uno viral', 'Mira cómo cambia el ritmo en menos de tres segundos', 'Guarda este clip antes de que se te olvide aplicarlo', 'Comparte esto con alguien que necesite verlo hoy'],
-        ['Al principio parece una escena tranquila, pero espera...', 'Aquí es donde la tensión sube al máximo nivel', 'Ese pequeño movimiento lo cambia absolutamente todo', 'Suscríbete si quieres ver la segunda parte ahora mismo']
-      ]
-    },
-    {
-      titles: ['La escena más intensa en pocos segundos', 'Por qué todos están hablando de esto', 'El clímax que dispara la retención'],
-      hooks: ['¡INCREÍBLE!', 'PASÓ ESTO...', 'BRUTAL 🔥'],
-      badges: ['RETENCIÓN TOP', 'RECOMENDADO', 'EXCLUSIVO'],
-      subs: [
-        ['No parpadees durante los próximos segundos', 'Todo lo que pasó antes llevaba directo a este momento', 'La reacción aquí es simplemente espectacular', 'Dale like si quieres más momentos así de épicos'],
-        ['Muchos lo intentan, pero pocos logran este resultado', 'Observa la precisión en cada cuadro de esta toma', 'Ese remate final hace que quieras verlo en bucle', 'Cuéntame qué puntuación le das del 1 al 10'],
-        ['Este instante vale oro para tu próximo Short', 'Arranca con fuerza desde el primer segundo sin pausas', 'Mantén la intriga viva hasta el último instante', 'Activa la campanita para no perderte el próximo episodio']
-      ]
-    },
-    {
-      titles: ['Lo que nadie notó a primera vista', 'El truco visual que atrapa al instante', 'Así se logra un final inolvidable'],
-      hooks: ['¡ATENCIÓN!', '¿LO VISTE?', 'IMPACTO 10/10'],
-      badges: ['TENDENCIA', 'CTR MÁXIMO', 'GANADOR'],
-      subs: [
-        ['Mira el centro de la pantalla antes de que cambie', 'Poca gente nota este detalle la primera vez', 'Cuando lo vuelves a ver todo cobra sentido', 'Guárdalo para enseñárselo a tus amigos'],
-        ['Tres segundos bastan para enganchar a la audiencia', 'El contraste y el ritmo lo hacen imposible de ignorar', 'Así es como mantienes a la gente hasta el final', 'Comenta si quieres ver cómo se hizo paso a paso'],
-        ['El cierre perfecto para disparar comentarios', 'Cada cuadro suma energía hasta el remate', 'Mira cómo termina esta escena sin cortes', 'Sígueme para más clips como este cada día']
-      ]
-    }
-  ];
-
-  function buildSmartCutsFallback() {
-    const d = Math.max(1.8, state.duration || 4.5);
-    const pack = CREATIVE_BANK[state.creativeSeed % CREATIVE_BANK.length];
-    const seg = d / 3;
-    return [0, 1, 2].map(i => {
-      const s = Number((i * seg).toFixed(1));
-      const e = Number(Math.min(d, (i + 1) * seg).toFixed(1));
-      return {
-        title: pack.titles[i],
-        hookText: pack.hooks[i],
-        badge: pack.badges[i],
-        score: 96 - i * 2,
-        start: s,
-        end: e > s + 0.5 ? e : d,
-        frameIdx: Math.min(Math.max(0, state.frames.length - 1), i === 0 ? 0 : i === 1 ? 2 : 4),
-        lines: pack.subs[i]
-      };
-    });
-  }
-
-  async function callConfiguredAI(promptText, framesList = [], configOverride = null) {
-    const cfg = configOverride || state.ai;
+  // ==================== MOTOR MULTI-IA (TEXTO + VISIÓN) ====================
+  async function callConfiguredAI(prompt, frameBase64List = [], cfgOverride = null) {
+    const cfg = cfgOverride || state.ai;
     const provider = cfg.provider || 'gemini';
-    const provMeta = AI_PROVIDERS[provider] || AI_PROVIDERS.custom;
+    const meta = AI_PROVIDERS[provider] || AI_PROVIDERS.custom;
+    const model = cfg.model || meta.defaultModel;
     const apiKey = (cfg.apiKey || '').trim();
-    const model = (cfg.model || provMeta.defaultModel).trim();
-    const baseUrl = (cfg.baseUrl || provMeta.baseUrl).trim().replace(/\/+$/, '');
+    const baseUrl = (cfg.baseUrl || meta.baseUrl).trim();
 
-    if (!apiKey && provider !== 'custom') {
-      throw new Error('Falta ingresar tu API Key / Token.');
-    }
-
-    // 1) Google Gemini API
     if (provider === 'gemini') {
-      const parts = [{ text: promptText }];
-      framesList.slice(0, 3).forEach(f => {
-        if (f && f.dataUrl && f.dataUrl.includes(',')) {
-          parts.push({ inline_data: { mime_type: 'image/jpeg', data: f.dataUrl.split(',')[1] } });
-        }
+      const cleanBase = baseUrl.replace(/\/+$/, '');
+      const url = `${cleanBase}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const parts = [{ text: prompt }];
+      frameBase64List.forEach(b64 => {
+        parts.push({ inlineData: { mimeType: 'image/jpeg', data: b64 } });
       });
-      const tryModels = [...new Set([model, 'gemini-2.5-flash', 'gemini-2.0-flash'])];
-      let lastErr = 'Error al conectar con Gemini.';
-      for (const m of tryModels) {
-        const res = await fetch(`${baseUrl}/models/${encodeURIComponent(m)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts }] })
-        });
-        if (res.ok) {
-          const json = await res.json();
-          const txt = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          if (txt) return txt;
-        } else {
-          const errJson = await res.json().catch(() => ({}));
-          lastErr = errJson?.error?.message || `HTTP ${res.status}`;
-          if (res.status === 401 || res.status === 403) break;
-        }
-      }
-      throw new Error(lastErr);
+      const res = await fetchWithBackoff(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts }] })
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error?.message || `HTTP ${res.status}`);
+      return json?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
     }
 
-    // 2) Anthropic Claude API
     if (provider === 'anthropic') {
-      const content = [];
-      framesList.slice(0, 3).forEach(f => {
-        if (f && f.dataUrl && f.dataUrl.includes(',')) {
-          content.push({
-            type: 'image',
-            source: { type: 'base64', media_type: 'image/jpeg', data: f.dataUrl.split(',')[1] }
-          });
-        }
+      if (!apiKey) throw new Error('Falta tu API Key de Anthropic.');
+      const content = [{ type: 'text', text: prompt }];
+      frameBase64List.forEach(b64 => {
+        content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } });
       });
-      content.push({ type: 'text', text: promptText });
-      const res = await fetch(baseUrl, {
+      const res = await fetchWithBackoff(baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1162,92 +1651,146 @@
         },
         body: JSON.stringify({ model, max_tokens: 1024, messages: [{ role: 'user', content }] })
       });
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson?.error?.message || `HTTP ${res.status}`);
-      }
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error?.message || `HTTP ${res.status}`);
       return json?.content?.[0]?.text || '';
     }
 
-    // 3) APIs Compatibles con OpenAI (OpenAI, OpenRouter, Groq, DeepSeek, xAI, Custom/Ollama)
+    // Proveedores OpenAI-compatible (OpenAI, OpenRouter, Groq, DeepSeek, xAI, Custom/Ollama)
     const headers = { 'Content-Type': 'application/json' };
     if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
     if (provider === 'openrouter') {
-      headers['HTTP-Referer'] = window.location.origin || 'https://cliphub.studio';
+      headers['HTTP-Referer'] = window.location.origin;
       headers['X-Title'] = 'ClipHub Studio Pro';
     }
 
-    const useVision = provMeta.vision && framesList.length > 0;
-    const buildBody = (withImages) => {
-      const content = withImages
-        ? [
-            { type: 'text', text: promptText },
-            ...framesList.slice(0, 3).map(f => ({ type: 'image_url', image_url: { url: f.dataUrl } }))
-          ]
-        : promptText;
-      return JSON.stringify({
-        model,
-        temperature: 0.7,
-        messages: [{ role: 'user', content }]
-      });
-    };
+    let userContent = prompt;
+    if (meta.vision && frameBase64List.length) {
+      userContent = [
+        { type: 'text', text: prompt },
+        ...frameBase64List.map(b64 => ({
+          type: 'image_url',
+          image_url: { url: `data:image/jpeg;base64,${b64}` }
+        }))
+      ];
+    }
 
-    let res = await fetch(baseUrl, { method: 'POST', headers, body: buildBody(useVision) });
-    if (!res.ok && useVision && res.status === 400) {
-      // Si el modelo elegido no soporta imágenes, reintentar en modo texto
-      res = await fetch(baseUrl, { method: 'POST', headers, body: buildBody(false) });
-    }
-    if (!res.ok) {
-      const errJson = await res.json().catch(() => ({}));
-      throw new Error(errJson?.error?.message || `HTTP ${res.status}`);
-    }
-    const json = await res.json();
+    const res = await fetchWithBackoff(baseUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: userContent }],
+        temperature: 0.9
+      })
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json?.error?.message || `HTTP ${res.status}`);
     return json?.choices?.[0]?.message?.content || '';
   }
 
-  async function askAiForCuts() {
-    if (!isAiConfigured()) return null;
-    const prompt = `Eres director creativo de videos virales (Shorts/Reels/TikTok).
-Analiza este video titulado "${state.videoName}" (duración ${state.duration.toFixed(1)} segundos).
-Crea 3 cortes DISTINTOS, muy creativos y SIN repetir frases ni ganchos.
-Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con esta estructura exacta:
-{"cuts":[{"title":"título creativo","hookText":"2-3 PALABRAS IMPACTO","badge":"ETIQUETA CORTA","score":95,"start":0,"end":5,"frameIdx":0,"lines":["frase 1","frase 2","frase 3","frase 4"]}]}`;
+  // ==================== BANCO CREATIVO NO REPETITIVO ====================
+  const DYNAMIC_POOL = [
+    { title: 'El giro que cambia toda la historia', hook: '¡NADIE LO VIO!', badge: 'GIRO TOTAL', lines: ['Quédate hasta el final porque aquí pasa algo inesperado', 'Fíjate bien en este detalle que casi todos ignoran', 'Justo en este segundo cambia todo el panorama', '¿Tú también lo notaste? Cuéntame abajo'] },
+    { title: 'El segundo exacto que dispara la atención', hook: '¡MIRA ESTO!', badge: 'ALTO CTR', lines: ['No parpadees durante los próximos segundos', 'Todo lo anterior llevaba directo a este instante', 'Observa cómo sube la tensión sin previo aviso', 'Guarda este clip antes de seguir bajando'] },
+    { title: 'El detalle oculto que lo explica todo', hook: 'EL SECRETO', badge: 'DETALLE OCULTO', lines: ['A simple vista parece normal, pero mira más cerca', 'Aquí está la clave que marca toda la diferencia', 'Pocos se dan cuenta a la primera reproducción', 'Compártelo con alguien que ame descubrir esto'] },
+    { title: 'Por qué esta escena atrapa desde el inicio', hook: 'BRUTAL 🔥', badge: 'RETENCIÓN 98%', lines: ['Así se engancha a la audiencia en menos de tres segundos', 'Cada movimiento suma ritmo y curiosidad', 'Este remate hace que quieras verlo en bucle', '¿Del 1 al 10 qué nota le das a esta toma?'] },
+    { title: 'Lo que pasa cuando menos lo esperas', hook: '¿QUÉ PASÓ?', badge: 'IMPACTO VIVO', lines: ['Empieza tranquilo, pero prepárate para el cambio', 'El ritmo acelera justo en la mitad del corte', 'Ese contraste visual atrapa todas las miradas', 'Suscríbete si quieres ver la continuación'] },
+    { title: 'El clímax perfecto para Shorts y Reels', hook: 'NIVEL DIOS', badge: 'TOP VIRAL', lines: ['Este fragmento tiene todo para hacerse tendencia', 'Colores vivos, acción directa y cero relleno', 'Mantén la mirada en el centro de la pantalla', 'Déjame un 🔥 si quieres más clips así'] },
+    { title: 'La técnica visual que multiplica vistas', hook: '¡IMPOSIBLE!', badge: 'EFECTO WOW', lines: ['Muchos pasan de largo sin ver el truco real', 'Fíjate en la transición justo en este punto', 'Un cambio pequeño genera un resultado enorme', 'Guárdalo para aplicarlo en tu próximo video'] },
+    { title: 'El momento más comentado del video', hook: 'TODOS HABLAN', badge: 'TENDENCIA', lines: ['Esta es la parte que la gente repite tres veces', 'La energía cambia de cero a cien al instante', 'Imposible no reaccionar cuando llega el final', 'Comenta qué habrías hecho tú en ese momento'] },
+    { title: 'Pura adrenalina en formato vertical', hook: 'SIN PAUSA', badge: 'ACCIÓN TOP', lines: ['Directo al grano desde el primer fotograma', 'Sin introducciones largas ni tiempos muertos', 'Así se retiene al espectador hasta el final', 'Dale like si este corte te atrapó'] }
+  ];
 
-    try {
-      const raw = await callConfiguredAI(prompt, state.frames);
-      const cleaned = raw.replace(/\x60\x60\x60json|\x60\x60\x60/gi, '').trim();
-      const firstBrace = cleaned.indexOf('{');
-      const lastBrace = cleaned.lastIndexOf('}');
-      const jsonStr = firstBrace !== -1 && lastBrace !== -1 ? cleaned.slice(firstBrace, lastBrace + 1) : cleaned;
-      const parsed = JSON.parse(jsonStr);
-      if (Array.isArray(parsed.cuts) && parsed.cuts.length >= 1) {
-        return parsed.cuts.slice(0, 3).map((c, i) => ({
-          title: c.title || `Momento Viral #${i + 1}`,
-          hookText: (c.hookText || '¡MIRA ESTO!').toUpperCase(),
-          badge: (c.badge || 'TOP CTR').toUpperCase(),
-          score: Number(c.score) || 94,
-          start: Math.max(0, Math.min(state.duration - 1, Number(c.start) || 0)),
-          end: Math.max(1, Math.min(state.duration, Number(c.end) || state.duration)),
-          frameIdx: Math.min(state.frames.length - 1, Math.max(0, Number(c.frameIdx) || i)),
-          lines: Array.isArray(c.lines) && c.lines.length ? c.lines : CREATIVE_BANK[0].subs[i]
-        }));
-      }
-    } catch (err) {
-      showToast(`IA (${AI_PROVIDERS[state.ai.provider]?.short || 'IA'}): usando motor creativo local (${err.message.slice(0, 45)})`, 'warn');
+  function getUniqueCreativePack(seedOffset = 0) {
+    const idx = Math.abs(state.creativeSeed + seedOffset) % DYNAMIC_POOL.length;
+    return DYNAMIC_POOL[idx];
+  }
+
+  function buildSmartCutsFallback() {
+    const d = Math.max(3, state.duration || 12);
+    const targetLen = Math.min(d, state.cutDuration || 15);
+    const used = new Set();
+    const picks = [];
+    for (let i = 0; i < 3; i++) {
+      let idx = (state.creativeSeed + i * 2 + Math.floor(Math.random() * DYNAMIC_POOL.length)) % DYNAMIC_POOL.length;
+      while (used.has(idx)) idx = (idx + 1) % DYNAMIC_POOL.length;
+      used.add(idx);
+      picks.push(DYNAMIC_POOL[idx]);
     }
+
+    return [0, 1, 2].map(i => {
+      let s, e;
+      if (d <= targetLen * 1.15) {
+        const seg = d / 3;
+        s = Number((i * seg).toFixed(1));
+        e = Number(Math.min(d, (i + 1) * seg).toFixed(1));
+      } else {
+        const maxStart = Math.max(0, d - targetLen);
+        s = Number(((maxStart / 2) * i).toFixed(1));
+        e = Number(Math.min(d, s + targetLen).toFixed(1));
+      }
+      if (e <= s + 0.6) e = Number(d.toFixed(1));
+      return {
+        title: picks[i].title,
+        hookText: picks[i].hook,
+        badge: picks[i].badge,
+        score: 91 + Math.floor(Math.random() * 8),
+        start: s,
+        end: e,
+        frameIdx: Math.min(Math.max(0, state.frames.length - 1), i === 0 ? 0 : i === 1 ? 2 : 4),
+        lines: [...picks[i].lines]
+      };
+    });
+  }
+
+  async function askAIForCuts() {
+    const entropy = `${Date.now()}-${Math.floor(Math.random() * 9999)}`;
+    const prompt = `Eres director creativo experto en YouTube Shorts, Reels y TikTok (Semilla creativa: ${entropy}).
+Analiza estos fotogramas del video "${state.videoName}" (duración total: ${state.duration.toFixed(1)}s).
+El usuario desea cortes de aproximadamente ${Math.min(state.duration, state.cutDuration).toFixed(1)} segundos cada uno.
+Crea 3 cortes COMPLETAMENTE DIFERENTES entre sí, con títulos originales, ganchos impactantes (máx 3 palabras) y 4 líneas de subtítulos atractivas en español que describan lo que se ve. NO repitas clichés ni frases iguales entre cortes.
+Responde ÚNICAMENTE con JSON válido sin bloques markdown:
+{"cuts":[{"title":"título único","hookText":"2-3 PALABRAS","badge":"ETIQUETA","score":96,"start":0,"end":5,"frameIdx":0,"lines":["frase 1","frase 2","frase 3","frase 4"]}]}`;
+
+    const frameB64s = state.frames.slice(0, 3).map(f => f.dataUrl.split(',')[1]);
+    try {
+      const raw = await callConfiguredAI(prompt, frameB64s);
+      const startIdx = raw.indexOf('{');
+      const endIdx = raw.lastIndexOf('}');
+      if (startIdx === -1 || endIdx === -1) return null;
+      const parsed = JSON.parse(raw.slice(startIdx, endIdx + 1));
+      if (Array.isArray(parsed.cuts) && parsed.cuts.length >= 1) {
+        return parsed.cuts.slice(0, 3).map((c, i) => {
+          const fallback = getUniqueCreativePack(i * 3);
+          const s = Math.max(0, Math.min(Math.max(0, state.duration - 1), Number(c.start) || 0));
+          let e = Number(c.end) || (s + state.cutDuration);
+          e = Math.max(s + 0.8, Math.min(state.duration, e));
+          return {
+            title: c.title || fallback.title,
+            hookText: String(c.hookText || fallback.hook).toUpperCase().slice(0, 22),
+            badge: String(c.badge || fallback.badge).toUpperCase().slice(0, 18),
+            score: Math.min(99, Math.max(85, Number(c.score) || (92 + i * 2))),
+            start: Number(s.toFixed(1)),
+            end: Number(e.toFixed(1)),
+            frameIdx: Math.min(Math.max(0, state.frames.length - 1), Number.isFinite(Number(c.frameIdx)) ? Number(c.frameIdx) : i),
+            lines: Array.isArray(c.lines) && c.lines.length ? c.lines.map(String) : [...fallback.lines]
+          };
+        });
+      }
+    } catch (_) {}
     return null;
   }
 
   // ==================== SUBTÍTULOS EN TODO EL CORTE ====================
   function buildTimedSubtitles(lines, start, end) {
-    const clean = lines.map(l => l.trim()).filter(Boolean);
+    const clean = (lines || []).map(l => String(l).trim()).filter(Boolean);
     if (!clean.length) return [];
-    const span = Math.max(1, end - start);
+    const span = Math.max(0.8, end - start);
     const step = span / clean.length;
     return clean.map((text, idx) => ({
       start: start + idx * step,
-      end: idx === clean.length - 1 ? end : start + (idx + 1) * step,
+      end: start + (idx + 1) * step,
       text
     }));
   }
@@ -1256,43 +1799,210 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
     const cut = state.cuts[idx];
     if (!cut) return;
     state.activeCutIdx = idx;
-    state.startTime = cut.start;
-    state.endTime = cut.end > cut.start + 0.5 ? cut.end : state.duration;
+    state.startTime = Math.max(0, Math.min(state.duration || 15, cut.start));
+    state.endTime = cut.end > state.startTime + 0.4 ? Math.min(state.duration || cut.end, cut.end) : (state.duration || 15);
     $('startInput').value = state.startTime.toFixed(1);
     $('endInput').value = state.endTime.toFixed(1);
-    $('subsTextarea').value = cut.lines.join('\n');
+    $('subsTextarea').value = (cut.lines || []).join('\n');
     state.subtitles = buildTimedSubtitles(cut.lines, state.startTime, state.endTime);
     updateCutRangeLabel();
     renderCutsList();
 
-    video.currentTime = state.startTime;
-    if (autoPlay) {
-      video.play().catch(() => {});
-      $('playPauseBtn').textContent = '⏸ Pausar';
+    if (video.src) {
+      try { video.currentTime = state.startTime; } catch (_) {}
+      if (autoPlay) {
+        video.play().then(syncPlayButtons).catch(syncPlayButtons);
+      }
     }
   }
 
   function renderCutsList() {
-    if (!state.cuts.length) return;
+    if (!state.cuts.length) {
+      $('cutsContainer').innerHTML = '<div class="muted">Aún no hay cortes generados. Pulsa "🚀 Auto-Analizar Todo (IA)".</div>';
+      return;
+    }
     $('cutsContainer').innerHTML = state.cuts.map((c, i) => `
       <div class="cut-item ${i === state.activeCutIdx ? 'active' : ''}" data-cut="${i}">
         <div class="row" style="justify-content:space-between; margin-bottom:4px;">
           <strong>#${i + 1} ${c.title}</strong>
-          <span class="badge green">CTR ${c.score}%</span>
+          <div class="row" style="gap:6px;">
+            <span class="badge green">CTR ${c.score}%</span>
+            <button type="button" class="btn btn-sm btn-danger" data-del-cut="${i}" title="Eliminar corte" style="padding:2px 7px;">✕</button>
+          </div>
         </div>
-        <div class="muted">${fmtTime(c.start)} → ${fmtTime(c.end)} • Gancho: <strong>${c.hookText}</strong> • ${c.lines.length} bloques de subtítulos</div>
+        <div class="muted">${fmtTime(c.start)} → ${fmtTime(c.end)} (${Math.max(0.5, c.end - c.start).toFixed(1)}s) • Gancho: <strong>${c.hookText}</strong> • ${(c.lines || []).length} subtítulos</div>
       </div>
     `).join('');
+
     document.querySelectorAll('.cut-item').forEach(el => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', e => {
+        if (e.target.closest('[data-del-cut]')) return;
         loadCutIntoPlayer(Number(el.dataset.cut), true);
-        showToast(`Reproduciendo Corte #${Number(el.dataset.cut) + 1} con subtítulos`, 'ok');
+      });
+    });
+
+    document.querySelectorAll('[data-del-cut]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const delIdx = Number(btn.dataset.delCut);
+        state.cuts.splice(delIdx, 1);
+        if (state.activeCutIdx === delIdx) state.activeCutIdx = state.cuts.length ? 0 : -1;
+        else if (state.activeCutIdx > delIdx) state.activeCutIdx--;
+        renderCutsList();
+        if (state.activeCutIdx >= 0) loadCutIntoPlayer(state.activeCutIdx, false);
+        showToast('Corte eliminado', '');
       });
     });
   }
 
-  // ==================== MINIATURAS CREATIVAS (4 ESTILOS DISTINTOS) ====================
-  async function createCreativeThumbnail(cut, idx) {
+  // ==================== GENERADOR DE MINIATURAS REALES CON IA (ESTILOS ÚNICOS) ====================
+  const AI_THUMB_STYLES = [
+    {
+      key: 'viral',
+      name: 'Ultra Viral Alto Contraste',
+      desc: 'MrBeast-style high-contrast studio rim lighting, hyper-vivid saturated colors, dramatic depth of field, glowing aura around the main subject, bold explosive yellow and white 3D display typography with thick black outline',
+      canvasMode: 0
+    },
+    {
+      key: 'cinema',
+      name: 'Póster Cinematográfico',
+      desc: 'Hollywood movie poster grading with rich teal-and-orange cinema lighting, subtle anamorphic lens flare, moody dramatic shadows, clean metallic white epic headline typography positioned cleanly',
+      canvasMode: 1
+    },
+    {
+      key: 'cyber',
+      name: 'Neón Cyberpunk',
+      desc: 'Futuristic cyberpunk aesthetic with electric cyan and hot magenta neon rim light, glowing light streaks, dark glossy atmosphere, sleek neon-lit bold futuristic headline text',
+      canvasMode: 2
+    },
+    {
+      key: 'mystery',
+      name: 'Documental Misterio CTR',
+      desc: 'High-tension investigative documentary thumbnail, dramatic spotlight cutting through dark shadows, subtle red focus highlight ring or directional accent, crisp urgent white-and-red bold headline',
+      canvasMode: 3
+    },
+    {
+      key: 'comic',
+      name: 'Cómic Pop-Art Dinámico',
+      desc: 'Energetic stylized pop-art comic burst background, punchy contrasting colors, subtle halftone speed lines, vibrant tilted banner sticker with bold expressive display text',
+      canvasMode: 4
+    },
+    {
+      key: 'luxury',
+      name: 'Editorial Lujo Dorado',
+      desc: 'Premium luxury editorial photography, obsidian dark backdrop with warm golden bokeh flares, crisp spotlighting, elegant high-impact gold-and-white headline typography',
+      canvasMode: 5
+    },
+    {
+      key: 'fire_ice',
+      name: 'Choque Fuego y Rayo',
+      desc: 'Epic split-lighting composition with glowing fiery orange embers on the left and electric blue lightning energy on the right, ultra sharp subject in center, fiery bold headline text',
+      canvasMode: 0
+    },
+    {
+      key: 'retro',
+      name: 'Retro Acción 90s',
+      desc: 'Vibrant 1990s action poster aesthetic with rich warm film colors, dynamic diagonal composition, subtle chromatic sheen, bold arcade-inspired headline text',
+      canvasMode: 2
+    },
+    {
+      key: 'minimal',
+      name: 'Moderno Minimal Pro',
+      desc: 'Clean modern creator thumbnail, sharp crisp subject isolation, sleek asymmetric color accent panel, ultra-legible Swiss bold headline typography, zero clutter',
+      canvasMode: 1
+    }
+  ];
+
+  const EXTRA_VISUAL_TWISTS = [
+    'use a dramatic low-angle dynamic perspective',
+    'add subtle glowing bokeh light particles in the background',
+    'frame the focal subject slightly off-center using rule of thirds for maximum text readability',
+    'enhance color contrast with luminous rim lighting on the edges',
+    'create a dramatic before-and-after or split-tone energy mood',
+    'use energetic diagonal visual leading lines drawing the eye to the subject'
+  ];
+
+  function pickStyleForIndex(idx, moodChoice) {
+    if (moodChoice && moodChoice !== 'random') {
+      const exact = AI_THUMB_STYLES.find(s => s.key === moodChoice);
+      if (exact) return exact;
+    }
+    // Garantiza que cada tarjeta use un estilo distinto y rote en cada regeneración
+    const offset = (state.creativeSeed + idx * 3 + Math.floor(Math.random() * 2)) % AI_THUMB_STYLES.length;
+    return AI_THUMB_STYLES[offset];
+  }
+
+  async function callGeminiImageThumbnail(frameDataUrl, cut, styleObj, customIdea) {
+    const apiKey = state.ai.provider === 'gemini' ? (state.ai.apiKey || '').trim() : '';
+    const twist = EXTRA_VISUAL_TWISTS[Math.floor(Math.random() * EXTRA_VISUAL_TWISTS.length)];
+    const uniqueId = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+
+    const promptText = `Transform and creatively reimagine this video scene into an eye-catching, click-worthy 16:9 YouTube thumbnail (Unique variation #${uniqueId}).
+Art Direction Style: ${styleObj.name} — ${styleObj.desc}.
+Creative Composition Twist: ${twist}.
+${customIdea ? `User Special Creative Request: ${customIdea}.` : ''}
+Include bold, ultra-legible, correctly spelled Spanish headline text reading "${cut.hookText}" and a small crisp accent badge reading "${cut.badge}".
+Make the image look completely professional, vivid, high-CTR, and visually distinct from a plain screenshot. No tiny unreadable text, no watermarks.`;
+
+    const parts = [{ text: promptText }];
+    if (frameDataUrl && frameDataUrl.includes(',')) {
+      parts.push({
+        inlineData: {
+          mimeType: 'image/jpeg',
+          data: frameDataUrl.split(',')[1]
+        }
+      });
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const payload = {
+      contents: [{ role: 'user', parts }],
+      generationConfig: {
+        responseModalities: ['IMAGE'],
+        imageConfig: { aspectRatio: '16:9' }
+      }
+    };
+
+    const res = await fetchWithBackoff(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }, 2);
+
+    if (!res.ok) throw new Error(`Gemini Image HTTP ${res.status}`);
+    const json = await res.json();
+    const imgPart = json?.candidates?.[0]?.content?.parts?.find(p => p.inlineData?.data);
+    if (!imgPart) throw new Error('Sin imagen en la respuesta de Gemini');
+    const mime = imgPart.inlineData.mimeType || 'image/png';
+    return `data:${mime};base64,${imgPart.inlineData.data}`;
+  }
+
+  async function callOpenAIImageThumbnail(cut, styleObj, customIdea) {
+    if (state.ai.provider !== 'openai' || !state.ai.apiKey) throw new Error('OpenAI no activo');
+    const twist = EXTRA_VISUAL_TWISTS[Math.floor(Math.random() * EXTRA_VISUAL_TWISTS.length)];
+    const prompt = `Create a vivid 16:9 YouTube thumbnail about "${cut.title}". Style: ${styleObj.name} (${styleObj.desc}). ${twist}. ${customIdea || ''} Feature bold Spanish text "${cut.hookText}". High contrast, professional creator design.`;
+    const res = await fetchWithBackoff('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.ai.apiKey.trim()}`
+      },
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt,
+        size: '1792x1024',
+        response_format: 'b64_json'
+      })
+    }, 1);
+    if (!res.ok) throw new Error(`OpenAI Image HTTP ${res.status}`);
+    const json = await res.json();
+    const b64 = json?.data?.[0]?.b64_json;
+    if (!b64) throw new Error('Sin imagen OpenAI');
+    return `data:image/png;base64,${b64}`;
+  }
+
+  // Respaldo artístico variado (6 composiciones distintas) si la API de imagen no está disponible
+  async function createCanvasFallbackThumbnail(cut, styleObj) {
     const c = document.createElement('canvas');
     c.width = 1280; c.height = 720;
     const g = c.getContext('2d');
@@ -1303,217 +2013,305 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
         const im = new Image(); im.onload = () => res(im); im.src = frameObj.dataUrl;
       });
       g.save();
-      g.filter = idx === 0 ? 'contrast(1.18) saturate(1.28)' : idx === 1 ? 'contrast(1.25) brightness(0.92) saturate(1.38)' : 'contrast(1.16) saturate(1.42)';
+      const filters = [
+        'contrast(1.22) saturate(1.45)',
+        'contrast(1.28) brightness(0.88) saturate(1.15)',
+        'contrast(1.3) saturate(1.6) hue-rotate(15deg)',
+        'contrast(1.35) brightness(0.82)',
+        'contrast(1.18) saturate(1.7)',
+        'contrast(1.25) sepia(0.25) saturate(1.3)'
+      ];
+      g.filter = filters[styleObj.canvasMode % filters.length];
       g.drawImage(img, 0, 0, 1280, 720);
       g.restore();
     } else {
-      g.fillStyle = '#0f172a'; g.fillRect(0, 0, 1280, 720);
+      const bg = g.createLinearGradient(0, 0, 1280, 720);
+      bg.addColorStop(0, '#1e1b4b'); bg.addColorStop(1, '#0f172a');
+      g.fillStyle = bg; g.fillRect(0, 0, 1280, 720);
     }
 
-    const styleVariant = (idx + state.creativeSeed) % 4;
-
-    if (styleVariant === 0) {
-      // Estilo 1: Cine Impacto
+    const mode = styleObj.canvasMode % 6;
+    if (mode === 0) {
+      // Diagonal Viral Dorado
       const grad = g.createLinearGradient(0, 0, 1280, 720);
-      grad.addColorStop(0, 'rgba(6,10,22,0.86)');
-      grad.addColorStop(0.55, 'rgba(6,10,22,0.22)');
-      grad.addColorStop(1, 'rgba(245,158,11,0.40)');
+      grad.addColorStop(0, 'rgba(6,10,22,0.88)');
+      grad.addColorStop(0.55, 'rgba(6,10,22,0.18)');
+      grad.addColorStop(1, 'rgba(245,158,11,0.45)');
       g.fillStyle = grad; g.fillRect(0, 0, 1280, 720);
-
-      g.fillStyle = '#f59e0b';
-      drawRoundRect(g, 56, 52, 340, 56, 14); g.fill();
-      g.fillStyle = '#090d16'; g.font = '900 28px Segoe UI';
-      g.fillText(`⚡ ${cut.badge}`, 78, 90);
-
-      g.font = '900 104px Impact, Segoe UI';
-      g.lineWidth = 14; g.strokeStyle = '#050811';
-      g.strokeText(cut.hookText, 56, 560, 1160);
-      g.fillStyle = '#ffffff'; g.fillText(cut.hookText, 56, 560, 1160);
-
-      g.font = '800 44px Segoe UI';
-      g.strokeText(cut.title.slice(0, 38), 56, 632, 1160);
-      g.fillStyle = '#fde047'; g.fillText(cut.title.slice(0, 38), 56, 632, 1160);
-    } else if (styleVariant === 1) {
-      // Estilo 2: Misterio Neón CTR
-      const rad = g.createRadialGradient(640, 340, 140, 640, 360, 760);
-      rad.addColorStop(0, 'rgba(0,0,0,0.05)');
-      rad.addColorStop(1, 'rgba(4,9,24,0.88)');
-      g.fillStyle = rad; g.fillRect(0, 0, 1280, 720);
-
-      g.strokeStyle = '#38bdf8'; g.lineWidth = 14;
-      drawRoundRect(g, 24, 24, 1232, 672, 28); g.stroke();
-
-      g.save();
-      g.translate(640, 560); g.rotate(-0.04);
-      g.fillStyle = '#0ea5e9';
-      drawRoundRect(g, -460, -70, 920, 128, 22); g.fill();
-      g.fillStyle = '#ffffff'; g.font = '900 84px Impact, Segoe UI'; g.textAlign = 'center';
-      g.fillText(cut.hookText, 0, 22, 860);
-      g.restore();
-
-      g.fillStyle = '#ef4444';
-      drawRoundRect(g, 890, 50, 330, 58, 999); g.fill();
-      g.fillStyle = '#fff'; g.font = '900 26px Segoe UI'; g.textAlign = 'center';
-      g.fillText(`🔥 ${cut.badge}`, 1055, 88);
-      g.textAlign = 'left';
-    } else if (styleVariant === 2) {
-      // Estilo 3: Viral Pop Violeta
-      const bGrad = g.createLinearGradient(0, 340, 0, 720);
-      bGrad.addColorStop(0, 'rgba(0,0,0,0)');
-      bGrad.addColorStop(1, 'rgba(88,28,135,0.94)');
-      g.fillStyle = bGrad; g.fillRect(0, 340, 1280, 380);
-
-      g.save();
-      g.translate(210, 110); g.rotate(-0.08);
-      g.fillStyle = '#22c55e';
-      drawRoundRect(g, -155, -36, 310, 72, 16); g.fill();
-      g.fillStyle = '#04101f'; g.font = '900 32px Segoe UI'; g.textAlign = 'center';
-      g.fillText(cut.badge, 0, 11);
-      g.restore();
-
+      g.fillStyle = '#f59e0b'; drawRoundRect(g, 54, 48, 340, 56, 14); g.fill();
+      g.fillStyle = '#090d16'; g.font = '900 28px Segoe UI'; g.fillText(`⚡ ${cut.badge}`, 78, 86);
+      g.font = '900 106px Impact, Segoe UI'; g.lineWidth = 14; g.strokeStyle = '#050811';
+      g.strokeText(cut.hookText, 54, 565); g.fillStyle = '#ffffff'; g.fillText(cut.hookText, 54, 565);
+      g.font = '800 42px Segoe UI'; g.strokeText(cut.title.slice(0, 38), 54, 636);
+      g.fillStyle = '#fde047'; g.fillText(cut.title.slice(0, 38), 54, 636);
+    } else if (mode === 1) {
+      // Cine Letterbox Teal & Orange
+      const grad = g.createLinearGradient(0, 320, 0, 720);
+      grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(2,6,23,0.94)');
+      g.fillStyle = grad; g.fillRect(0, 320, 1280, 400);
+      g.fillStyle = 'rgba(0,0,0,0.92)'; g.fillRect(0, 0, 1280, 54); g.fillRect(0, 666, 1280, 54);
       g.textAlign = 'center';
-      g.font = '900 108px Impact, Segoe UI';
-      g.lineWidth = 14; g.strokeStyle = '#090d16';
-      g.strokeText(cut.hookText, 640, 585, 1160);
-      g.fillStyle = '#facc15'; g.fillText(cut.hookText, 640, 585, 1160);
-
-      g.font = '700 38px Segoe UI';
-      g.fillStyle = '#ffffff'; g.fillText(cut.title.slice(0, 44), 640, 655, 1160);
+      g.font = '900 98px Impact, Segoe UI'; g.lineWidth = 12; g.strokeStyle = '#020617';
+      g.strokeText(cut.hookText, 640, 545); g.fillStyle = '#f8fafc'; g.fillText(cut.hookText, 640, 545);
+      g.font = '700 34px Segoe UI'; g.fillStyle = '#38bdf8'; g.fillText(`— ${cut.title.slice(0, 46)} —`, 640, 618);
+      g.textAlign = 'left';
+    } else if (mode === 2) {
+      // Cyberpunk Neón Frame
+      const rad = g.createRadialGradient(640, 340, 120, 640, 360, 760);
+      rad.addColorStop(0, 'rgba(0,0,0,0.05)'); rad.addColorStop(1, 'rgba(15,4,36,0.9)');
+      g.fillStyle = rad; g.fillRect(0, 0, 1280, 720);
+      g.strokeStyle = '#38bdf8'; g.lineWidth = 12; drawRoundRect(g, 24, 24, 1232, 672, 26); g.stroke();
+      g.strokeStyle = '#ec4899'; g.lineWidth = 5; drawRoundRect(g, 38, 38, 1204, 644, 20); g.stroke();
+      g.save(); g.translate(640, 560); g.rotate(-0.035);
+      g.fillStyle = '#ec4899'; drawRoundRect(g, -460, -68, 920, 124, 20); g.fill();
+      g.fillStyle = '#ffffff'; g.font = '900 84px Impact, Segoe UI'; g.textAlign = 'center';
+      g.fillText(cut.hookText, 0, 22); g.restore();
+      g.fillStyle = '#0ea5e9'; drawRoundRect(g, 890, 56, 320, 54, 999); g.fill();
+      g.fillStyle = '#fff'; g.font = '900 25px Segoe UI'; g.textAlign = 'center';
+      g.fillText(`⚡ ${cut.badge}`, 1050, 92); g.textAlign = 'left';
+    } else if (mode === 3) {
+      // Misterio Documental con Círculo Rojo
+      const rad = g.createRadialGradient(640, 340, 80, 640, 360, 680);
+      rad.addColorStop(0, 'rgba(0,0,0,0)'); rad.addColorStop(1, 'rgba(0,0,0,0.92)');
+      g.fillStyle = rad; g.fillRect(0, 0, 1280, 720);
+      g.strokeStyle = '#ef4444'; g.lineWidth = 12;
+      g.beginPath(); g.arc(880, 310, 130, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = '#ef4444'; drawRoundRect(g, 58, 430, 690, 120, 16); g.fill();
+      g.fillStyle = '#fff'; g.font = '900 86px Impact, Segoe UI'; g.fillText(cut.hookText, 86, 522);
+      g.font = '800 38px Segoe UI'; g.fillStyle = '#f8fafc'; g.fillText(cut.title.slice(0, 36), 62, 616);
+    } else if (mode === 4) {
+      // Cómic Pop-Art
+      const bGrad = g.createLinearGradient(0, 350, 0, 720);
+      bGrad.addColorStop(0, 'rgba(0,0,0,0)'); bGrad.addColorStop(1, 'rgba(88,28,135,0.92)');
+      g.fillStyle = bGrad; g.fillRect(0, 350, 1280, 370);
+      g.save(); g.translate(220, 110); g.rotate(-0.08);
+      g.fillStyle = '#22c55e'; drawRoundRect(g, -165, -38, 330, 76, 16); g.fill();
+      g.strokeStyle = '#020617'; g.lineWidth = 6; g.stroke();
+      g.fillStyle = '#04101f'; g.font = '900 32px Segoe UI'; g.textAlign = 'center';
+      g.fillText(cut.badge, 0, 11); g.restore();
+      g.textAlign = 'center';
+      g.font = '900 108px Impact, Segoe UI'; g.lineWidth = 16; g.strokeStyle = '#090d16';
+      g.strokeText(cut.hookText, 640, 585); g.fillStyle = '#facc15'; g.fillText(cut.hookText, 640, 585);
+      g.font = '700 38px Segoe UI'; g.fillStyle = '#ffffff'; g.fillText(cut.title.slice(0, 44), 640, 655);
       g.textAlign = 'left';
     } else {
-      // Estilo 4: Editorial Fuego (Contraste Rojo/Negro)
-      const grad = g.createLinearGradient(0, 260, 0, 720);
-      grad.addColorStop(0, 'rgba(0,0,0,0)');
-      grad.addColorStop(1, 'rgba(127,29,29,0.92)');
-      g.fillStyle = grad; g.fillRect(0, 260, 1280, 460);
-
-      g.fillStyle = '#ffffff';
-      drawRoundRect(g, 56, 48, 360, 58, 12); g.fill();
-      g.fillStyle = '#991b1b'; g.font = '900 28px Segoe UI';
-      g.fillText(`★ ${cut.badge}`, 80, 88);
-
-      g.font = '900 106px Impact, Segoe UI';
-      g.lineWidth = 14; g.strokeStyle = '#050811';
-      g.strokeText(cut.hookText, 56, 565, 1160);
-      g.fillStyle = '#fb923c'; g.fillText(cut.hookText, 56, 565, 1160);
-
-      g.font = '800 42px Segoe UI';
-      g.fillStyle = '#f8fafc'; g.fillText(cut.title.slice(0, 42), 56, 640, 1160);
+      // Editorial Lujo Dorado
+      const grad = g.createLinearGradient(0, 0, 1280, 0);
+      grad.addColorStop(0, 'rgba(9,13,22,0.92)'); grad.addColorStop(0.58, 'rgba(9,13,22,0.35)'); grad.addColorStop(1, 'rgba(9,13,22,0.08)');
+      g.fillStyle = grad; g.fillRect(0, 0, 1280, 720);
+      g.fillStyle = '#fbbf24'; g.fillRect(60, 120, 12, 460);
+      g.fillStyle = '#fbbf24'; g.font = '800 30px Segoe UI'; g.fillText(cut.badge, 98, 175);
+      g.fillStyle = '#ffffff'; g.font = '900 94px Impact, Segoe UI'; g.fillText(cut.hookText, 98, 340);
+      g.fillStyle = '#cbd5e1'; g.font = '700 40px Segoe UI'; g.fillText(cut.title.slice(0, 32), 98, 430);
     }
 
     return c.toDataURL('image/png');
   }
 
-  async function buildAllThumbnails() {
-    setStep(4, 'run', 'Diseñando 3 estilos...');
-    const list = [];
-    for (let i = 0; i < state.cuts.length; i++) {
-      const dataUrl = await createCreativeThumbnail(state.cuts[i], i);
-      list.push({ cutIdx: i, title: state.cuts[i].title, hook: state.cuts[i].hookText, dataUrl });
+  async function generateSingleThumbnail(idx, freshTwist = false) {
+    const cut = state.cuts[idx];
+    if (!cut) return;
+    if (freshTwist) {
+      state.creativeSeed += 1 + Math.floor(Math.random() * 5);
+      const pack = getUniqueCreativePack(idx * 2 + Math.floor(Math.random() * 7));
+      cut.hookText = pack.hook;
+      cut.badge = pack.badge;
+      cut.title = pack.title;
+      renderCutsList();
     }
-    state.thumbnails = list;
+
+    const moodChoice = $('thumbMoodSelect').value;
+    const customIdea = $('thumbCustomIdea').value.trim();
+    const styleObj = pickStyleForIndex(idx, moodChoice);
+    const frameObj = state.frames[cut.frameIdx] || state.frames[idx % Math.max(1, state.frames.length)];
+
+    // Mostrar estado cargando en esa tarjeta
+    state.thumbnails[idx] = {
+      cutIdx: idx,
+      title: cut.title,
+      hook: cut.hookText,
+      styleName: styleObj.name,
+      source: 'loading',
+      dataUrl: state.thumbnails[idx]?.dataUrl || (frameObj?.dataUrl || '')
+    };
     renderThumbnailsGrid();
-    setStep(4, 'done', '3 miniaturas CTR listas');
+
+    let dataUrl = '';
+    let sourceLabel = '🎨 Estudio Creativo';
+    try {
+      if (state.ai.provider === 'openai' && state.ai.apiKey) {
+        dataUrl = await callOpenAIImageThumbnail(cut, styleObj, customIdea);
+        sourceLabel = '✨ IA OpenAI';
+      } else {
+        dataUrl = await callGeminiImageThumbnail(frameObj?.dataUrl, cut, styleObj, customIdea);
+        sourceLabel = '✨ IA Gemini';
+      }
+    } catch (_) {
+      dataUrl = await createCanvasFallbackThumbnail(cut, styleObj);
+      sourceLabel = '🎨 Diseño Dinámico';
+    }
+
+    state.thumbnails[idx] = {
+      cutIdx: idx,
+      title: cut.title,
+      hook: cut.hookText,
+      styleName: styleObj.name,
+      source: sourceLabel,
+      dataUrl
+    };
+    renderThumbnailsGrid();
+  }
+
+  async function buildAllThumbnails(freshTwist = false) {
+    if (!state.cuts.length) {
+      showToast('Primero carga y analiza un video para generar miniaturas', 'warn');
+      return;
+    }
+    setStep(4, 'run', 'Creando miniaturas con IA...');
+    $('regenThumbsBtn').disabled = true;
+    $('regenThumbsBtn').textContent = '⏳ Generando Miniaturas IA...';
+
+    const count = Math.min(3, state.cuts.length);
+    state.thumbnails = new Array(count);
+
+    // Generar en paralelo para máxima velocidad con estilos distintos en cada tarjeta
+    await Promise.all(
+      Array.from({ length: count }, (_, i) => generateSingleThumbnail(i, freshTwist))
+    );
+
+    const aiCount = state.thumbnails.filter(t => t && t.source.includes('IA')).length;
+    setStep(4, 'done', aiCount > 0 ? `${aiCount} miniaturas IA listas` : `${count} miniaturas variadas listas`);
+    $('regenThumbsBtn').disabled = false;
+    $('regenThumbsBtn').textContent = '✨ Generar 3 Miniaturas Nuevas con IA';
   }
 
   function renderThumbnailsGrid() {
-    if (!state.thumbnails.length) return;
-    const styleNames = ['Cine Impacto', 'Misterio Neón', 'Viral Pop', 'Editorial Fuego'];
-    $('thumbsGrid').innerHTML = state.thumbnails.map((t, i) => `
-      <div class="thumb-card">
-        <img src="${t.dataUrl}" alt="Miniatura ${i + 1}" />
-        <div class="thumb-body">
-          <div class="row" style="justify-content:space-between; margin-bottom:6px;">
-            <strong>Corte #${i + 1}: ${t.hook}</strong>
-            <span class="badge amber">${styleNames[(i + state.creativeSeed) % 4]}</span>
+    if (!state.thumbnails.length) {
+      $('thumbsGrid').innerHTML = '<div class="card muted">Analiza un video en el Estudio de Cortes para generar automáticamente 3 miniaturas únicas con IA.</div>';
+      return;
+    }
+    $('thumbsGrid').innerHTML = state.thumbnails.map((t, i) => {
+      if (!t) return '';
+      const isLoading = t.source === 'loading';
+      const isAI = t.source.includes('IA');
+      return `
+        <div class="thumb-card">
+          <div class="thumb-img-wrap">
+            ${t.dataUrl ? `<img src="${t.dataUrl}" alt="Miniatura ${i + 1}" />` : ''}
+            ${isLoading ? `
+              <div class="thumb-loader">
+                <div class="spinner"></div>
+                <div>Creando miniatura única con IA...<br><span class="muted">${t.styleName}</span></div>
+              </div>
+            ` : ''}
           </div>
-          <p class="muted" style="margin-bottom:10px;">${t.title}</p>
-          <div class="row">
-            <a class="btn btn-sm btn-green" href="${t.dataUrl}" download="miniatura_corte_${i + 1}.png" style="text-decoration:none;">⬇️ Descargar PNG</a>
-            <button class="btn btn-sm btn-primary" onclick="window._useCut(${i})">✂️ Abrir Corte</button>
+          <div class="thumb-body">
+            <div class="row" style="justify-content:space-between;">
+              <strong>Corte #${i + 1}: ${t.hook}</strong>
+              <span class="badge ${isAI ? 'purple' : 'amber'}">${isLoading ? '⏳ Generando' : t.source}</span>
+            </div>
+            <div class="muted" style="font-size:0.78rem;">Estilo: <strong>${t.styleName}</strong></div>
+            <p class="muted" style="flex:1;">${t.title}</p>
+            <div class="row">
+              <button type="button" class="btn btn-sm btn-purple" onclick="window._regenOneThumb(${i})" ${isLoading ? 'disabled' : ''}>🎲 Otra con IA</button>
+              <a class="btn btn-sm btn-green" href="${t.dataUrl || '#'}" download="miniatura_ia_corte_${i + 1}.png" style="text-decoration:none; ${isLoading ? 'pointer-events:none; opacity:.5;' : ''}">⬇️ PNG</a>
+              <button type="button" class="btn btn-sm btn-primary" onclick="window._useCut(${i})">✂️ Corte</button>
+            </div>
           </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
+
   window._useCut = idx => {
     document.querySelector('[data-tab="studio"]').click();
     loadCutIntoPlayer(idx, true);
   };
 
+  window._regenOneThumb = async idx => {
+    showToast(`Generando nueva variante con IA para Corte #${idx + 1}...`, '');
+    await generateSingleThumbnail(idx, true);
+    showToast(`¡Nueva miniatura #${idx + 1} lista!`, 'ok');
+  };
+
+  $('regenThumbsBtn').addEventListener('click', async () => {
+    if (!state.cuts.length) {
+      showToast('Primero carga un video y analízalo en "Estudio de Cortes"', 'warn');
+      return;
+    }
+    state.creativeSeed += 3 + Math.floor(Math.random() * 11);
+    showToast('Creando 3 miniaturas nuevas con estilos y textos distintos...', '');
+    await buildAllThumbnails(true);
+    showToast('¡3 nuevas miniaturas generadas!', 'ok');
+  });
+
   // ==================== PIPELINE COMPLETO ====================
-  let isAnalyzing = false;
   async function runFullAnalysis() {
-    if (isAnalyzing) return;
     if (!video.src) {
-      $('pipelineMsg').textContent = 'Primero sube un video o pulsa "Cargar Video Demo".';
+      $('pipelineMsg').textContent = 'Primero sube un video o pulsa "✨ Cargar Video Demo".';
       showToast('Sube un video o carga el demo primero', 'warn');
       return;
     }
-    isAnalyzing = true;
+    if (state.isAnalyzing) return;
+    state.isAnalyzing = true;
+    $('analyzeBtn').disabled = true;
+    $('analyzeBtn').textContent = '⏳ Analizando...';
+
     try {
-      $('pipelineMsg').textContent = 'Analizando video, extrayendo fotogramas reales y diseñando miniaturas...';
+      state.creativeSeed += 1 + Math.floor(Math.random() * 7);
+      $('pipelineMsg').textContent = 'Analizando video, extrayendo fotogramas reales y creando cortes + miniaturas con IA...';
+
       await extractRealFrames();
 
       setStep(2, 'run', 'Detectando momentos...');
-      const aiCuts = await askAiForCuts();
-      const provLabel = (AI_PROVIDERS[state.ai.provider] || AI_PROVIDERS.gemini).short;
+      const aiCuts = await askAIForCuts();
       state.cuts = aiCuts || buildSmartCutsFallback();
-      setStep(2, 'done', `${state.cuts.length} cortes (${aiCuts ? provLabel + ' IA' : 'Motor Creativo'})`);
+      setStep(2, 'done', `${state.cuts.length} cortes (${aiCuts ? 'IA Conectada' : 'Motor Creativo'})`);
 
-      setStep(3, 'run', 'Sincronizando texto...');
+      setStep(3, 'run', 'Sincronizando subtítulos...');
       loadCutIntoPlayer(0, true);
       setStep(3, 'done', 'Subtítulos en vivo listos');
 
-      await buildAllThumbnails();
-      $('pipelineMsg').textContent = '✅ ¡Todo listo! Reproduce el video para ver los subtítulos en vivo, revisa tus miniaturas creativas o programa tus fechas.';
-      showToast('¡Cortes, subtítulos en vivo y 3 miniaturas listos!', 'ok');
+      await buildAllThumbnails(false);
+      $('pipelineMsg').textContent = '✅ ¡Todo listo! Reproduce el video con subtítulos en vivo, edítalo en el Editor o revisa tus miniaturas IA.';
+      showToast('¡Análisis completado: cortes, subtítulos y miniaturas IA listos!', 'ok');
     } catch (err) {
-      console.error('Error en análisis:', err);
-      setStep(1, 'err', 'Reintentar');
-      $('pipelineMsg').textContent = `⚠️ Ocurrió un error al analizar el video: ${err.message || err}`;
-      showToast('Error al analizar el video. Reintenta o carga otro archivo.', 'warn');
+      $('pipelineMsg').textContent = `⚠️ Ocurrió un detalle al analizar: ${err.message}`;
+      showToast('Error durante el análisis. Intenta de nuevo.', 'warn');
     } finally {
-      isAnalyzing = false;
+      state.isAnalyzing = false;
+      $('analyzeBtn').disabled = false;
+      $('analyzeBtn').textContent = '🚀 Auto-Analizar Todo (IA)';
     }
   }
 
   $('analyzeBtn').addEventListener('click', runFullAnalysis);
-  $('regenThumbsBtn').addEventListener('click', async () => {
-    if (!state.cuts.length) {
-      showToast('Primero analiza un video para generar cortes y miniaturas', 'warn');
-      return;
-    }
-    state.creativeSeed++;
-    const fresh = buildSmartCutsFallback();
-    state.cuts.forEach((c, i) => {
-      c.hookText = fresh[i].hookText;
-      c.badge = fresh[i].badge;
-      c.title = fresh[i].title;
-      c.lines = fresh[i].lines;
-    });
-    renderCutsList();
-    if (state.activeCutIdx >= 0) loadCutIntoPlayer(state.activeCutIdx, false);
-    await buildAllThumbnails();
-    showToast('¡Estilos y creatividad de miniaturas renovados!', 'ok');
-  });
 
-  // ==================== MOTOR DE RENDER EN VIVO (VIDEO + PNG + SUBTÍTULOS) ====================
+  // ==================== MOTOR DE RENDER EN VIVO (ESTUDIO + EDITOR + EXPORTACIÓN) ====================
   function wrapText(c, text, maxW) {
-    const words = text.split(' ');
+    const words = String(text || '').split(' ');
     const lines = [];
     let cur = '';
     for (const w of words) {
       const test = cur ? cur + ' ' + w : w;
       if (c.measureText(test).width > maxW && cur) {
-        lines.push(cur);
-        cur = w;
-      } else {
-        cur = test;
-      }
+        lines.push(cur); cur = w;
+      } else cur = test;
     }
     if (cur) lines.push(cur);
     return lines;
+  }
+
+  function buildCanvasFilterString() {
+    const e = state.edit;
+    const parts = [
+      `brightness(${e.brightness}%)`,
+      `contrast(${e.contrast}%)`,
+      `saturate(${e.saturate}%)`
+    ];
+    if (e.grayscale > 0) parts.push(`grayscale(${e.grayscale}%)`);
+    if (e.sepia > 0) parts.push(`sepia(${e.sepia}%)`);
+    return parts.join(' ');
   }
 
   function drawSubtitleOverlay(c, w, h, now) {
@@ -1522,13 +2320,13 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
       (now >= state.startTime && now <= state.endTime ? state.subtitles[state.subtitles.length - 1] : null);
     if (!active) return;
 
-    const fontSize = state.aspect === '9:16' ? 34 : 38;
+    const fontSize = state.aspect === '9:16' ? 32 : state.aspect === '1:1' ? 34 : 36;
     c.save();
     c.font = `900 ${fontSize}px Segoe UI, Impact, sans-serif`;
     c.textAlign = 'center';
     const lines = wrapText(c, active.text.toUpperCase(), w * 0.86);
     const lineH = fontSize * 1.24;
-    const baseY = h * 0.78 - ((lines.length - 1) * lineH) / 2;
+    const baseY = h * 0.79 - ((lines.length - 1) * lineH) / 2;
 
     lines.forEach((line, idx) => {
       const y = baseY + idx * lineH;
@@ -1550,12 +2348,54 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
     c.restore();
   }
 
-  function renderFrameLoop() {
-    const w = canvas.width, h = canvas.height;
-    ctx.fillStyle = '#050811';
-    ctx.fillRect(0, 0, w, h);
+  function drawHookAndWatermark(c, w, h) {
+    const e = state.edit;
+    // Barra de gancho superior
+    if (e.showHook && e.hookText.trim()) {
+      c.save();
+      const padX = w * 0.06;
+      const barW = w - padX * 2;
+      const barH = Math.max(54, h * 0.075);
+      const barY = h * 0.045;
+      c.fillStyle = e.hookColor || '#f59e0b';
+      drawRoundRect(c, padX, barY, barW, barH, 14);
+      c.fill();
+      c.fillStyle = (e.hookColor === '#f59e0b' || e.hookColor === '#10b981') ? '#090d16' : '#ffffff';
+      const fSize = Math.max(20, Math.min(30, Math.round(w * 0.048)));
+      c.font = `900 ${fSize}px Segoe UI, sans-serif`;
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(e.hookText.trim().toUpperCase().slice(0, 38), w / 2, barY + barH / 2);
+      c.restore();
+    }
 
-    if (video.readyState >= 2 && video.videoWidth > 0) {
+    // Marca de agua
+    if (e.watermark.trim()) {
+      c.save();
+      c.globalAlpha = e.watermarkOpacity;
+      const fSize = Math.max(18, Math.round(w * 0.036));
+      c.font = `800 ${fSize}px Segoe UI, sans-serif`;
+      const txt = e.watermark.trim();
+      const pad = 20;
+      const topOffset = (e.showHook && e.hookText.trim()) ? h * 0.15 : pad + fSize;
+      let x = w - pad, y = topOffset;
+      if (e.watermarkPos === 'tl') { c.textAlign = 'left'; x = pad; y = topOffset; }
+      else if (e.watermarkPos === 'tr') { c.textAlign = 'right'; x = w - pad; y = topOffset; }
+      else if (e.watermarkPos === 'bl') { c.textAlign = 'left'; x = pad; y = h - pad; }
+      else { c.textAlign = 'right'; x = w - pad; y = h - pad; }
+      c.lineWidth = 4; c.strokeStyle = 'rgba(0,0,0,0.8)';
+      c.strokeText(txt, x, y);
+      c.fillStyle = '#ffffff';
+      c.fillText(txt, x, y);
+      c.restore();
+    }
+  }
+
+  function drawCompositeFrame(targetCtx, w, h) {
+    targetCtx.fillStyle = '#050811';
+    targetCtx.fillRect(0, 0, w, h);
+
+    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
       const vr = video.videoWidth / video.videoHeight;
       const cr = w / h;
       let sx = 0, sy = 0, sw = video.videoWidth, sh = video.videoHeight;
@@ -1566,74 +2406,338 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
         sh = video.videoWidth / cr;
         sy = (video.videoHeight - sh) / 2;
       }
-      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, w, h);
 
-      if (!video.paused && state.loopCut && video.currentTime >= state.endTime) {
-        video.currentTime = state.startTime;
-      }
-      $('seekBar').value = video.currentTime;
-      $('timeNow').textContent = fmtTime(video.currentTime);
+      targetCtx.save();
+      targetCtx.filter = buildCanvasFilterString();
+      targetCtx.translate(w / 2 + (state.edit.panX / 100) * w, h / 2 + (state.edit.panY / 100) * h);
+      targetCtx.rotate((state.edit.rotation * Math.PI) / 180);
+      targetCtx.scale((state.edit.flipX ? -1 : 1) * state.edit.zoom, state.edit.zoom);
+      targetCtx.drawImage(video, sx, sy, sw, sh, -w / 2, -h / 2, w, h);
+      targetCtx.restore();
+    } else {
+      targetCtx.save();
+      targetCtx.fillStyle = '#64748b';
+      targetCtx.font = '700 22px Segoe UI';
+      targetCtx.textAlign = 'center';
+      targetCtx.fillText('Sube un video o pulsa', w / 2, h / 2 - 14);
+      targetCtx.fillStyle = '#38bdf8';
+      targetCtx.fillText('✨ Cargar Video Demo', w / 2, h / 2 + 22);
+      targetCtx.restore();
     }
 
+    // PNG sin fondo
     if (state.pngProcessed) {
       const scale = Number($('pngScale').value) / 100;
       const pw = w * scale;
       const ph = pw * (state.pngProcessed.height / state.pngProcessed.width);
       const px = (Number($('pngX').value) / 100) * w - pw / 2;
       const py = (Number($('pngY').value) / 100) * h - ph / 2;
-      ctx.drawImage(state.pngProcessed, px, py, pw, ph);
+      targetCtx.drawImage(state.pngProcessed, px, py, pw, ph);
     }
 
-    drawSubtitleOverlay(ctx, w, h, video.currentTime);
+    // Gancho superior + Marca de agua
+    drawHookAndWatermark(targetCtx, w, h);
+
+    // Subtítulos en vivo
+    drawSubtitleOverlay(targetCtx, w, h, video.currentTime || 0);
+  }
+
+  function renderFrameLoop() {
+    if (video.readyState >= 2 && !video.paused && !state.isExporting) {
+      if (state.loopCut && state.endTime > state.startTime && video.currentTime >= state.endTime) {
+        video.currentTime = state.startTime;
+      }
+    }
+    if (video.src && !state.draggingTimeline) {
+      $('seekBar').value = video.currentTime || 0;
+      const tTxt = fmtTime(video.currentTime || 0);
+      $('timeNow').textContent = tTxt;
+      $('edTimeNow').textContent = tTxt;
+      updateTimelineUI();
+    }
+
+    if (state.activeTab === 'editor' && !state.isExporting) {
+      drawCompositeFrame(editorCtx, editorCanvas.width, editorCanvas.height);
+    } else {
+      drawCompositeFrame(ctx, canvas.width, canvas.height);
+    }
+
     requestAnimationFrame(renderFrameLoop);
   }
   requestAnimationFrame(renderFrameLoop);
 
-  // ==================== CONTROLES DEL REPRODUCTOR ====================
-  function updateCutRangeLabel() {
-    $('cutRangeLabel').textContent = `Corte: ${fmtTime(state.startTime)} - ${fmtTime(state.endTime)}`;
-  }
-
-  $('playPauseBtn').addEventListener('click', () => {
+  // ==================== CONTROLES DE REPRODUCCIÓN (ESTUDIO + EDITOR) ====================
+  function togglePlayPause() {
     if (!video.src) {
-      showToast('Sube un video o carga el demo primero', 'warn');
+      showToast('Primero sube un video o pulsa "✨ Cargar Video Demo"', 'warn');
       return;
     }
     if (video.paused) {
       if (video.currentTime < state.startTime || video.currentTime >= state.endTime) {
         video.currentTime = state.startTime;
       }
-      video.play().catch(() => {});
-      $('playPauseBtn').textContent = '⏸ Pausar';
+      video.playbackRate = state.edit.speed;
+      video.play().then(syncPlayButtons).catch(syncPlayButtons);
     } else {
       video.pause();
-      $('playPauseBtn').textContent = '▶ Reproducir';
+      syncPlayButtons();
     }
-  });
+  }
 
-  $('loopCutBtn').addEventListener('click', () => {
+  $('playPauseBtn').addEventListener('click', togglePlayPause);
+  $('edPlayPauseBtn').addEventListener('click', togglePlayPause);
+
+  function toggleLoopCut() {
     state.loopCut = !state.loopCut;
-    $('loopCutBtn').style.borderColor = state.loopCut ? 'var(--green)' : 'var(--border)';
+    syncLoopButtons();
     showToast(state.loopCut ? 'Loop del corte activado' : 'Loop del corte desactivado', '');
-  });
+  }
+  $('loopCutBtn').addEventListener('click', toggleLoopCut);
+  $('edLoopCutBtn').addEventListener('click', toggleLoopCut);
+
+  $('aspectSelect').addEventListener('change', e => applyAspectRatio(e.target.value));
+  $('edAspectSelect').addEventListener('change', e => applyAspectRatio(e.target.value));
 
   $('seekBar').addEventListener('input', e => {
-    if (video.src) video.currentTime = Number(e.target.value);
+    if (!video.src) return;
+    video.currentTime = Number(e.target.value);
   });
 
-  $('aspectSelect').addEventListener('change', e => {
-    state.aspect = e.target.value;
-    if (state.aspect === '9:16') {
-      canvas.width = 540;
-      canvas.height = 960;
-      canvas.classList.remove('landscape');
+  video.addEventListener('ended', syncPlayButtons);
+
+  // ==================== LÍNEA DE TIEMPO INTERACTIVA DEL EDITOR ====================
+  function scrubTimelineFromPointer(e) {
+    if (!video.src || state.duration <= 0) return;
+    const rect = $('timelineTrack').getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const t = ratio * state.duration;
+    video.currentTime = t;
+    $('edTimeNow').textContent = fmtTime(t);
+    $('timeNow').textContent = fmtTime(t);
+    updateTimelineUI();
+  }
+
+  $('timelineTrack').addEventListener('pointerdown', e => {
+    state.draggingTimeline = true;
+    scrubTimelineFromPointer(e);
+  });
+  window.addEventListener('pointermove', e => {
+    if (state.draggingTimeline) scrubTimelineFromPointer(e);
+  });
+  window.addEventListener('pointerup', () => { state.draggingTimeline = false; });
+
+  $('edMarkStartBtn').addEventListener('click', () => {
+    if (!video.src) return showToast('Carga un video primero', 'warn');
+    const t = Number((video.currentTime || 0).toFixed(1));
+    state.startTime = Math.min(t, Math.max(0, state.endTime - 0.5));
+    $('startInput').value = state.startTime.toFixed(1);
+    if (state.activeCutIdx >= 0 && state.cuts[state.activeCutIdx]) {
+      state.cuts[state.activeCutIdx].start = state.startTime;
+      state.subtitles = buildTimedSubtitles(state.cuts[state.activeCutIdx].lines, state.startTime, state.endTime);
+      renderCutsList();
+    }
+    updateCutRangeLabel();
+    showToast(`Inicio del corte marcado en ${fmtTime(state.startTime)}`, 'ok');
+  });
+
+  $('edMarkEndBtn').addEventListener('click', () => {
+    if (!video.src) return showToast('Carga un video primero', 'warn');
+    const t = Number((video.currentTime || state.duration).toFixed(1));
+    state.endTime = Math.max(t, Math.min(state.duration, state.startTime + 0.5));
+    $('endInput').value = state.endTime.toFixed(1);
+    if (state.activeCutIdx >= 0 && state.cuts[state.activeCutIdx]) {
+      state.cuts[state.activeCutIdx].end = state.endTime;
+      state.subtitles = buildTimedSubtitles(state.cuts[state.activeCutIdx].lines, state.startTime, state.endTime);
+      renderCutsList();
+    }
+    updateCutRangeLabel();
+    showToast(`Fin del corte marcado en ${fmtTime(state.endTime)}`, 'ok');
+  });
+
+  $('edSplitCutBtn').addEventListener('click', () => {
+    if (!video.src) return showToast('Carga un video primero', 'warn');
+    const splitAt = Number((video.currentTime || 0).toFixed(1));
+    if (splitAt <= state.startTime + 0.4 || splitAt >= state.endTime - 0.4) {
+      showToast('Coloca el cursor amarillo dentro del rango del corte para dividirlo', 'warn');
+      return;
+    }
+    const baseCut = state.cuts[state.activeCutIdx] || {
+      title: 'Corte Editado',
+      hookText: 'PARTE 1',
+      badge: 'DIVIDIDO',
+      score: 94,
+      frameIdx: 0,
+      lines: $('subsTextarea').value.split('\n').filter(Boolean)
+    };
+    const lines = baseCut.lines?.length ? baseCut.lines : ['Primera parte del corte', 'Segunda parte del corte'];
+    const mid = Math.max(1, Math.floor(lines.length / 2));
+    const part1 = { ...baseCut, title: `${baseCut.title} (Parte 1)`, start: state.startTime, end: splitAt, lines: lines.slice(0, mid) };
+    const part2 = { ...baseCut, title: `${baseCut.title} (Parte 2)`, start: splitAt, end: state.endTime, lines: lines.slice(mid).length ? lines.slice(mid) : lines };
+
+    if (state.activeCutIdx >= 0) {
+      state.cuts.splice(state.activeCutIdx, 1, part1, part2);
     } else {
-      canvas.width = 960;
-      canvas.height = 540;
-      canvas.classList.add('landscape');
+      state.cuts.push(part1, part2);
+      state.activeCutIdx = state.cuts.length - 2;
+    }
+    renderCutsList();
+    loadCutIntoPlayer(state.activeCutIdx, false);
+    showToast(`Corte dividido en 2 partes en ${fmtTime(splitAt)}`, 'ok');
+  });
+
+  $('edSaveNewCutBtn').addEventListener('click', () => {
+    if (!video.src) return showToast('Carga un video primero', 'warn');
+    const idx = state.cuts.length;
+    const pack = getUniqueCreativePack(idx + 5);
+    const lines = $('subsTextarea').value.split('\n').map(l => l.trim()).filter(Boolean);
+    state.cuts.push({
+      title: state.edit.hookText.trim() || `Corte Editado #${idx + 1}`,
+      hookText: (state.edit.hookText.trim() || pack.hook).toUpperCase().slice(0, 20),
+      badge: 'EDITADO PRO',
+      score: 95,
+      start: state.startTime,
+      end: state.endTime,
+      frameIdx: Math.min(Math.max(0, state.frames.length - 1), Math.floor((state.startTime / Math.max(1, state.duration)) * Math.max(1, state.frames.length))),
+      lines: lines.length ? lines : pack.lines
+    });
+    renderCutsList();
+    loadCutIntoPlayer(idx, false);
+    showToast('Corte editado guardado en tu lista de cortes', 'ok');
+  });
+
+  // ==================== VELOCIDAD, AUDIO, TRANSFORMACIÓN Y COLOR ====================
+  $('edSpeedSelect').addEventListener('change', e => {
+    state.edit.speed = Number(e.target.value) || 1;
+    video.playbackRate = state.edit.speed;
+    showToast(`Velocidad: ${state.edit.speed}x`, '');
+  });
+
+  $('edVolumeRange').addEventListener('input', e => {
+    const v = Number(e.target.value);
+    state.edit.volume = v / 100;
+    video.volume = state.edit.volume;
+    $('edVolumeVal').textContent = `${v}%`;
+    if (v > 0 && state.edit.muted) {
+      state.edit.muted = false;
+      video.muted = false;
+      $('edMuteBtn').textContent = '🔊 Audio Activo (Clic para silenciar)';
     }
   });
 
+  $('edMuteBtn').addEventListener('click', () => {
+    state.edit.muted = !state.edit.muted;
+    video.muted = state.edit.muted;
+    $('edMuteBtn').textContent = state.edit.muted
+      ? '🔇 Audio Silenciado (Clic para activar)'
+      : '🔊 Audio Activo (Clic para silenciar)';
+  });
+
+  $('edZoomRange').addEventListener('input', e => {
+    const v = Number(e.target.value);
+    state.edit.zoom = v / 100;
+    $('edZoomVal').textContent = `${v}%`;
+  });
+  $('edPanXRange').addEventListener('input', e => {
+    state.edit.panX = Number(e.target.value);
+    $('edPanXVal').textContent = `${state.edit.panX}%`;
+  });
+  $('edPanYRange').addEventListener('input', e => {
+    state.edit.panY = Number(e.target.value);
+    $('edPanYVal').textContent = `${state.edit.panY}%`;
+  });
+  $('edRotateBtn').addEventListener('click', () => {
+    state.edit.rotation = (state.edit.rotation + 90) % 360;
+    showToast(`Rotación: ${state.edit.rotation}°`, '');
+  });
+  $('edFlipXBtn').addEventListener('click', () => {
+    state.edit.flipX = !state.edit.flipX;
+    $('edFlipXBtn').style.borderColor = state.edit.flipX ? 'var(--accent)' : 'var(--border)';
+  });
+
+  const FILTER_PRESETS = {
+    none: { brightness: 100, contrast: 100, saturate: 100, grayscale: 0, sepia: 0 },
+    cine: { brightness: 96, contrast: 128, saturate: 112, grayscale: 0, sepia: 8 },
+    vibrant: { brightness: 106, contrast: 116, saturate: 155, grayscale: 0, sepia: 0 },
+    warm: { brightness: 104, contrast: 108, saturate: 122, grayscale: 0, sepia: 32 },
+    bw: { brightness: 102, contrast: 132, saturate: 0, grayscale: 100, sepia: 0 },
+    cyber: { brightness: 95, contrast: 135, saturate: 165, grayscale: 0, sepia: 0 }
+  };
+
+  function syncColorSlidersUI() {
+    $('edBrightRange').value = state.edit.brightness;
+    $('edBrightVal').textContent = `${state.edit.brightness}%`;
+    $('edContrastRange').value = state.edit.contrast;
+    $('edContrastVal').textContent = `${state.edit.contrast}%`;
+    $('edSatRange').value = state.edit.saturate;
+    $('edSatVal').textContent = `${state.edit.saturate}%`;
+  }
+
+  $('edFilterPreset').addEventListener('change', e => {
+    const p = FILTER_PRESETS[e.target.value] || FILTER_PRESETS.none;
+    state.edit.filterPreset = e.target.value;
+    Object.assign(state.edit, p);
+    syncColorSlidersUI();
+  });
+  $('edBrightRange').addEventListener('input', e => {
+    state.edit.brightness = Number(e.target.value);
+    $('edBrightVal').textContent = `${state.edit.brightness}%`;
+  });
+  $('edContrastRange').addEventListener('input', e => {
+    state.edit.contrast = Number(e.target.value);
+    $('edContrastVal').textContent = `${state.edit.contrast}%`;
+  });
+  $('edSatRange').addEventListener('input', e => {
+    state.edit.saturate = Number(e.target.value);
+    $('edSatVal').textContent = `${state.edit.saturate}%`;
+  });
+
+  $('edShowHookCheck').addEventListener('change', e => { state.edit.showHook = e.target.checked; });
+  $('edHookInput').addEventListener('input', e => {
+    state.edit.hookText = e.target.value;
+    if (e.target.value.trim() && !$('edShowHookCheck').checked) {
+      $('edShowHookCheck').checked = true;
+      state.edit.showHook = true;
+    }
+  });
+  $('edHookColorSelect').addEventListener('change', e => { state.edit.hookColor = e.target.value; });
+  $('edWatermarkInput').addEventListener('input', e => { state.edit.watermark = e.target.value; });
+  $('edWatermarkPos').addEventListener('change', e => { state.edit.watermarkPos = e.target.value; });
+  $('edWatermarkOpacity').addEventListener('input', e => {
+    const v = Number(e.target.value);
+    state.edit.watermarkOpacity = v / 100;
+    $('edWmOpVal').textContent = `${v}%`;
+  });
+
+  $('edResetBtn').addEventListener('click', () => {
+    Object.assign(state.edit, {
+      speed: 1, volume: 1, muted: false, zoom: 1, panX: 0, panY: 0,
+      rotation: 0, flipX: false, filterPreset: 'none',
+      brightness: 100, contrast: 100, saturate: 100, grayscale: 0, sepia: 0,
+      showHook: false, hookText: '', hookColor: '#f59e0b',
+      watermark: '', watermarkPos: 'tr', watermarkOpacity: 0.75
+    });
+    video.playbackRate = 1;
+    video.volume = 1;
+    video.muted = false;
+    $('edSpeedSelect').value = '1';
+    $('edVolumeRange').value = 100; $('edVolumeVal').textContent = '100%';
+    $('edMuteBtn').textContent = '🔊 Audio Activo (Clic para silenciar)';
+    $('edZoomRange').value = 100; $('edZoomVal').textContent = '100%';
+    $('edPanXRange').value = 0; $('edPanXVal').textContent = '0%';
+    $('edPanYRange').value = 0; $('edPanYVal').textContent = '0%';
+    $('edFlipXBtn').style.borderColor = 'var(--border)';
+    $('edFilterPreset').value = 'none';
+    syncColorSlidersUI();
+    $('edShowHookCheck').checked = false;
+    $('edHookInput').value = '';
+    $('edHookColorSelect').value = '#f59e0b';
+    $('edWatermarkInput').value = '';
+    $('edWatermarkPos').value = 'tr';
+    $('edWatermarkOpacity').value = 75; $('edWmOpVal').textContent = '75%';
+    showToast('Ajustes del editor restablecidos', 'ok');
+  });
+
+  // ==================== SUBTÍTULOS ====================
   $('subStyleSelect').addEventListener('change', e => { state.subStyle = e.target.value; });
   $('showSubsCheck').addEventListener('change', e => { state.showSubs = e.target.checked; });
 
@@ -1657,8 +2761,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
     updateCutRangeLabel();
     if (video.src) {
       video.currentTime = state.startTime;
-      video.play().catch(() => {});
-      $('playPauseBtn').textContent = '⏸ Pausar';
+      video.play().then(syncPlayButtons).catch(syncPlayButtons);
     }
     showToast('Subtítulos aplicados en todo el corte', 'ok');
   });
@@ -1695,59 +2798,67 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
     img.onload = () => {
       state.pngImg = img;
       processPngChroma();
-      showToast('Foto PNG cargada (puedes arrastrarla sobre el video)', 'ok');
+      showToast('Foto PNG añadida (arrástrala sobre el video para moverla)', 'ok');
     };
+    img.onerror = () => showToast('No se pudo cargar la imagen seleccionada', 'warn');
     img.src = URL.createObjectURL(f);
+    e.target.value = '';
   });
 
   $('chromaSelect').addEventListener('change', processPngChroma);
   $('clearPngBtn').addEventListener('click', () => {
     state.pngImg = null;
     state.pngProcessed = null;
-    showToast('Foto PNG eliminada', '');
+    showToast('Foto PNG quitada del video', '');
   });
 
-  function movePngFromPointer(e) {
-    const rect = canvas.getBoundingClientRect();
+  function movePngFromPointer(e, targetEl) {
+    const rect = targetEl.getBoundingClientRect();
     const xPct = Math.max(5, Math.min(95, ((e.clientX - rect.left) / rect.width) * 100));
     const yPct = Math.max(5, Math.min(95, ((e.clientY - rect.top) / rect.height) * 100));
     $('pngX').value = Math.round(xPct);
     $('pngY').value = Math.round(yPct);
   }
-  canvas.addEventListener('pointerdown', e => {
-    if (!state.pngProcessed) return;
-    state.draggingPng = true;
-    movePngFromPointer(e);
-  });
-  canvas.addEventListener('pointermove', e => {
-    if (state.draggingPng) movePngFromPointer(e);
+  [canvas, editorCanvas].forEach(cEl => {
+    cEl.addEventListener('pointerdown', e => {
+      if (!state.pngProcessed) return;
+      state.draggingPng = true;
+      movePngFromPointer(e, cEl);
+    });
+    cEl.addEventListener('pointermove', e => {
+      if (state.draggingPng) movePngFromPointer(e, cEl);
+    });
   });
   window.addEventListener('pointerup', () => { state.draggingPng = false; });
   window.addEventListener('pointercancel', () => { state.draggingPng = false; });
 
-  // ==================== EXPORTAR Y PREVISUALIZAR CLIP (CON AUDIO) ====================
-  $('exportClipBtn').addEventListener('click', async () => {
+  // ==================== EXPORTAR Y PREVISUALIZAR CLIP (CON AUDIO Y EDICIÓN) ====================
+  async function exportCurrentClip() {
     if (!video.src) {
-      showToast('Primero carga un video o el demo', 'warn');
+      showToast('Primero carga un video o pulsa "✨ Cargar Video Demo"', 'warn');
       return;
     }
+    state.isExporting = true;
     $('exportModal').classList.add('open');
     $('exportedVideoPreview').style.display = 'none';
     $('downloadExportBtn').style.display = 'none';
     $('exportProgress').style.width = '5%';
-    $('exportStatus').textContent = 'Renderizando corte con subtítulos, PNG y audio...';
+    $('exportStatus').textContent = 'Renderizando video editado con filtros, subtítulos, PNG y audio...';
 
     try {
+      drawCompositeFrame(ctx, canvas.width, canvas.height);
       const canvasStream = canvas.captureStream(30);
       const tracks = [...canvasStream.getVideoTracks()];
-      try {
-        const vidStream = typeof video.captureStream === 'function'
-          ? video.captureStream()
-          : (typeof video.mozCaptureStream === 'function' ? video.mozCaptureStream() : null);
-        if (vidStream) {
-          vidStream.getAudioTracks().forEach(t => tracks.push(t));
-        }
-      } catch (_) {}
+      if (!state.edit.muted) {
+        try {
+          const vidStream = typeof video.captureStream === 'function'
+            ? video.captureStream()
+            : (typeof video.mozCaptureStream === 'function' ? video.mozCaptureStream() : null);
+          if (vidStream) {
+            vidStream.getAudioTracks().forEach(t => tracks.push(t));
+          }
+        } catch (_) {}
+      }
 
       const combinedStream = new MediaStream(tracks);
       const mimeTypes = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
@@ -1757,7 +2868,9 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
       const chunks = [];
       rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
 
-      const durMs = Math.min(60000, Math.max(1200, (state.endTime - state.startTime) * 1000));
+      const speed = Math.max(0.25, state.edit.speed || 1);
+      const durMs = Math.min(90000, Math.max(1200, ((state.endTime - state.startTime) / speed) * 1000));
+      video.playbackRate = speed;
       video.currentTime = state.startTime;
       await video.play().catch(() => {});
       rec.start();
@@ -1772,22 +2885,27 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
       clearInterval(timer);
       rec.stop();
       video.pause();
-      $('playPauseBtn').textContent = '▶ Reproducir';
+      syncPlayButtons();
 
       await new Promise(r => { rec.onstop = r; });
       const blob = new Blob(chunks, { type: chosenMime || 'video/webm' });
       const url = URL.createObjectURL(blob);
       $('exportProgress').style.width = '100%';
-      $('exportStatus').textContent = '✅ Clip listo. Revísalo antes de descargarlo o publicarlo.';
+      $('exportStatus').textContent = '✅ Video editado listo. Revísalo antes de descargarlo o publicarlo.';
       $('exportedVideoPreview').src = url;
       $('exportedVideoPreview').style.display = 'block';
       $('downloadExportBtn').href = url;
-      $('downloadExportBtn').download = `${state.videoName}_corte.webm`;
+      $('downloadExportBtn').download = `${state.videoName}_editado.webm`;
       $('downloadExportBtn').style.display = 'inline-flex';
     } catch (err) {
       $('exportStatus').textContent = `⚠️ No se pudo renderizar el video: ${err.message}`;
+    } finally {
+      state.isExporting = false;
     }
-  });
+  }
+
+  $('exportClipBtn').addEventListener('click', exportCurrentClip);
+  $('edExportBtn').addEventListener('click', exportCurrentClip);
   $('closeExportModal').addEventListener('click', () => $('exportModal').classList.remove('open'));
 
   // ==================== YOUTUBE DIRECTO ====================
@@ -1809,7 +2927,8 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
 
   $('ytQuickCutBtn').addEventListener('click', () => {
     const idx = state.cuts.length;
-    const endSec = Math.min(15, state.duration || 15);
+    const endSec = Math.min(state.cutDuration, state.duration || state.cutDuration);
+    const pack = getUniqueCreativePack(idx + 2);
     state.cuts.push({
       title: `Momento en Directo #${idx + 1}`,
       hookText: '¡EN VIVO!',
@@ -1818,11 +2937,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
       start: 0,
       end: endSec,
       frameIdx: 0,
-      lines: [
-        'Esto acaba de pasar en pleno directo',
-        'Mira la reacción en vivo sin cortes',
-        '¿Estabas conectado cuando ocurrió?'
-      ]
+      lines: pack.lines
     });
     renderCutsList();
     loadCutIntoPlayer(idx, false);
@@ -1838,7 +2953,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
 
   function syncAiModalFields(providerKey, keepExisting = false) {
     const meta = AI_PROVIDERS[providerKey] || AI_PROVIDERS.custom;
-    $('aiVisionBadge').textContent = meta.vision ? 'Visión + Texto' : 'Solo Texto';
+    $('aiVisionBadge').textContent = providerKey === 'gemini' ? 'Visión + Texto + Miniaturas IA' : meta.vision ? 'Visión + Texto' : 'Solo Texto';
     $('aiPortalLink').href = meta.portal;
     $('apiKeyInput').placeholder = meta.placeholder;
     $('aiModelSuggestions').innerHTML = meta.models.map(m => `<option value="${m}"></option>`).join('');
@@ -1868,7 +2983,8 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
       `🔥 ${title} — ¡Míralo hasta el último segundo!`,
       `👀 ¿Notaste este detalle? ${title}`,
       `⚡ El momento más intenso del video: ${title}`,
-      `🎬 No podrás verlo solo una vez: ${title}`
+      `🎬 No podrás verlo solo una vez: ${title}`,
+      `🚀 Esto está dando de qué hablar: ${title}`
     ];
     const tags = {
       'YouTube Shorts': '#Shorts #Viral #Contenido #Tendencia',
@@ -1882,12 +2998,12 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
   }
 
   function saveAccounts() {
-    localStorage.setItem('cliphub_accounts', JSON.stringify(state.accounts));
+    safeSet('cliphub_accounts', JSON.stringify(state.accounts));
     renderAccounts();
   }
 
   function saveSchedule() {
-    localStorage.setItem('cliphub_schedule', JSON.stringify(state.schedule));
+    safeSet('cliphub_schedule', JSON.stringify(state.schedule));
     renderSchedule();
   }
 
@@ -1903,7 +3019,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
             <strong>${acc.icon} ${acc.name}</strong>
             <div class="muted">${acc.connected ? (acc.handle || acc.loginUser || 'Cuenta vinculada') : 'Sin conectar'}</div>
           </div>
-          <button class="btn btn-sm ${acc.connected ? 'btn-green' : ''}" onclick="window._openAcc('${key}')">
+          <button type="button" class="btn btn-sm ${acc.connected ? 'btn-green' : ''}" onclick="window._openAcc('${key}')">
             ${acc.connected ? '⚙️ Gestionar' : 'Conectar'}
           </button>
         </div>
@@ -2077,8 +3193,8 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
           <div class="muted" style="white-space:pre-line; margin-top:4px;">${item.caption}</div>
         </div>
         <div class="row">
-          <button class="btn btn-sm btn-primary" onclick="window._pubNow('${item.id}')">🚀 Publicar Ahora</button>
-          <button class="btn btn-sm btn-danger" onclick="window._delSched('${item.id}')">🗑️</button>
+          <button type="button" class="btn btn-sm btn-primary" onclick="window._pubNow('${item.id}')">🚀 Publicar Ahora</button>
+          <button type="button" class="btn btn-sm btn-danger" onclick="window._delSched('${item.id}')">🗑️</button>
         </div>
       </div>
     `).join('');
@@ -2171,19 +3287,17 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
   $('genDynamicCopyBtn').addEventListener('click', async () => {
     const title = $('schedTitle').value.trim() || (state.cuts[state.activeCutIdx]?.title || 'Nuevo Clip Viral');
     const platform = $('schedPlatform').value;
-    if (isAiConfigured()) {
-      showToast(`Generando copy creativo con ${AI_PROVIDERS[state.ai.provider]?.short || 'IA'}...`, '');
-      try {
-        const prompt = `Escribe una descripción corta, magnética y con 4 hashtags relevantes para ${platform} sobre el video "${title}". Solo entrega el texto listo para pegar.`;
-        const aiText = await callConfiguredAI(prompt, []);
-        if (aiText.trim()) {
-          $('schedCaption').value = aiText.trim();
-          showToast('Copy generado con IA', 'ok');
-          return;
-        }
-      } catch (_) {}
-    }
-    $('schedCaption').value = makeDynamicCopy(title, platform);
+    showToast('Generando copy creativo con IA...', '');
+    try {
+      const prompt = `Escribe una descripción corta, original, magnética y diferente (variación ${Date.now()}) con 4 hashtags relevantes para ${platform} sobre el video "${title}". Solo entrega el texto en español listo para pegar.`;
+      const aiText = await callConfiguredAI(prompt, []);
+      if (aiText.trim()) {
+        $('schedCaption').value = aiText.trim();
+        showToast('Copy creativo generado con IA', 'ok');
+        return;
+      }
+    } catch (_) {}
+    $('schedCaption').value = makeDynamicCopy(title, platform, Math.floor(Math.random() * 10));
     showToast('Nuevo copy creativo generado', 'ok');
   });
 
@@ -2200,13 +3314,13 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
 
   $('autoScheduleAllBtn').addEventListener('click', () => {
     if (!state.cuts.length) {
-      showToast('Primero analiza un video para generar los 3 cortes', 'warn');
+      showToast('Primero analiza un video para generar los cortes', 'warn');
       return;
     }
     const platforms = ['YouTube Shorts', 'Instagram Reels', 'TikTok'];
     state.cuts.forEach((c, i) => {
       const dt = new Date(Date.now() + (i + 1) * 24 * 3600 * 1000);
-      dt.setHours(18 + i, 30, 0, 0);
+      dt.setHours(18 + (i % 4), 30, 0, 0);
       state.schedule.push({
         id: String(Date.now() + i) + Math.random().toString(16).slice(2, 5),
         title: c.title,
@@ -2218,9 +3332,10 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
     });
     saveSchedule();
     document.querySelector('[data-tab="social"]').click();
-    showToast('¡3 cortes programados automáticamente en fechas escalonadas!', 'ok');
+    showToast(`¡${state.cuts.length} cortes programados automáticamente en fechas escalonadas!`, 'ok');
   });
 
+  // ==================== MODAL CONFIGURACIÓN DE IA ====================
   $('aiProviderSelect').addEventListener('change', e => {
     syncAiModalFields(e.target.value, false);
     $('aiTestResult').className = 'test-box';
@@ -2269,28 +3384,36 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
       model: $('aiModelInput').value.trim() || meta.defaultModel,
       baseUrl: $('aiBaseUrlInput').value.trim() || meta.baseUrl
     };
-    localStorage.setItem('cliphub_ai_config', JSON.stringify(state.ai));
-    if (prov === 'gemini') localStorage.setItem('cliphub_gemini_key', state.ai.apiKey);
+    safeSet('cliphub_ai_config', JSON.stringify(state.ai));
+    if (prov === 'gemini') safeSet('cliphub_gemini_key', state.ai.apiKey);
     refreshAiBadge();
     $('aiModal').classList.remove('open');
-    showToast(isAiConfigured() ? `${meta.name} guardada correctamente` : 'IA en modo local creativo', 'ok');
+    showToast(isAiConfigured() ? `${meta.name} guardada correctamente` : 'IA configurada', 'ok');
   });
 
   $('clearAiKeyBtn').addEventListener('click', () => {
     state.ai = { provider: 'gemini', apiKey: '', model: AI_PROVIDERS.gemini.defaultModel, baseUrl: AI_PROVIDERS.gemini.baseUrl };
-    localStorage.removeItem('cliphub_ai_config');
-    localStorage.removeItem('cliphub_gemini_key');
+    safeRemove('cliphub_ai_config');
+    safeRemove('cliphub_gemini_key');
     refreshAiBadge();
     $('aiModal').classList.remove('open');
-    showToast('Configuración de IA desconectada', '');
+    showToast('Token de IA desconectado', '');
   });
 
   $('closeAiModal').addEventListener('click', () => $('aiModal').classList.remove('open'));
 
-  // Inicialización
+  // Cerrar modales al hacer clic fuera de la caja
+  ['aiModal', 'exportModal', 'accountModal', 'publishModal'].forEach(id => {
+    $(id).addEventListener('click', e => {
+      if (e.target.id === id && !state.isExporting) $(id).classList.remove('open');
+    });
+  });
+
+  // ==================== INICIALIZACIÓN ====================
   const initDate = new Date(Date.now() + 3600 * 1000);
   $('schedDate').value = toLocalInputValue(initDate);
   refreshAiBadge();
+  syncLoopButtons();
   renderAccounts();
   renderSchedule();
 })();
