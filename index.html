@@ -770,7 +770,7 @@
       </div>
       <div>
         <label>Modelo</label>
-        <input type="text" id="aiModelInput" list="aiModelSuggestions" placeholder="Ej: gemini-2.5-flash" />
+        <input type="text" id="aiModelInput" list="aiModelSuggestions" placeholder="Ej: gemini-3-flash-preview" />
         <datalist id="aiModelSuggestions"></datalist>
       </div>
     </div>
@@ -790,7 +790,10 @@
 
     <div class="row" style="justify-content:space-between;">
       <a id="aiPortalLink" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="muted" style="color:var(--accent); text-decoration:none; font-weight:600;">🔑 Obtener API Key de este proveedor ↗</a>
-      <button type="button" class="btn btn-sm btn-primary" id="testAiBtn">⚡ Probar Conexión</button>
+      <div class="row">
+        <button type="button" class="btn btn-sm" id="detectModelsBtn">🔍 Detectar Modelos</button>
+        <button type="button" class="btn btn-sm btn-primary" id="testAiBtn">⚡ Probar Conexión</button>
+      </div>
     </div>
 
     <div class="test-box" id="aiTestResult"></div>
@@ -960,8 +963,8 @@
       name: 'Google Gemini',
       short: 'Gemini',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: 'gemini-2.5-flash',
-      models: ['gemini-2.5-flash', 'gemini-3-flash-preview', 'gemini-2.0-flash'],
+      defaultModel: 'gemini-3-flash-preview',
+      models: ['gemini-3-flash-preview', 'gemini-3.0-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
       vision: true,
       portal: 'https://aistudio.google.com/apikey',
       placeholder: 'AIzaSy... (clave de Google AI Studio)'
@@ -1027,21 +1030,32 @@
       placeholder: 'xai-...'
     },
     custom: {
-      name: 'IA Personalizada',
-      short: 'IA Custom',
+      name: 'Personalizada (OpenAI / Ollama)',
+      short: 'Custom IA',
       baseUrl: 'http://localhost:11434/v1/chat/completions',
       defaultModel: 'llama3.2',
       models: ['llama3.2', 'qwen2.5', 'mistral'],
       vision: false,
-      portal: 'https://ollama.com/',
-      placeholder: 'Tu API Token (opcional en Ollama local)'
+      portal: 'https://ollama.com',
+      placeholder: 'Opcional para API local o token personalizado'
     }
   };
+
+  function isRetiredGeminiModel(name) {
+    return /^models\/gemini-(1\.0|1\.5|2\.0)|^gemini-(1\.0|1\.5|2\.0)/i.test(String(name || '').trim());
+  }
 
   function loadAiConfig() {
     try {
       const saved = JSON.parse(safeGet('cliphub_ai_config', 'null'));
-      if (saved && saved.provider && AI_PROVIDERS[saved.provider]) return saved;
+      if (saved && saved.provider && AI_PROVIDERS[saved.provider]) {
+        // Migrar automáticamente modelos retirados (ej. gemini-2.0-flash) al modelo vigente
+        if (saved.provider === 'gemini' && (!saved.model || isRetiredGeminiModel(saved.model))) {
+          saved.model = AI_PROVIDERS.gemini.defaultModel;
+          safeSet('cliphub_ai_config', JSON.stringify(saved));
+        }
+        return saved;
+      }
     } catch (_) {}
     const legacyKey = safeGet('cliphub_gemini_key', '');
     return {
@@ -1740,26 +1754,49 @@
   }
 
   // ==================== MOTOR MULTI-IA (TEXTO + VISIÓN) ====================
+  async function discoverGeminiModels(apiKey, baseUrl = 'https://generativelanguage.googleapis.com/v1beta') {
+    const cleanBase = (baseUrl || 'https://generativelanguage.googleapis.com/v1beta').replace(/\/+$/, '');
+    const res = await fetch(`${cleanBase}/models?key=${encodeURIComponent(apiKey || '')}`);
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json?.error?.message || `HTTP ${res.status}`);
+    const all = (json.models || [])
+      .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+      .map(m => String(m.name || '').replace(/^models\//, ''))
+      .filter(name => name && !isRetiredGeminiModel(name));
+
+    const imageModels = all.filter(n => /image/i.test(n));
+    const textModels = all.filter(n => /gemini/i.test(n) && !/image|tts|audio|embedding|live/i.test(n));
+    // Priorizar los modelos Flash más recientes
+    textModels.sort((a, b) => {
+      const score = x => (/flash/i.test(x) ? 10 : 0) + (/gemini-3/i.test(x) ? 20 : /gemini-2\.5/i.test(x) ? 15 : 0);
+      return score(b) - score(a);
+    });
+    return { textModels, imageModels, all };
+  }
+
   async function callConfiguredAI(prompt, frameBase64List = [], cfgOverride = null) {
     const cfg = cfgOverride || state.ai;
     const provider = cfg.provider || 'gemini';
     const meta = AI_PROVIDERS[provider] || AI_PROVIDERS.custom;
-    const model = (cfg.model || meta.defaultModel).trim();
+    let model = (cfg.model || meta.defaultModel).trim().replace(/^models\//, '');
     const apiKey = (cfg.apiKey || '').trim();
     const baseUrl = (cfg.baseUrl || meta.baseUrl).trim();
 
     if (provider === 'gemini') {
-      if (!apiKey) throw new Error('Falta API Key de Gemini en "Configurar IA"');
       const cleanBase = baseUrl.replace(/\/+$/, '');
+      if (isRetiredGeminiModel(model)) {
+        model = 'gemini-3-flash-preview';
+      }
       const parts = [{ text: prompt }];
       frameBase64List.forEach(b64 => {
         parts.push({ inlineData: { mimeType: 'image/jpeg', data: b64 } });
       });
 
-      const candidateModels = [...new Set([model, 'gemini-2.5-flash', 'gemini-2.0-flash'])];
+      const candidateModels = [...new Set([model, 'gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-3.0-flash'])];
       let lastErr = 'Error desconocido en Gemini';
-      for (const m of candidateModels) {
-        const url = `${cleanBase}/models/${encodeURIComponent(m)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+      const tryGeminiModel = async (mName) => {
+        const url = `${cleanBase}/models/${encodeURIComponent(mName)}:generateContent?key=${encodeURIComponent(apiKey)}`;
         const res = await fetchWithBackoff(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1767,10 +1804,42 @@
         });
         const json = await res.json().catch(() => ({}));
         if (res.ok) {
-          return json?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+          return { ok: true, text: json?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '', modelUsed: mName };
         }
-        lastErr = json?.error?.message || `HTTP ${res.status}`;
-        if (res.status !== 404 && res.status !== 400) break;
+        return { ok: false, status: res.status, message: json?.error?.message || `HTTP ${res.status}` };
+      };
+
+      for (const m of candidateModels) {
+        const attempt = await tryGeminiModel(m);
+        if (attempt.ok) {
+          if (cfgOverride) cfgOverride.model = attempt.modelUsed;
+          return attempt.text;
+        }
+        lastErr = attempt.message;
+        // Si es error de clave inválida o sin permisos, detener cascada
+        if (attempt.status === 401 || /API key not valid/i.test(lastErr)) break;
+      }
+
+      // Auto-descubrir los modelos realmente activos en la clave del usuario
+      if (apiKey && /not found|no longer available|not supported|404/i.test(lastErr)) {
+        try {
+          const found = await discoverGeminiModels(apiKey, cleanBase);
+          for (const discovered of found.textModels.slice(0, 3)) {
+            if (candidateModels.includes(discovered)) continue;
+            const retry = await tryGeminiModel(discovered);
+            if (retry.ok) {
+              if (cfgOverride) cfgOverride.model = retry.modelUsed;
+              state.ai.model = retry.modelUsed;
+              safeSet('cliphub_ai_config', JSON.stringify(state.ai));
+              return retry.text;
+            }
+            lastErr = retry.message;
+          }
+        } catch (_) {}
+      }
+
+      if (!apiKey && /API key|403|401|unregistered/i.test(lastErr)) {
+        throw new Error('Pega tu API Key de Google AI Studio en "Configurar IA" (obligatorio en GitHub Pages).');
       }
       throw new Error(lastErr);
     }
@@ -1830,45 +1899,40 @@
   }
 
   async function askAIForCuts() {
-    if (!isAiConfigured()) return null;
-    const dur = state.duration || 15;
-    const targetLen = Math.min(dur, state.cutDuration || 15);
-    const prompt = `Eres director creativo de videos virales (YouTube Shorts, Reels, TikTok).
-Analiza estos fotogramas del video "${state.videoName}" (duración total: ${dur.toFixed(1)} segundos, duración deseada por corte: ~${targetLen.toFixed(1)}s).
-Crea 3 cortes DISTINTOS, creativos y NO repetitivos en español.
-Responde ÚNICAMENTE con un JSON válido (sin texto adicional ni markdown) con esta estructura:
-{"cuts":[{"title":"título creativo","hookText":"2-4 PALABRAS IMPACTO","badge":"ETIQUETA CORTA","score":95,"start":0,"end":5,"frameIdx":0,"lines":["frase 1","frase 2","frase 3","frase 4"]}]}`;
-
-    const framesB64 = state.frames.slice(0, 3)
-      .map(f => (f.dataUrl && f.dataUrl.includes(',')) ? f.dataUrl.split(',')[1] : '')
-      .filter(Boolean);
-
+    if (!isAiConfigured() && state.ai.provider !== 'gemini') return null;
     try {
-      const raw = await callConfiguredAI(prompt, framesB64);
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (!match) return null;
-      const parsed = JSON.parse(match[0]);
-      if (!Array.isArray(parsed.cuts) || !parsed.cuts.length) return null;
+      const prompt = `Eres un director creativo de videos virales (Shorts/Reels/TikTok).
+Analiza el video "${state.videoName}" (duración ${state.duration.toFixed(1)}s). Cada corte debe durar aprox. ${state.cutDuration}s (o menos si el video es corto).
+Crea 3 cortes DISTINTOS, creativos y NO repetitivos.
+Responde ÚNICAMENTE con un JSON válido sin texto extra ni bloques markdown, con esta estructura exacta:
+{"cuts":[{"title":"título creativo","hookText":"2-3 PALABRAS IMPACTO","badge":"ETIQUETA CORTA","score":95,"start":0,"end":15,"frameIdx":0,"lines":["frase 1","frase 2","frase 3","frase 4"]}]}`;
 
-      return parsed.cuts.slice(0, 3).map((c, i) => {
-        const pack = getUniqueCreativePack(state.creativeSeed + i);
-        const s = Math.max(0, Math.min(dur - 0.5, Number(c.start) || 0));
-        const rawEnd = Number(c.end) || (s + targetLen);
-        const e = Math.max(s + 0.5, Math.min(dur, rawEnd));
-        return {
-          title: c.title || pack.title,
-          hookText: String(c.hookText || pack.hook).toUpperCase().slice(0, 28),
-          badge: String(c.badge || pack.badge).toUpperCase().slice(0, 18),
-          score: Math.min(99, Math.max(82, Number(c.score) || (96 - i * 2))),
-          start: Number(s.toFixed(1)),
-          end: Number(e.toFixed(1)),
-          frameIdx: Math.min(Math.max(0, state.frames.length - 1), Number(c.frameIdx) || i),
-          lines: Array.isArray(c.lines) && c.lines.length ? c.lines.map(String) : pack.lines
-        };
-      });
-    } catch (_) {
-      return null;
-    }
+      const frameB64 = state.frames.slice(0, 3).map(f => f.dataUrl.split(',')[1]).filter(Boolean);
+      const raw = await callConfiguredAI(prompt, frameB64);
+      const cleaned = raw.replace(/`{3}json|`{3}/gi, '').trim();
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
+
+      if (Array.isArray(parsed.cuts) && parsed.cuts.length >= 1) {
+        return parsed.cuts.slice(0, 3).map((c, i) => {
+          const fallbackPack = getUniqueCreativePack(state.creativeSeed + i);
+          const s = Math.max(0, Math.min(Math.max(0, state.duration - 0.8), Number(c.start) || 0));
+          const rawEnd = Number(c.end) || (s + state.cutDuration);
+          const e = Math.max(s + 0.8, Math.min(state.duration || 15, rawEnd));
+          return {
+            title: c.title || fallbackPack.title,
+            hookText: (c.hookText || fallbackPack.hook).toUpperCase().slice(0, 28),
+            badge: (c.badge || fallbackPack.badge).toUpperCase().slice(0, 18),
+            score: Math.min(99, Math.max(80, Number(c.score) || (96 - i * 2))),
+            start: Number(s.toFixed(1)),
+            end: Number(e.toFixed(1)),
+            frameIdx: Math.min(Math.max(0, state.frames.length - 1), Number(c.frameIdx) || i),
+            lines: Array.isArray(c.lines) && c.lines.length ? c.lines.map(String) : fallbackPack.lines
+          };
+        });
+      }
+    } catch (_) {}
+    return null;
   }
 
   // ==================== SUBTÍTULOS EN TODO EL CORTE ====================
@@ -1961,9 +2025,6 @@ Responde ÚNICAMENTE con un JSON válido (sin texto adicional ni markdown) con e
 
   async function callGeminiImageThumbnail(frameDataUrl, cut, styleObj, customIdea) {
     const apiKey = state.ai.provider === 'gemini' ? (state.ai.apiKey || '').trim() : '';
-    if (!apiKey) {
-      throw new Error('No hay API Key de Gemini configurada en "Configurar IA"');
-    }
     const twist = EXTRA_VISUAL_TWISTS[Math.floor(Math.random() * EXTRA_VISUAL_TWISTS.length)];
     const uniqueId = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 
@@ -1996,40 +2057,53 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       {
         model: 'gemini-2.5-flash-image',
         generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
-      },
-      {
-        model: 'gemini-2.0-flash-exp-image-generation',
-        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
       }
     ];
 
-    let lastErrorMsg = 'Sin respuesta de imagen';
-    for (const att of attempts) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${att.model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-      const payload = {
-        contents: [{ role: 'user', parts }],
-        generationConfig: att.generationConfig
-      };
-
+    const tryImageAttempt = async (att) => {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(att.model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
       const res = await fetchWithBackoff(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts }],
+          generationConfig: att.generationConfig
+        })
       }, 1);
-
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
         const imgPart = json?.candidates?.[0]?.content?.parts?.find(p => p.inlineData?.data);
         if (imgPart) {
           const mime = imgPart.inlineData.mimeType || 'image/png';
-          return { dataUrl: `data:${mime};base64,${imgPart.inlineData.data}`, modelUsed: att.model };
+          return { ok: true, dataUrl: `data:${mime};base64,${imgPart.inlineData.data}`, modelUsed: att.model };
         }
-        lastErrorMsg = `${att.model} respondió sin imagen`;
-      } else {
-        const apiErr = json?.error?.message || `HTTP ${res.status}`;
-        lastErrorMsg = `${att.model}: ${apiErr}`;
-        if (/API key/i.test(apiErr) || res.status === 401) break;
+        return { ok: false, status: 200, message: `${att.model} respondió sin imagen` };
       }
+      return { ok: false, status: res.status, message: `${att.model}: ${json?.error?.message || `HTTP ${res.status}`}` };
+    };
+
+    let lastErrorMsg = 'Sin respuesta de imagen';
+    for (const att of attempts) {
+      const r = await tryImageAttempt(att);
+      if (r.ok) return { dataUrl: r.dataUrl, modelUsed: r.modelUsed };
+      lastErrorMsg = r.message;
+      if (/API key not valid/i.test(lastErrorMsg) || r.status === 401) break;
+    }
+
+    // Si los modelos por defecto no están disponibles en la cuenta, detectar los modelos de imagen activos
+    if (apiKey && /not found|no longer available|not supported|404/i.test(lastErrorMsg)) {
+      try {
+        const found = await discoverGeminiModels(apiKey);
+        for (const imgModel of found.imageModels.slice(0, 2)) {
+          if (attempts.some(a => a.model === imgModel)) continue;
+          const r = await tryImageAttempt({
+            model: imgModel,
+            generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+          });
+          if (r.ok) return { dataUrl: r.dataUrl, modelUsed: r.modelUsed };
+          lastErrorMsg = r.message;
+        }
+      } catch (_) {}
     }
 
     throw new Error(lastErrorMsg);
@@ -3072,6 +3146,31 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     inp.type = inp.type === 'password' ? 'text' : 'password';
   });
 
+  $('detectModelsBtn').addEventListener('click', async () => {
+    const provider = $('aiProviderSelect').value;
+    const apiKey = $('apiKeyInput').value.trim();
+    const baseUrl = $('aiBaseUrlInput').value.trim();
+    if (provider !== 'gemini') {
+      showBoxMsg('aiTestResult', 'info', 'La detección automática funciona con Google Gemini. Para otros proveedores elige un modelo de la lista sugerida.');
+      return;
+    }
+    if (!apiKey) {
+      showBoxMsg('aiTestResult', 'err', 'Pega primero tu API Key de Google AI Studio para detectar los modelos activos de tu cuenta.');
+      return;
+    }
+    showBoxMsg('aiTestResult', 'info', '🔍 Consultando los modelos disponibles en tu cuenta de Google AI Studio...');
+    try {
+      const { textModels, imageModels } = await discoverGeminiModels(apiKey, baseUrl);
+      if (!textModels.length) throw new Error('No se encontraron modelos de texto activos para esta clave.');
+      $('aiModelSuggestions').innerHTML = textModels.map(m => `<option value="${m}"></option>`).join('');
+      $('aiModelInput').value = textModels[0];
+      const imgInfo = imageModels.length ? ` | Imágenes detectadas: ${imageModels.slice(0, 3).join(', ')}` : ' | Sin modelos de imagen en esta clave (se usará Diseño Dinámico).';
+      showBoxMsg('aiTestResult', 'ok', `✅ Modelo recomendado seleccionado: ${textModels[0]} (${textModels.length} modelos de texto activos)${imgInfo}`);
+    } catch (err) {
+      showBoxMsg('aiTestResult', 'err', `❌ No se pudieron listar modelos: ${err.message}`);
+    }
+  });
+
   $('testAiBtn').addEventListener('click', async () => {
     const tempCfg = {
       provider: $('aiProviderSelect').value,
@@ -3082,6 +3181,9 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     showBoxMsg('aiTestResult', 'info', '⏳ Probando conexión con el proveedor de IA...');
     try {
       const reply = await callConfiguredAI('Responde únicamente con la palabra: CONECTADO', [], tempCfg);
+      if (tempCfg.model && tempCfg.model !== $('aiModelInput').value.trim()) {
+        $('aiModelInput').value = tempCfg.model;
+      }
       showBoxMsg('aiTestResult', 'ok', `✅ Conexión exitosa (${tempCfg.model}). Respuesta: "${reply.trim().slice(0, 60)}"`);
     } catch (err) {
       showBoxMsg('aiTestResult', 'err', `❌ Error al conectar: ${err.message}`);
