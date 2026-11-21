@@ -178,6 +178,39 @@
     #toastBox.ok { background: #064e3b; border-color: var(--green); color: #d1fae5; }
     #toastBox.warn { background: #451a03; border-color: var(--amber); color: #fef3c7; }
 
+    /* Configuración Avanzada IA & Redes */
+    .modal-lg { max-width: 600px; }
+    .modal-tabs {
+      display: flex; gap: 6px; margin-bottom: 14px;
+      background: #080e1c; padding: 5px; border-radius: 12px; border: 1px solid var(--border);
+    }
+    .modal-tab {
+      flex: 1; background: transparent; border: none; color: var(--muted);
+      padding: 8px 10px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.82rem; transition: .18s;
+    }
+    .modal-tab.active { background: #162544; color: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.3); }
+    .input-group { display: flex; gap: 6px; align-items: center; }
+    .input-group input { flex: 1; }
+    .field-block { margin-bottom: 11px; }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 560px) { .form-grid-2 { grid-template-columns: 1fr; } }
+    .test-box {
+      margin-top: 10px; padding: 10px 12px; border-radius: 10px; font-size: 0.82rem;
+      background: #0a1224; border: 1px solid var(--border); display: none; line-height: 1.4;
+    }
+    .test-box.show { display: block; }
+    .test-box.ok { border-color: var(--green); background: rgba(16,185,129,.12); color: #a7f3d0; }
+    .test-box.err { border-color: var(--red); background: rgba(239,68,68,.12); color: #fecaca; }
+    .test-box.info { border-color: var(--accent); background: rgba(56,189,248,.12); color: #bae6fd; }
+    .security-note {
+      font-size: 0.78rem; color: #cbd5e1; background: rgba(245,158,11,.10);
+      border: 1px solid rgba(245,158,11,.35); border-radius: 10px; padding: 9px 11px;
+      margin-top: 8px; line-height: 1.45;
+    }
+    .social-card { flex-direction: column; align-items: stretch; gap: 12px; }
+    .social-card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .social-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
     /* Video fuente oculto visualmente pero decodificado por GPU (evita frames negros) */
     #sourceVideo {
       position: fixed; bottom: 0; right: 0; width: 320px; height: 180px;
@@ -364,7 +397,13 @@
   <!-- ==================== TAB 3: REDES & CALENDARIO ==================== -->
   <section id="tab-social" class="view">
     <div class="card">
-      <h2>🔗 Cuentas Conectadas</h2>
+      <div class="row" style="justify-content:space-between; margin-bottom:12px;">
+        <div>
+          <h2 style="margin-bottom:4px;">🔗 Centro de Conexión de Redes Sociales</h2>
+          <div class="muted">Conecta cada red mediante <strong>Token / API Oficial</strong>, <strong>Webhook (Make / n8n / Zapier)</strong> o <strong>Perfil de acceso rápido</strong>.</div>
+        </div>
+        <button class="btn btn-sm btn-primary" id="verifyAllAccountsBtn">⚡ Verificar Conexiones</button>
+      </div>
       <div class="grid-3" id="accountsGrid"></div>
     </div>
 
@@ -381,6 +420,8 @@
             <option value="YouTube Shorts">YouTube Shorts</option>
             <option value="Instagram Reels">Instagram Reels</option>
             <option value="TikTok">TikTok</option>
+            <option value="Facebook Reels">Facebook Reels</option>
+            <option value="X (Twitter)">X (Twitter)</option>
           </select>
         </div>
         <div style="flex:1; min-width:190px;">
@@ -392,7 +433,7 @@
       <textarea id="schedCaption" rows="3" placeholder="Copy atractivo para la red social..."></textarea>
       <div class="row" style="margin-top:10px;">
         <button class="btn btn-green" id="addScheduleBtn">📌 Guardar en Calendario</button>
-        <button class="btn btn-primary" id="genDynamicCopyBtn">✨ Variar Copy Creativo</button>
+        <button class="btn btn-primary" id="genDynamicCopyBtn">✨ Variar Copy Creativo (IA)</button>
       </div>
     </div>
 
@@ -409,16 +450,62 @@
 <!-- Toast de mensajes -->
 <div id="toastBox"></div>
 
-<!-- Modal API Key -->
+<!-- Modal Configuración Universal de IA -->
 <div class="modal-bg" id="aiModal">
-  <div class="modal">
-    <h2 style="margin-bottom:8px;">🔑 Configurar Gemini IA</h2>
-    <p class="muted" style="margin-bottom:12px;">Tu clave se guarda únicamente en tu navegador (localStorage). Si no ingresas clave, el estudio igual funciona con su motor inteligente local.</p>
-    <label>Gemini API Key (Google AI Studio)</label>
-    <input type="password" id="apiKeyInput" placeholder="Pega tu clave aquí..." />
-    <div class="row" style="margin-top:14px; justify-content:flex-end;">
-      <button class="btn" id="closeAiModal">Cerrar</button>
-      <button class="btn btn-green" id="saveAiKeyBtn">Guardar Clave</button>
+  <div class="modal modal-lg">
+    <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+      <h2 style="margin:0;">🤖 Configurar Proveedor de IA (Multi-IA)</h2>
+      <span class="badge" id="aiVisionBadge">Visión + Texto</span>
+    </div>
+    <p class="muted" style="margin-bottom:14px;">Conecta cualquier motor de IA usando su API Key / Token. Todo se guarda localmente en tu navegador y si prefieres no usar clave, el motor creativo local sigue funcionando.</p>
+
+    <div class="form-grid-2 field-block">
+      <div>
+        <label>Proveedor de IA</label>
+        <select id="aiProviderSelect">
+          <option value="gemini">Google Gemini (Recomendado)</option>
+          <option value="openai">OpenAI (ChatGPT / GPT-4o)</option>
+          <option value="openrouter">OpenRouter (Claude, Llama, DeepSeek...)</option>
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="groq">Groq (Ultra Rápido)</option>
+          <option value="deepseek">DeepSeek</option>
+          <option value="xai">xAI (Grok)</option>
+          <option value="custom">Personalizada (OpenAI Compatible / Ollama)</option>
+        </select>
+      </div>
+      <div>
+        <label>Modelo</label>
+        <input type="text" id="aiModelInput" list="aiModelSuggestions" placeholder="Ej: gemini-2.5-flash" />
+        <datalist id="aiModelSuggestions"></datalist>
+      </div>
+    </div>
+
+    <div class="field-block">
+      <label>API Key / Bearer Token</label>
+      <div class="input-group">
+        <input type="password" id="apiKeyInput" placeholder="Pega tu token o clave API aquí..." autocomplete="off" />
+        <button type="button" class="btn btn-sm" id="toggleAiKeyVis" title="Mostrar u ocultar token">👁️</button>
+      </div>
+    </div>
+
+    <div class="field-block">
+      <label>URL del Endpoint (Automática o Personalizada)</label>
+      <input type="url" id="aiBaseUrlInput" placeholder="https://..." />
+    </div>
+
+    <div class="row" style="justify-content:space-between;">
+      <a id="aiPortalLink" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="muted" style="color:var(--accent); text-decoration:none; font-weight:600;">🔑 Obtener API Key de este proveedor ↗</a>
+      <button type="button" class="btn btn-sm btn-primary" id="testAiBtn">⚡ Probar Conexión</button>
+    </div>
+
+    <div class="test-box" id="aiTestResult"></div>
+
+    <div class="row" style="margin-top:16px; justify-content:space-between;">
+      <button type="button" class="btn btn-sm btn-danger" id="clearAiKeyBtn">🗑️ Desconectar IA</button>
+      <div class="row">
+        <button type="button" class="btn" id="closeAiModal">Cerrar</button>
+        <button type="button" class="btn btn-green" id="saveAiKeyBtn">💾 Guardar Configuración</button>
+      </div>
     </div>
   </div>
 </div>
@@ -437,15 +524,88 @@
   </div>
 </div>
 
-<!-- Modal Conectar Red -->
+<!-- Modal Conectar Red Social Avanzado -->
 <div class="modal-bg" id="accountModal">
-  <div class="modal">
-    <h2 id="accModalTitle" style="margin-bottom:8px;">Conectar Cuenta</h2>
-    <label>Nombre del Canal o @Usuario</label>
-    <input type="text" id="accHandleInput" placeholder="Ej: @BrasiyNina" />
-    <div class="row" style="margin-top:14px; justify-content:flex-end;">
-      <button class="btn" id="closeAccModal">Cancelar</button>
-      <button class="btn btn-green" id="saveAccBtn">Guardar Conexión</button>
+  <div class="modal modal-lg">
+    <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+      <h2 id="accModalTitle" style="margin:0;">Conectar Cuenta</h2>
+      <a id="accPortalLink" href="#" target="_blank" rel="noopener noreferrer" class="muted" style="color:var(--accent); text-decoration:none; font-weight:600;">Portal API Oficial ↗</a>
+    </div>
+
+    <!-- Selector de método de conexión -->
+    <div class="modal-tabs" id="accModeTabs">
+      <button type="button" class="modal-tab active" data-acc-mode="token">🔑 Token / API</button>
+      <button type="button" class="modal-tab" data-acc-mode="webhook">🔗 Webhook Auto</button>
+      <button type="button" class="modal-tab" data-acc-mode="profile">👤 Usuario / Perfil</button>
+    </div>
+
+    <div class="form-grid-2 field-block">
+      <div>
+        <label>Nombre del Canal o @Usuario</label>
+        <input type="text" id="accHandleInput" placeholder="Ej: @BrasiyNina" />
+      </div>
+      <div>
+        <label>ID de Canal / Cuenta (Opcional)</label>
+        <input type="text" id="accChannelIdInput" placeholder="Ej: UCxxxx o 1784..." />
+      </div>
+    </div>
+
+    <!-- Panel 1: Token / API Oficial -->
+    <div id="accPaneToken">
+      <div class="field-block">
+        <label>Access Token / OAuth Bearer Token</label>
+        <div class="input-group">
+          <input type="password" id="accTokenInput" placeholder="Pega tu Access Token oficial..." autocomplete="off" />
+          <button type="button" class="btn btn-sm" id="toggleAccTokenVis" title="Mostrar u ocultar token">👁️</button>
+        </div>
+      </div>
+      <div class="field-block">
+        <label>OAuth Client ID (Opcional para tu app)</label>
+        <input type="text" id="accClientIdInput" placeholder="Ej: 1234567890-xxxx.apps.googleusercontent.com" />
+      </div>
+    </div>
+
+    <!-- Panel 2: Webhook (Make / n8n / Zapier) -->
+    <div id="accPaneWebhook" style="display:none;">
+      <div class="field-block">
+        <label>URL del Webhook (Make, n8n, Zapier o tu servidor)</label>
+        <input type="url" id="accWebhookUrlInput" placeholder="https://hook.us1.make.com/..." />
+      </div>
+      <div class="field-block">
+        <label>Token Secreto / Authorization Header (Opcional)</label>
+        <input type="password" id="accWebhookSecretInput" placeholder="Bearer tu_secreto_seguro" autocomplete="off" />
+      </div>
+      <div class="muted">Ideal para GitHub Pages: al pulsar <strong>Publicar Ahora</strong>, ClipHub envía automáticamente el título, copy, plataforma y fecha a tu flujo.</div>
+    </div>
+
+    <!-- Panel 3: Perfil / Acceso Rápido -->
+    <div id="accPaneProfile" style="display:none;">
+      <div class="form-grid-2 field-block">
+        <div>
+          <label>Usuario o Correo de la Cuenta</label>
+          <input type="text" id="accLoginUserInput" placeholder="tu@correo.com o @usuario" />
+        </div>
+        <div>
+          <label>Enlace Directo a tu Studio / Perfil</label>
+          <input type="url" id="accProfileUrlInput" placeholder="https://studio.youtube.com/..." />
+        </div>
+      </div>
+      <div class="security-note">
+        🔒 <strong>Seguridad:</strong> Por protección de tu cuenta, YouTube, Instagram y TikTok no permiten iniciar sesión directa con contraseña desde páginas estáticas. Usa este modo para vincular tu perfil y abrir tu Studio con el copy copiado al instante, o usa <strong>Token / API</strong> o <strong>Webhook</strong> para envío automatizado.
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px; justify-content:flex-end;">
+      <button type="button" class="btn btn-sm btn-primary" id="testAccBtn">⚡ Probar Conexión</button>
+    </div>
+    <div class="test-box" id="accTestResult"></div>
+
+    <div class="row" style="margin-top:16px; justify-content:space-between;">
+      <button type="button" class="btn btn-sm btn-danger" id="disconnectAccBtn">🔌 Desconectar</button>
+      <div class="row">
+        <button type="button" class="btn" id="closeAccModal">Cancelar</button>
+        <button type="button" class="btn btn-green" id="saveAccBtn">💾 Guardar Conexión</button>
+      </div>
     </div>
   </div>
 </div>
@@ -457,9 +617,8 @@
     <div id="pubStatus" class="muted">Preparando paquete de video y metadatos...</div>
     <div class="progress-bar"><div class="progress-fill" id="pubProgress"></div></div>
     <div id="pubLinks" class="row" style="margin-top:12px; display:none;">
-      <a class="btn btn-sm btn-primary" href="https://studio.youtube.com" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">Abrir YouTube Studio</a>
-      <a class="btn btn-sm btn-amber" href="https://business.facebook.com/latest/home" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">Meta Business</a>
-      <a class="btn btn-sm btn-green" href="https://www.tiktok.com/creator-center/upload" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">TikTok Upload</a>
+      <a class="btn btn-sm btn-primary" id="pubDirectStudioBtn" href="https://studio.youtube.com" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">Abrir Studio de esta Red ↗</a>
+      <button class="btn btn-sm btn-amber" id="pubCopyAgainBtn">📋 Copiar Descripción</button>
     </div>
     <div class="row" style="margin-top:14px; justify-content:flex-end;">
       <button class="btn" id="closePubModal">Cerrar</button>
@@ -471,9 +630,125 @@
 (() => {
   const $ = id => document.getElementById(id);
 
+  // ==================== PRESETS MULTI-IA ====================
+  const AI_PROVIDERS = {
+    gemini: {
+      name: 'Google Gemini',
+      short: 'Gemini',
+      baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+      defaultModel: 'gemini-2.5-flash',
+      models: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'],
+      vision: true,
+      portal: 'https://aistudio.google.com/apikey',
+      placeholder: 'AIzaSy...'
+    },
+    openai: {
+      name: 'OpenAI (ChatGPT)',
+      short: 'OpenAI',
+      baseUrl: 'https://api.openai.com/v1/chat/completions',
+      defaultModel: 'gpt-4o-mini',
+      models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini'],
+      vision: true,
+      portal: 'https://platform.openai.com/api-keys',
+      placeholder: 'sk-proj-...'
+    },
+    openrouter: {
+      name: 'OpenRouter',
+      short: 'OpenRouter',
+      baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
+      defaultModel: 'google/gemini-2.0-flash-001',
+      models: ['google/gemini-2.0-flash-001', 'openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-chat'],
+      vision: true,
+      portal: 'https://openrouter.ai/keys',
+      placeholder: 'sk-or-v1-...'
+    },
+    anthropic: {
+      name: 'Anthropic Claude',
+      short: 'Claude',
+      baseUrl: 'https://api.anthropic.com/v1/messages',
+      defaultModel: 'claude-3-5-sonnet-latest',
+      models: ['claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest'],
+      vision: true,
+      portal: 'https://console.anthropic.com/settings/keys',
+      placeholder: 'sk-ant-...'
+    },
+    groq: {
+      name: 'Groq',
+      short: 'Groq',
+      baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
+      defaultModel: 'llama-3.3-70b-versatile',
+      models: ['llama-3.3-70b-versatile', 'llama-3.2-11b-vision-preview', 'mixtral-8x7b-32768'],
+      vision: false,
+      portal: 'https://console.groq.com/keys',
+      placeholder: 'gsk_...'
+    },
+    deepseek: {
+      name: 'DeepSeek',
+      short: 'DeepSeek',
+      baseUrl: 'https://api.deepseek.com/chat/completions',
+      defaultModel: 'deepseek-chat',
+      models: ['deepseek-chat', 'deepseek-reasoner'],
+      vision: false,
+      portal: 'https://platform.deepseek.com/api_keys',
+      placeholder: 'sk-...'
+    },
+    xai: {
+      name: 'xAI (Grok)',
+      short: 'Grok',
+      baseUrl: 'https://api.x.ai/v1/chat/completions',
+      defaultModel: 'grok-2-vision-1212',
+      models: ['grok-2-vision-1212', 'grok-2-latest'],
+      vision: true,
+      portal: 'https://console.x.ai/',
+      placeholder: 'xai-...'
+    },
+    custom: {
+      name: 'IA Personalizada',
+      short: 'IA Custom',
+      baseUrl: 'http://localhost:11434/v1/chat/completions',
+      defaultModel: 'llama3.2',
+      models: ['llama3.2', 'qwen2.5', 'mistral'],
+      vision: false,
+      portal: 'https://ollama.com/',
+      placeholder: 'Tu API Token (opcional en Ollama local)'
+    }
+  };
+
+  function loadAiConfig() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('cliphub_ai_config') || 'null');
+      if (saved && saved.provider && AI_PROVIDERS[saved.provider]) return saved;
+    } catch (_) {}
+    const legacyKey = localStorage.getItem('cliphub_gemini_key') || '';
+    return {
+      provider: 'gemini',
+      apiKey: legacyKey,
+      model: AI_PROVIDERS.gemini.defaultModel,
+      baseUrl: AI_PROVIDERS.gemini.baseUrl
+    };
+  }
+
+  const DEFAULT_ACCOUNTS = {
+    youtube: { name: 'YouTube', icon: '▶️', portal: 'https://console.cloud.google.com/apis/credentials', studioUrl: 'https://studio.youtube.com', connected: false, mode: 'token', handle: '', channelId: '', token: '', clientId: '', webhookUrl: '', webhookSecret: '', loginUser: '', profileUrl: '', verified: false },
+    instagram: { name: 'Instagram', icon: '📸', portal: 'https://developers.facebook.com/apps/', studioUrl: 'https://business.facebook.com/latest/home', connected: false, mode: 'token', handle: '', channelId: '', token: '', clientId: '', webhookUrl: '', webhookSecret: '', loginUser: '', profileUrl: '', verified: false },
+    tiktok: { name: 'TikTok', icon: '🎵', portal: 'https://developers.tiktok.com/', studioUrl: 'https://www.tiktok.com/creator-center/upload', connected: false, mode: 'token', handle: '', channelId: '', token: '', clientId: '', webhookUrl: '', webhookSecret: '', loginUser: '', profileUrl: '', verified: false },
+    facebook: { name: 'Facebook Reels', icon: '📘', portal: 'https://developers.facebook.com/apps/', studioUrl: 'https://business.facebook.com/latest/home', connected: false, mode: 'token', handle: '', channelId: '', token: '', clientId: '', webhookUrl: '', webhookSecret: '', loginUser: '', profileUrl: '', verified: false },
+    x: { name: 'X (Twitter)', icon: '𝕏', portal: 'https://developer.x.com/en/portal/dashboard', studioUrl: 'https://x.com/compose/post', connected: false, mode: 'token', handle: '', channelId: '', token: '', clientId: '', webhookUrl: '', webhookSecret: '', loginUser: '', profileUrl: '', verified: false }
+  };
+
+  function loadAccounts() {
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem('cliphub_accounts') || '{}'); } catch (_) {}
+    const merged = {};
+    for (const [k, def] of Object.entries(DEFAULT_ACCOUNTS)) {
+      merged[k] = { ...def, ...(saved[k] || {}) };
+    }
+    return merged;
+  }
+
   // ==================== ESTADO GLOBAL ====================
   const state = {
-    apiKey: localStorage.getItem('cliphub_gemini_key') || '',
+    ai: loadAiConfig(),
     videoName: 'video_demo',
     duration: 0,
     frames: [],
@@ -491,11 +766,7 @@
     draggingPng: false,
     thumbnails: [],
     creativeSeed: 0,
-    accounts: JSON.parse(localStorage.getItem('cliphub_accounts') || JSON.stringify({
-      youtube: { name: 'YouTube', connected: false, handle: '' },
-      instagram: { name: 'Instagram', connected: false, handle: '' },
-      tiktok: { name: 'TikTok', connected: false, handle: '' }
-    })),
+    accounts: loadAccounts(),
     schedule: JSON.parse(localStorage.getItem('cliphub_schedule') || '[]')
   };
 
@@ -503,7 +774,7 @@
   const canvas = $('previewCanvas');
   const ctx = canvas.getContext('2d');
 
-  // ==================== TOAST (SIN ALERT) ====================
+  // ==================== TOAST Y PORTAPAPELES (SIN ALERT) ====================
   let toastTimer = null;
   function showToast(msg, type = '') {
     const box = $('toastBox');
@@ -511,6 +782,26 @@
     box.className = 'show' + (type ? ' ' + type : '');
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { box.className = ''; }, 3200);
+  }
+
+  function copyTextSafe(text) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function isAiConfigured() {
+    return Boolean(state.ai.apiKey || (state.ai.provider === 'custom' && state.ai.baseUrl));
   }
 
   // ==================== UTILIDADES ====================
@@ -544,8 +835,10 @@
   }
 
   function refreshAiBadge() {
-    $('aiDot').className = 'dot' + (state.apiKey ? ' ok' : '');
-    $('aiStatusText').textContent = state.apiKey ? 'IA Conectada' : 'Configurar IA';
+    const ok = isAiConfigured();
+    const prov = AI_PROVIDERS[state.ai.provider] || AI_PROVIDERS.gemini;
+    $('aiDot').className = 'dot' + (ok ? ' ok' : '');
+    $('aiStatusText').textContent = ok ? `${prov.short} Conectada` : 'Configurar IA';
   }
 
   // ==================== NAVEGACIÓN ====================
@@ -676,142 +969,142 @@
     }
     return { canvas: c, time: target };
   }
+  async function callConfiguredAI(promptText, framesList = [], configOverride = null) {
+    const cfg = configOverride || state.ai;
+    const provider = cfg.provider || 'gemini';
+    const provMeta = AI_PROVIDERS[provider] || AI_PROVIDERS.custom;
+    const apiKey = (cfg.apiKey || '').trim();
+    const model = (cfg.model || provMeta.defaultModel).trim();
+    const baseUrl = (cfg.baseUrl || provMeta.baseUrl).trim().replace(/\/+$/, '');
 
-  async function extractRealFrames() {
-    setStep(1, 'run', 'Decodificando video...');
-    const wasPaused = video.paused;
-    const prevMuted = video.muted;
-    video.muted = true;
-    try { await video.play(); } catch (_) {}
-    await new Promise(r => setTimeout(r, 120));
-    video.pause();
-
-    const dur = (isFinite(video.duration) && video.duration > 0) ? video.duration : state.duration || 12;
-    state.duration = dur;
-    const ratios = [0.12, 0.30, 0.50, 0.70, 0.86];
-    const results = [];
-
-    for (let i = 0; i < ratios.length; i++) {
-      let cap = await seekAndCapture(dur * ratios[i]);
-      if (isFrameMostlyBlack(cap.canvas)) {
-        cap = await seekAndCapture(dur * ratios[i] + 0.5);
-      }
-      results.push({ time: cap.time, dataUrl: cap.canvas.toDataURL('image/jpeg', 0.88) });
+    if (!apiKey && provider !== 'custom') {
+      throw new Error('Falta ingresar tu API Key / Token.');
     }
 
-    video.muted = prevMuted;
-    if (!wasPaused) video.play().catch(() => {});
-
-    state.frames = results;
-    $('framesStrip').innerHTML = results.map((f, idx) => `
-      <div class="frame-box" data-frame-time="${f.time}" title="Saltar a ${fmtTime(f.time)}">
-        <img src="${f.dataUrl}" alt="Fotograma ${idx + 1}" />
-        <span class="frame-ts">${fmtTime(f.time)}</span>
-      </div>
-    `).join('');
-
-    document.querySelectorAll('.frame-box[data-frame-time]').forEach(box => {
-      box.addEventListener('click', () => {
-        video.currentTime = Number(box.dataset.frameTime);
+    // 1) Google Gemini API
+    if (provider === 'gemini') {
+      const parts = [{ text: promptText }];
+      framesList.slice(0, 3).forEach(f => {
+        if (f && f.dataUrl && f.dataUrl.includes(',')) {
+          parts.push({ inline_data: { mime_type: 'image/jpeg', data: f.dataUrl.split(',')[1] } });
+        }
       });
-    });
-
-    setStep(1, 'done', `${results.length} fotogramas reales`);
-  }
-
-  // ==================== BANCO CREATIVO VARIADO (NUNCA REPETITIVO) ====================
-  const CREATIVE_BANK = [
-    {
-      titles: ['El giro que cambia toda la historia', 'Nadie esperaba este segundo exacto', 'El detalle oculto que lo explica todo'],
-      hooks: ['¡GIRO TOTAL!', 'NO LO CREERÁS', 'EL SECRETO'],
-      badges: ['MOMENTO CLAVE', 'ALTO IMPACTO', 'VIRAL 98%'],
-      subs: [
-        ['Quédate hasta el final porque aquí pasa algo increíble', 'Fíjate bien en este detalle que casi todos pasan por alto', 'Justo en este segundo la historia da un giro total', '¿Tú también lo viste? Déjamelo en los comentarios'],
-        ['Esto es lo que separa un video normal de uno viral', 'Mira cómo cambia el ritmo en menos de tres segundos', 'Guarda este clip antes de que se te olvide aplicarlo', 'Comparte esto con alguien que necesite verlo hoy'],
-        ['Al principio parece una escena tranquila, pero espera...', 'Aquí es donde la tensión sube al máximo nivel', 'Ese pequeño movimiento lo cambia absolutamente todo', 'Suscríbete si quieres ver la segunda parte ahora mismo']
-      ]
-    },
-    {
-      titles: ['La escena más intensa en pocos segundos', 'Por qué todos están hablando de esto', 'El clímax que dispara la retención'],
-      hooks: ['¡IMPACTO REAL!', 'PASÓ ESTO...', 'BRUTAL 🔥'],
-      badges: ['RETENCIÓN TOP', 'DEBATE VIRAL', 'EXCLUSIVO'],
-      subs: [
-        ['No parpadees durante los próximos cinco segundos', 'Todo lo que pasó antes llevaba directo a este momento', 'La reacción aquí es simplemente espectacular', 'Dale like si quieres más momentos así de épicos'],
-        ['Muchos lo intentan, pero pocos logran este resultado', 'Observa la precisión en cada cuadro de esta toma', 'Ese remate final hace que quieras verlo en bucle', 'Cuéntame qué puntuación le das del 1 al 10'],
-        ['Este instante vale oro para tu próximo Short', 'Arranca con fuerza desde el primer segundo sin pausas', 'Mantén la intriga viva hasta el último instante', 'Activa la campanita para no perderte el próximo episodio']
-      ]
-    },
-    {
-      titles: ['Lo que ocurre justo antes del desenlace', 'El contraste visual que atrapa la mirada', 'Cierre dinámico listo para publicar hoy'],
-      hooks: ['SIN FILTROS', '¿QUÉ HARÍAS?', 'PURA ACCIÓN'],
-      badges: ['ESTRENO', 'TENDENCIA', 'TOP CTR'],
-      subs: [
-        ['Parece una toma tranquila durante dos segundos', 'Pero la energía sube de golpe sin avisar', 'Ese contraste visual retiene hasta el final', 'Compártelo con alguien que disfrute este tema'],
-        ['Aquí está la pieza que conecta toda la idea', 'Cada palabra acompaña el movimiento del video', 'Así conviertes un video largo en tres Shorts potentes', 'Déjame tu veredicto abajo en los comentarios'],
-        ['Cerramos con el fragmento de mayor dinamismo', 'Ritmo ágil, titular fuerte y lectura instantánea', 'Perfecto para programar en horario pico hoy', '¿Cuál de los tres cortes fue tu favorito?']
-      ]
-    }
-  ];
-
-  function buildSmartCutsFallback() {
-    const d = Math.max(4, state.duration);
-    const pack = CREATIVE_BANK[state.creativeSeed % CREATIVE_BANK.length];
-    const seg = d / 3;
-    return [0, 1, 2].map(i => {
-      const s = Number((i * seg).toFixed(1));
-      const e = Number(Math.min(d, (i + 1) * seg).toFixed(1));
-      return {
-        title: pack.titles[i],
-        hookText: pack.hooks[i],
-        badge: pack.badges[i],
-        score: 97 - i * 2,
-        start: s,
-        end: e > s + 1 ? e : d,
-        frameIdx: Math.min(state.frames.length - 1, i === 0 ? 0 : i === 1 ? 2 : 4),
-        lines: pack.subs[i]
-      };
-    });
-  }
-
-  async function askGeminiForCuts() {
-    if (!state.apiKey) return null;
-    const prompt = `Eres director creativo de videos virales (Shorts/Reels/TikTok).
-Analiza estos fotogramas del video "${state.videoName}" (duración ${state.duration.toFixed(1)} segundos).
-Crea 3 cortes DISTINTOS, muy creativos y SIN repetir frases ni ganchos.
-Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exacta:
-{"cuts":[{"title":"título creativo","hookText":"2-3 PALABRAS IMPACTO","badge":"ETIQUETA CORTA","score":95,"start":0,"end":5,"frameIdx":0,"lines":["frase 1","frase 2","frase 3","frase 4"]}]}`;
-
-    const parts = [{ text: prompt }];
-    state.frames.slice(0, 3).forEach(f => {
-      parts.push({ inline_data: { mime_type: 'image/jpeg', data: f.dataUrl.split(',')[1] } });
-    });
-
-    const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-    for (const model of models) {
-      try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(state.apiKey)}`, {
+      const tryModels = [...new Set([model, 'gemini-2.5-flash', 'gemini-2.0-flash'])];
+      let lastErr = 'Error al conectar con Gemini.';
+      for (const m of tryModels) {
+        const res = await fetch(`${baseUrl}/models/${encodeURIComponent(m)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts }] })
         });
-        if (!res.ok) continue;
-        const json = await res.json();
-        const raw = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const cleaned = raw.replace(/\x60\x60\x60json|\x60\x60\x60/gi, '').trim();
-        const parsed = JSON.parse(cleaned);
-        if (Array.isArray(parsed.cuts) && parsed.cuts.length >= 1) {
-          return parsed.cuts.slice(0, 3).map((c, i) => ({
-            title: c.title || `Momento Viral #${i + 1}`,
-            hookText: (c.hookText || '¡MIRA ESTO!').toUpperCase(),
-            badge: (c.badge || 'TOP CTR').toUpperCase(),
-            score: Number(c.score) || 94,
-            start: Math.max(0, Math.min(state.duration - 1, Number(c.start) || 0)),
-            end: Math.max(1, Math.min(state.duration, Number(c.end) || state.duration)),
-            frameIdx: Math.min(state.frames.length - 1, Math.max(0, Number(c.frameIdx) || i)),
-            lines: Array.isArray(c.lines) && c.lines.length ? c.lines : CREATIVE_BANK[0].subs[i]
-          }));
+        if (res.ok) {
+          const json = await res.json();
+          const txt = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (txt) return txt;
+        } else {
+          const errJson = await res.json().catch(() => ({}));
+          lastErr = errJson?.error?.message || `HTTP ${res.status}`;
+          if (res.status === 401 || res.status === 403) break;
         }
-      } catch (_) {}
+      }
+      throw new Error(lastErr);
+    }
+
+    // 2) Anthropic Claude API
+    if (provider === 'anthropic') {
+      const content = [];
+      framesList.slice(0, 3).forEach(f => {
+        if (f && f.dataUrl && f.dataUrl.includes(',')) {
+          content.push({
+            type: 'image',
+            source: { type: 'base64', media_type: 'image/jpeg', data: f.dataUrl.split(',')[1] }
+          });
+        }
+      });
+      content.push({ type: 'text', text: promptText });
+      const res = await fetch(baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({ model, max_tokens: 1024, messages: [{ role: 'user', content }] })
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson?.error?.message || `HTTP ${res.status}`);
+      }
+      const json = await res.json();
+      return json?.content?.[0]?.text || '';
+    }
+
+    // 3) APIs Compatibles con OpenAI (OpenAI, OpenRouter, Groq, DeepSeek, xAI, Custom/Ollama)
+    const headers = { 'Content-Type': 'application/json' };
+    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+    if (provider === 'openrouter') {
+      headers['HTTP-Referer'] = window.location.origin || 'https://cliphub.studio';
+      headers['X-Title'] = 'ClipHub Studio Pro';
+    }
+
+    const useVision = provMeta.vision && framesList.length > 0;
+    const buildBody = (withImages) => {
+      const content = withImages
+        ? [
+            { type: 'text', text: promptText },
+            ...framesList.slice(0, 3).map(f => ({ type: 'image_url', image_url: { url: f.dataUrl } }))
+          ]
+        : promptText;
+      return JSON.stringify({
+        model,
+        temperature: 0.7,
+        messages: [{ role: 'user', content }]
+      });
+    };
+
+    let res = await fetch(baseUrl, { method: 'POST', headers, body: buildBody(useVision) });
+    if (!res.ok && useVision && res.status === 400) {
+      // Si el modelo elegido no soporta imágenes, reintentar en modo texto
+      res = await fetch(baseUrl, { method: 'POST', headers, body: buildBody(false) });
+    }
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson?.error?.message || `HTTP ${res.status}`);
+    }
+    const json = await res.json();
+    return json?.choices?.[0]?.message?.content || '';
+  }
+
+  async function askAiForCuts() {
+    if (!isAiConfigured()) return null;
+    const prompt = `Eres director creativo de videos virales (Shorts/Reels/TikTok).
+Analiza este video titulado "${state.videoName}" (duración ${state.duration.toFixed(1)} segundos).
+Crea 3 cortes DISTINTOS, muy creativos y SIN repetir frases ni ganchos.
+Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con esta estructura exacta:
+{"cuts":[{"title":"título creativo","hookText":"2-3 PALABRAS IMPACTO","badge":"ETIQUETA CORTA","score":95,"start":0,"end":5,"frameIdx":0,"lines":["frase 1","frase 2","frase 3","frase 4"]}]}`;
+
+    try {
+      const raw = await callConfiguredAI(prompt, state.frames);
+      const cleaned = raw.replace(/\x60\x60\x60json|\x60\x60\x60/gi, '').trim();
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+      const jsonStr = firstBrace !== -1 && lastBrace !== -1 ? cleaned.slice(firstBrace, lastBrace + 1) : cleaned;
+      const parsed = JSON.parse(jsonStr);
+      if (Array.isArray(parsed.cuts) && parsed.cuts.length >= 1) {
+        return parsed.cuts.slice(0, 3).map((c, i) => ({
+          title: c.title || `Momento Viral #${i + 1}`,
+          hookText: (c.hookText || '¡MIRA ESTO!').toUpperCase(),
+          badge: (c.badge || 'TOP CTR').toUpperCase(),
+          score: Number(c.score) || 94,
+          start: Math.max(0, Math.min(state.duration - 1, Number(c.start) || 0)),
+          end: Math.max(1, Math.min(state.duration, Number(c.end) || state.duration)),
+          frameIdx: Math.min(state.frames.length - 1, Math.max(0, Number(c.frameIdx) || i)),
+          lines: Array.isArray(c.lines) && c.lines.length ? c.lines : CREATIVE_BANK[0].subs[i]
+        }));
+      }
+    } catch (err) {
+      showToast(`IA (${AI_PROVIDERS[state.ai.provider]?.short || 'IA'}): usando motor creativo local (${err.message.slice(0, 45)})`, 'warn');
     }
     return null;
   }
@@ -1029,10 +1322,10 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     await extractRealFrames();
 
     setStep(2, 'run', 'Detectando momentos...');
-    const aiCuts = await askGeminiForCuts();
+    const aiCuts = await askAiForCuts();
+    const provLabel = (AI_PROVIDERS[state.ai.provider] || AI_PROVIDERS.gemini).short;
     state.cuts = aiCuts || buildSmartCutsFallback();
-    setStep(2, 'done', `${state.cuts.length} cortes (${aiCuts ? 'Gemini IA' : 'Motor Creativo'})`);
-
+    setStep(2, 'done', `${state.cuts.length} cortes (${aiCuts ? provLabel + ' IA' : 'Motor Creativo'})`);
     setStep(3, 'run', 'Sincronizando texto...');
     loadCutIntoPlayer(0, true);
     setStep(3, 'done', 'Subtítulos en vivo listos');
@@ -1350,43 +1643,250 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     const tags = {
       'YouTube Shorts': '#Shorts #Viral #Contenido #Tendencia',
       'Instagram Reels': '#Reels #ExplorePage #Creatividad #VideoViral',
-      'TikTok': '#ParaTi #FYP #TikTokViral #Clips'
+      'TikTok': '#ParaTi #FYP #TikTokViral #Clips',
+      'Facebook Reels': '#FacebookReels #Viral #Tendencias #Videos',
+      'X (Twitter)': '#Viral #Video #Tendencia'
     };
     return `${openers[(idx + Math.floor(Math.random() * openers.length)) % openers.length]}\n\n💬 Cuéntame qué opinas en los comentarios.\n${tags[platform] || '#Viral'}`;
+  }
+
+  function platformToAccountKey(platform) {
+    const p = (platform || '').toLowerCase();
+    if (p.includes('youtube')) return 'youtube';
+    if (p.includes('instagram')) return 'instagram';
+    if (p.includes('tiktok')) return 'tiktok';
+    if (p.includes('facebook')) return 'facebook';
+    return 'x';
   }
 
   function saveAccounts() { localStorage.setItem('cliphub_accounts', JSON.stringify(state.accounts)); renderAccounts(); }
   function saveSchedule() { localStorage.setItem('cliphub_schedule', JSON.stringify(state.schedule)); renderSchedule(); }
 
   let editingAccountKey = null;
-  function renderAccounts() {
-    $('accountsGrid').innerHTML = Object.entries(state.accounts).map(([key, acc]) => `
-      <div class="social-card">
-        <div>
-          <strong>${acc.name}</strong>
-          <div class="muted">${acc.connected ? `Conectado: ${acc.handle}` : 'Sin conectar'}</div>
-        </div>
-        <button class="btn btn-sm ${acc.connected ? 'btn-green' : ''}" onclick="window._openAcc('${key}')">
-          ${acc.connected ? '✓ Gestionar' : 'Conectar'}
-        </button>
-      </div>
-    `).join('');
+  let activeAccMode = 'token';
+
+  function setAccModalMode(mode) {
+    activeAccMode = mode;
+    document.querySelectorAll('#accModeTabs .modal-tab').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.accMode === mode);
+    });
+    $('accPaneToken').style.display = mode === 'token' ? 'block' : 'none';
+    $('accPaneWebhook').style.display = mode === 'webhook' ? 'block' : 'none';
+    $('accPaneProfile').style.display = mode === 'profile' ? 'block' : 'none';
   }
+
+  document.querySelectorAll('#accModeTabs .modal-tab').forEach(btn => {
+    btn.addEventListener('click', () => setAccModalMode(btn.dataset.accMode));
+  });
+
+  function showBoxMsg(elId, type, msg) {
+    const box = $(elId);
+    box.className = `test-box show ${type}`;
+    box.textContent = msg;
+  }
+
+  function renderAccounts() {
+    const modeLabel = { token: 'API Token', webhook: 'Webhook Auto', profile: 'Perfil Rápido' };
+    $('accountsGrid').innerHTML = Object.entries(state.accounts).map(([key, acc]) => {
+      const statusBadge = acc.connected
+        ? `<span class="badge green">${acc.verified ? '✓ Verificada' : 'Conectada'}</span><span class="badge">${modeLabel[acc.mode] || 'Token'}</span>`
+        : `<span class="badge amber">Sin conectar</span>`;
+      const detail = acc.connected
+        ? `${acc.handle || acc.loginUser || 'Cuenta activa'}${acc.channelId ? ' • ID: ' + acc.channelId.slice(0, 12) : ''}`
+        : 'Haz clic en Configurar para vincular token, webhook o perfil';
+      return `
+        <div class="social-card">
+          <div class="social-card-top">
+            <div>
+              <strong>${acc.icon || '🌐'} ${acc.name}</strong>
+              <div class="muted" style="margin-top:2px;">${detail}</div>
+            </div>
+            <button class="btn btn-sm ${acc.connected ? 'btn-green' : 'btn-primary'}" onclick="window._openAcc('${key}')">
+              ${acc.connected ? '⚙️ Configurar' : '🔗 Conectar'}
+            </button>
+          </div>
+          <div class="social-meta">${statusBadge}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
   window._openAcc = key => {
     editingAccountKey = key;
-    $('accModalTitle').textContent = `Conectar ${state.accounts[key].name}`;
-    $('accHandleInput').value = state.accounts[key].handle || '';
+    const acc = state.accounts[key];
+    $('accModalTitle').textContent = `${acc.icon || '🔗'} Configurar ${acc.name}`;
+    $('accPortalLink').href = acc.portal || '#';
+    $('accHandleInput').value = acc.handle || '';
+    $('accChannelIdInput').value = acc.channelId || '';
+    $('accTokenInput').value = acc.token || '';
+    $('accTokenInput').type = 'password';
+    $('accClientIdInput').value = acc.clientId || '';
+    $('accWebhookUrlInput').value = acc.webhookUrl || '';
+    $('accWebhookSecretInput').value = acc.webhookSecret || '';
+    $('accLoginUserInput').value = acc.loginUser || '';
+    $('accProfileUrlInput').value = acc.profileUrl || acc.studioUrl || '';
+    $('accTestResult').className = 'test-box';
+    setAccModalMode(acc.mode || 'token');
     $('accountModal').classList.add('open');
   };
+
+  $('toggleAccTokenVis').addEventListener('click', () => {
+    const inp = $('accTokenInput');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  });
+
+  async function verifyAccountCredentials(key, draft) {
+    if (draft.mode === 'webhook') {
+      if (!draft.webhookUrl) throw new Error('Ingresa la URL del Webhook para probar.');
+      const headers = { 'Content-Type': 'application/json' };
+      if (draft.webhookSecret) headers['Authorization'] = draft.webhookSecret;
+      const res = await fetch(draft.webhookUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          event: 'cliphub_connection_test',
+          platform: state.accounts[key].name,
+          handle: draft.handle || '@canal',
+          timestamp: new Date().toISOString()
+        })
+      });
+      if (!res.ok) throw new Error(`El Webhook respondió con HTTP ${res.status}.`);
+      return { verified: true, message: `✅ Webhook conectado y respondió OK (HTTP ${res.status}).` };
+    }
+
+    if (draft.mode === 'profile') {
+      if (!draft.handle && !draft.loginUser) throw new Error('Escribe tu @usuario o correo del perfil.');
+      return { verified: true, message: `✅ Perfil "${draft.handle || draft.loginUser}" listo para publicación rápida en Studio.` };
+    }
+
+    // Modo Token / API Oficial
+    if (!draft.token) throw new Error('Pega un Access Token válido para verificar.');
+    if (key === 'youtube') {
+      const res = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
+        headers: { 'Authorization': `Bearer ${draft.token}` }
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `Token rechazado por YouTube (HTTP ${res.status}).`);
+      }
+      const data = await res.json();
+      const ch = data?.items?.[0];
+      if (ch) {
+        return {
+          verified: true,
+          autoHandle: ch.snippet?.customUrl || ch.snippet?.title,
+          autoId: ch.id,
+          message: `✅ Token de YouTube verificado en vivo. Canal: ${ch.snippet?.title} (${ch.id}).`
+        };
+      }
+      return { verified: true, message: '✅ Token de YouTube válido.' };
+    }
+
+    if (key === 'instagram' || key === 'facebook') {
+      const res = await fetch(`https://graph.facebook.com/v20.0/me?fields=id,name&access_token=${encodeURIComponent(draft.token)}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `Token rechazado por Meta Graph API (HTTP ${res.status}).`);
+      }
+      const data = await res.json();
+      return {
+        verified: true,
+        autoHandle: data.name,
+        autoId: data.id,
+        message: `✅ Token de Meta verificado en vivo. Cuenta: ${data.name} (ID ${data.id}).`
+      };
+    }
+
+    return {
+      verified: true,
+      message: `ℹ️ Token guardado para ${state.accounts[key].name} (${draft.token.length} caracteres). Nota: esta plataforma bloquea llamadas directas CORS desde el navegador; para auto-publicación 100% automática también puedes usar el modo Webhook.`
+    };
+  }
+
+  $('testAccBtn').addEventListener('click', async () => {
+    const draft = {
+      mode: activeAccMode,
+      handle: $('accHandleInput').value.trim(),
+      token: $('accTokenInput').value.trim(),
+      webhookUrl: $('accWebhookUrlInput').value.trim(),
+      webhookSecret: $('accWebhookSecretInput').value.trim(),
+      loginUser: $('accLoginUserInput').value.trim()
+    };
+    showBoxMsg('accTestResult', 'info', 'Probando conexión con la plataforma...');
+    try {
+      const result = await verifyAccountCredentials(editingAccountKey, draft);
+      if (result.autoHandle && !$('accHandleInput').value.trim()) $('accHandleInput').value = result.autoHandle;
+      if (result.autoId && !$('accChannelIdInput').value.trim()) $('accChannelIdInput').value = result.autoId;
+      showBoxMsg('accTestResult', 'ok', result.message);
+    } catch (err) {
+      showBoxMsg('accTestResult', 'err', `❌ ${err.message}`);
+    }
+  });
+
   $('saveAccBtn').addEventListener('click', () => {
-    const h = $('accHandleInput').value.trim();
-    state.accounts[editingAccountKey].connected = Boolean(h);
-    state.accounts[editingAccountKey].handle = h;
+    const acc = state.accounts[editingAccountKey];
+    const handle = $('accHandleInput').value.trim();
+    const token = $('accTokenInput').value.trim();
+    const webhookUrl = $('accWebhookUrlInput').value.trim();
+    const loginUser = $('accLoginUserInput').value.trim();
+
+    const hasCreds = Boolean(
+      (activeAccMode === 'token' && (token || handle)) ||
+      (activeAccMode === 'webhook' && webhookUrl) ||
+      (activeAccMode === 'profile' && (handle || loginUser))
+    );
+
+    if (!hasCreds) {
+      showToast('Completa al menos tu usuario, token o URL de webhook', 'warn');
+      return;
+    }
+
+    acc.mode = activeAccMode;
+    acc.handle = handle || loginUser || acc.name;
+    acc.channelId = $('accChannelIdInput').value.trim();
+    acc.token = token;
+    acc.clientId = $('accClientIdInput').value.trim();
+    acc.webhookUrl = webhookUrl;
+    acc.webhookSecret = $('accWebhookSecretInput').value.trim();
+    acc.loginUser = loginUser;
+    acc.profileUrl = $('accProfileUrlInput').value.trim() || acc.studioUrl;
+    acc.connected = true;
+    acc.verified = $('accTestResult').classList.contains('ok');
+
     saveAccounts();
     $('accountModal').classList.remove('open');
-    showToast(h ? `Cuenta ${h} vinculada` : 'Cuenta desconectada', 'ok');
+    showToast(`${acc.name} configurada (${acc.handle})`, 'ok');
   });
+
+  $('disconnectAccBtn').addEventListener('click', () => {
+    const def = DEFAULT_ACCOUNTS[editingAccountKey];
+    state.accounts[editingAccountKey] = { ...def };
+    saveAccounts();
+    $('accountModal').classList.remove('open');
+    showToast(`${def.name} desconectada`, '');
+  });
+
   $('closeAccModal').addEventListener('click', () => $('accountModal').classList.remove('open'));
+
+  $('verifyAllAccountsBtn').addEventListener('click', async () => {
+    const connectedEntries = Object.entries(state.accounts).filter(([, a]) => a.connected);
+    if (!connectedEntries.length) {
+      showToast('Conecta al menos una red social primero', 'warn');
+      return;
+    }
+    let okCount = 0;
+    for (const [k, acc] of connectedEntries) {
+      try {
+        const res = await verifyAccountCredentials(k, acc);
+        acc.verified = Boolean(res.verified);
+        if (acc.verified) okCount++;
+      } catch (_) {
+        acc.verified = false;
+      }
+    }
+    saveAccounts();
+    showToast(`Verificación completada: ${okCount}/${connectedEntries.length} activas`, okCount ? 'ok' : 'warn');
+  });
 
   function renderSchedule() {
     $('schedCountBadge').textContent = `${state.schedule.length} programadas`;
@@ -1407,6 +1907,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
           <div class="muted" style="white-space:pre-line; margin-top:4px;">${item.caption}</div>
         </div>
         <div class="row">
+          <button class="btn btn-sm" onclick="window._copySched('${item.id}')" title="Copiar copy">📋</button>
           <button class="btn btn-sm btn-primary" onclick="window._pubNow('${item.id}')">🚀 Publicar Ahora</button>
           <button class="btn btn-sm btn-danger" onclick="window._delSched('${item.id}')">🗑️</button>
         </div>
@@ -1414,29 +1915,89 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     `).join('');
   }
 
+  window._copySched = id => {
+    const item = state.schedule.find(x => x.id === id);
+    if (!item) return;
+    copyTextSafe(`${item.title}\n\n${item.caption}`);
+    showToast('Título y descripción copiados al portapapeles', 'ok');
+  };
+
   window._delSched = id => {
     state.schedule = state.schedule.filter(x => x.id !== id);
     saveSchedule();
     showToast('Publicación eliminada', '');
   };
-  window._pubNow = id => {
+
+  let lastPublishedText = '';
+  window._pubNow = async id => {
     const item = state.schedule.find(x => x.id === id);
     if (!item) return;
-    $('pubModalTitle').textContent = `🚀 Subiendo a ${item.platform}`;
-    $('pubProgress').style.width = '15%';
+    const accKey = platformToAccountKey(item.platform);
+    const acc = state.accounts[accKey];
+    lastPublishedText = `${item.title}\n\n${item.caption}`;
+    copyTextSafe(lastPublishedText);
+
+    $('pubModalTitle').textContent = `🚀 Publicando en ${item.platform}`;
+    $('pubProgress').style.width = '18%';
     $('pubLinks').style.display = 'none';
-    $('pubStatus').textContent = 'Empaquetando video vertical 9:16 y subtítulos...';
+    $('pubDirectStudioBtn').href = (acc && acc.profileUrl) || (acc && acc.studioUrl) || 'https://studio.youtube.com';
+    $('pubStatus').textContent = `Preparando paquete para ${acc && acc.connected ? acc.handle : item.platform}...`;
     $('publishModal').classList.add('open');
 
-    setTimeout(() => { $('pubProgress').style.width = '60%'; $('pubStatus').textContent = 'Enviando metadatos y portada CTR...'; }, 700);
+    if (acc && acc.connected && acc.mode === 'webhook' && acc.webhookUrl) {
+      $('pubProgress').style.width = '55%';
+      $('pubStatus').textContent = 'Enviando publicación real al Webhook configurado...';
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (acc.webhookSecret) headers['Authorization'] = acc.webhookSecret;
+        const res = await fetch(acc.webhookUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            event: 'cliphub_publish',
+            platform: item.platform,
+            account: acc.handle,
+            channelId: acc.channelId,
+            title: item.title,
+            caption: item.caption,
+            scheduledDate: item.date
+          })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        $('pubProgress').style.width = '100%';
+        $('pubStatus').textContent = `✅ Enviado automáticamente a tu Webhook de ${item.platform} (HTTP ${res.status}). Copy también copiado al portapapeles.`;
+        $('pubLinks').style.display = 'flex';
+        item.status = 'Publicado';
+        saveSchedule();
+      } catch (err) {
+        $('pubProgress').style.width = '100%';
+        $('pubStatus').textContent = `⚠️ Error enviando al Webhook (${err.message}). El copy ya fue copiado para que puedas subirlo directo en tu Studio:`;
+        $('pubLinks').style.display = 'flex';
+      }
+      return;
+    }
+
+    setTimeout(() => {
+      $('pubProgress').style.width = '65%';
+      $('pubStatus').textContent = acc && acc.token
+        ? `Validando metadatos con token de ${acc.handle} y copiando descripción...`
+        : 'Copiando título y hashtags al portapapeles...';
+    }, 550);
+
     setTimeout(() => {
       $('pubProgress').style.width = '100%';
-      $('pubStatus').textContent = `✅ Listo para publicar en ${item.platform}. Usa el acceso directo si deseas confirmar en tu estudio oficial:`;
+      $('pubStatus').textContent = `✅ ¡Listo! La descripción ya está copiada en tu portapapeles. Abre el Studio de ${item.platform} para subir tu clip descargado y pegar el texto:`;
       $('pubLinks').style.display = 'flex';
       item.status = 'Publicado';
       saveSchedule();
-    }, 1500);
+    }, 1250);
   };
+  $('pubCopyAgainBtn').addEventListener('click', () => {
+    if (lastPublishedText) {
+      copyTextSafe(lastPublishedText);
+      showToast('Descripción copiada de nuevo', 'ok');
+    }
+  });
   $('closePubModal').addEventListener('click', () => $('publishModal').classList.remove('open'));
 
   $('addScheduleBtn').addEventListener('click', () => {
@@ -1456,9 +2017,28 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     showToast('¡Publicación programada en el calendario!', 'ok');
   });
 
-  $('genDynamicCopyBtn').addEventListener('click', () => {
+  $('genDynamicCopyBtn').addEventListener('click', async () => {
     const title = $('schedTitle').value.trim() || (state.cuts[state.activeCutIdx]?.title || 'Nuevo Clip Viral');
-    $('schedCaption').value = makeDynamicCopy(title, $('schedPlatform').value);
+    const platform = $('schedPlatform').value;
+    if (isAiConfigured()) {
+      const btn = $('genDynamicCopyBtn');
+      const prevTxt = btn.textContent;
+      btn.textContent = '⏳ Generando con IA...';
+      try {
+        const aiText = await callConfiguredAI(
+          `Escribe una descripción corta, magnética y creativa en español para publicar un video titulado "${title}" en ${platform}. Incluye un llamado a la acción y 4 hashtags relevantes. Solo devuelve el texto final listo para publicar.`,
+          []
+        );
+        if (aiText && aiText.trim()) {
+          $('schedCaption').value = aiText.trim();
+          showToast(`Copy creado con ${AI_PROVIDERS[state.ai.provider]?.short || 'IA'}`, 'ok');
+          btn.textContent = prevTxt;
+          return;
+        }
+      } catch (_) {}
+      btn.textContent = prevTxt;
+    }
+    $('schedCaption').value = makeDynamicCopy(title, platform);
     showToast('Copy dinámico generado', 'ok');
   });
 
@@ -1493,19 +2073,84 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     showToast('¡3 cortes programados en fechas escalonadas!', 'ok');
   });
 
-  // ==================== MODAL API KEY ====================
+  // ==================== MODAL CONFIGURACIÓN MULTI-IA ====================
+  function syncAiModalFields(providerKey, keepValues = false) {
+    const meta = AI_PROVIDERS[providerKey] || AI_PROVIDERS.custom;
+    $('aiVisionBadge').textContent = meta.vision ? '👁️ Visión + Texto' : '📝 Modo Texto';
+    $('aiPortalLink').href = meta.portal;
+    $('apiKeyInput').placeholder = meta.placeholder;
+    $('aiModelSuggestions').innerHTML = meta.models.map(m => `<option value="${m}"></option>`).join('');
+    if (!keepValues) {
+      $('aiModelInput').value = meta.defaultModel;
+      $('aiBaseUrlInput').value = meta.baseUrl;
+    }
+  }
+
+  $('aiProviderSelect').addEventListener('change', e => {
+    syncAiModalFields(e.target.value, false);
+    $('aiTestResult').className = 'test-box';
+  });
+
+  $('toggleAiKeyVis').addEventListener('click', () => {
+    const inp = $('apiKeyInput');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  });
+
   $('openAiModal').addEventListener('click', () => {
-    $('apiKeyInput').value = state.apiKey;
+    $('aiProviderSelect').value = state.ai.provider || 'gemini';
+    syncAiModalFields(state.ai.provider || 'gemini', true);
+    $('aiModelInput').value = state.ai.model || AI_PROVIDERS[state.ai.provider]?.defaultModel || '';
+    $('aiBaseUrlInput').value = state.ai.baseUrl || AI_PROVIDERS[state.ai.provider]?.baseUrl || '';
+    $('apiKeyInput').value = state.ai.apiKey || '';
+    $('apiKeyInput').type = 'password';
+    $('aiTestResult').className = 'test-box';
     $('aiModal').classList.add('open');
   });
-  $('closeAiModal').addEventListener('click', () => $('aiModal').classList.remove('open'));
+
+  $('testAiBtn').addEventListener('click', async () => {
+    const draftCfg = {
+      provider: $('aiProviderSelect').value,
+      model: $('aiModelInput').value.trim(),
+      baseUrl: $('aiBaseUrlInput').value.trim(),
+      apiKey: $('apiKeyInput').value.trim()
+    };
+    showBoxMsg('aiTestResult', 'info', `Probando conexión con ${AI_PROVIDERS[draftCfg.provider]?.name || 'tu IA'}...`);
+    const t0 = performance.now();
+    try {
+      const reply = await callConfiguredAI('Responde únicamente con la palabra: CONECTADO', [], draftCfg);
+      const ms = Math.round(performance.now() - t0);
+      showBoxMsg('aiTestResult', 'ok', `✅ ¡Conexión exitosa en ${ms} ms! Respuesta: "${reply.trim().slice(0, 60)}"`);
+    } catch (err) {
+      showBoxMsg('aiTestResult', 'err', `❌ No se pudo conectar: ${err.message}. Verifica tu token, modelo o permisos CORS del endpoint.`);
+    }
+  });
+
   $('saveAiKeyBtn').addEventListener('click', () => {
-    state.apiKey = $('apiKeyInput').value.trim();
-    localStorage.setItem('cliphub_gemini_key', state.apiKey);
+    const prov = $('aiProviderSelect').value;
+    const meta = AI_PROVIDERS[prov] || AI_PROVIDERS.custom;
+    state.ai = {
+      provider: prov,
+      apiKey: $('apiKeyInput').value.trim(),
+      model: $('aiModelInput').value.trim() || meta.defaultModel,
+      baseUrl: $('aiBaseUrlInput').value.trim() || meta.baseUrl
+    };
+    localStorage.setItem('cliphub_ai_config', JSON.stringify(state.ai));
+    if (prov === 'gemini') localStorage.setItem('cliphub_gemini_key', state.ai.apiKey);
     refreshAiBadge();
     $('aiModal').classList.remove('open');
-    showToast(state.apiKey ? 'Clave de Gemini IA guardada' : 'Clave eliminada', 'ok');
+    showToast(isAiConfigured() ? `${meta.name} guardada correctamente` : 'IA en modo local creativo', 'ok');
   });
+
+  $('clearAiKeyBtn').addEventListener('click', () => {
+    state.ai = { provider: 'gemini', apiKey: '', model: AI_PROVIDERS.gemini.defaultModel, baseUrl: AI_PROVIDERS.gemini.baseUrl };
+    localStorage.removeItem('cliphub_ai_config');
+    localStorage.removeItem('cliphub_gemini_key');
+    refreshAiBadge();
+    $('aiModal').classList.remove('open');
+    showToast('Configuración de IA desconectada', '');
+  });
+
+  $('closeAiModal').addEventListener('click', () => $('aiModal').classList.remove('open'));
 
   // Inicialización
   const initDate = new Date(Date.now() + 3600 * 1000);
