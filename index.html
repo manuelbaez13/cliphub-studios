@@ -103,8 +103,9 @@
     .frames-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 10px; }
     .frame-box {
       position: relative; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden;
-      background: #050811; border: 1px solid var(--border);
+      background: #050811; border: 1px solid var(--border); cursor: pointer;
     }
+    .frame-box:hover { border-color: var(--accent); }
     .frame-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .frame-ts {
       position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,.78);
@@ -119,6 +120,7 @@
     #previewCanvas {
       width: 100%; max-width: 310px; aspect-ratio: 9/16; background: #000;
       border-radius: 12px; box-shadow: 0 12px 35px rgba(0,0,0,.55);
+      touch-action: none;
     }
     #previewCanvas.landscape { max-width: 100%; aspect-ratio: 16/9; }
 
@@ -163,6 +165,19 @@
     .progress-bar { width: 100%; height: 10px; background: #09101f; border-radius: 999px; overflow: hidden; margin: 12px 0; }
     .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width .25s; }
     .muted { color: var(--muted); font-size: 0.84rem; }
+
+    /* Toast Notification (sin alert()) */
+    #toastBox {
+      position: fixed; bottom: 20px; right: 20px; z-index: 200;
+      padding: 11px 16px; border-radius: 12px; font-size: 0.85rem; font-weight: 700;
+      background: #10203a; border: 1px solid var(--accent); color: #e0f2fe;
+      box-shadow: 0 12px 30px rgba(0,0,0,.55);
+      opacity: 0; transform: translateY(16px); pointer-events: none; transition: .25s;
+    }
+    #toastBox.show { opacity: 1; transform: translateY(0); }
+    #toastBox.ok { background: #064e3b; border-color: var(--green); color: #d1fae5; }
+    #toastBox.warn { background: #451a03; border-color: var(--amber); color: #fef3c7; }
+
     /* Video fuente oculto visualmente pero decodificado por GPU (evita frames negros) */
     #sourceVideo {
       position: fixed; bottom: 0; right: 0; width: 320px; height: 180px;
@@ -188,7 +203,7 @@
   </button>
 </header>
 
-<video id="sourceVideo" playsinline crossorigin="anonymous"></video>
+<video id="sourceVideo" playsinline preload="auto" crossorigin="anonymous"></video>
 
 <main>
   <!-- ==================== TAB 1: ESTUDIO DE CORTES ==================== -->
@@ -244,7 +259,7 @@
           <canvas id="previewCanvas" width="540" height="960"></canvas>
           <div class="row" style="width:100%; justify-content:center;">
             <button class="btn btn-primary btn-sm" id="playPauseBtn">▶ Reproducir</button>
-            <button class="btn btn-sm" id="loopCutBtn">🔁 Loop Corte</button>
+            <button class="btn btn-sm" id="loopCutBtn" style="border-color: var(--green);">🔁 Loop Corte</button>
             <select id="aspectSelect" style="width:auto; padding:6px 8px;">
               <option value="9:16">9:16 Vertical</option>
               <option value="16:9">16:9 Horizontal</option>
@@ -298,6 +313,10 @@
           <textarea id="subsTextarea" rows="4" placeholder="Escribe o edita las frases del corte..."></textarea>
           <div class="row" style="margin-top:8px;">
             <button class="btn btn-sm btn-primary" id="applySubsBtn">✅ Aplicar y Cubrir Todo el Corte</button>
+            <label style="display:flex; align-items:center; gap:6px; margin:0; cursor:pointer;">
+              <input type="checkbox" id="showSubsCheck" checked style="width:auto;" />
+              Mostrar subtítulos en vivo
+            </label>
           </div>
         </div>
 
@@ -387,6 +406,9 @@
   </section>
 </main>
 
+<!-- Toast de mensajes -->
+<div id="toastBox"></div>
+
 <!-- Modal API Key -->
 <div class="modal-bg" id="aiModal">
   <div class="modal">
@@ -435,9 +457,9 @@
     <div id="pubStatus" class="muted">Preparando paquete de video y metadatos...</div>
     <div class="progress-bar"><div class="progress-fill" id="pubProgress"></div></div>
     <div id="pubLinks" class="row" style="margin-top:12px; display:none;">
-      <a class="btn btn-sm btn-primary" href="https://studio.youtube.com" target="_blank" style="text-decoration:none;">Abrir YouTube Studio</a>
-      <a class="btn btn-sm btn-amber" href="https://business.facebook.com/latest/home" target="_blank" style="text-decoration:none;">Meta Business</a>
-      <a class="btn btn-sm btn-green" href="https://www.tiktok.com/creator-center/upload" target="_blank" style="text-decoration:none;">TikTok Upload</a>
+      <a class="btn btn-sm btn-primary" href="https://studio.youtube.com" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">Abrir YouTube Studio</a>
+      <a class="btn btn-sm btn-amber" href="https://business.facebook.com/latest/home" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">Meta Business</a>
+      <a class="btn btn-sm btn-green" href="https://www.tiktok.com/creator-center/upload" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">TikTok Upload</a>
     </div>
     <div class="row" style="margin-top:14px; justify-content:flex-end;">
       <button class="btn" id="closePubModal">Cerrar</button>
@@ -454,8 +476,7 @@
     apiKey: localStorage.getItem('cliphub_gemini_key') || '',
     videoName: 'video_demo',
     duration: 0,
-    isDemo: false,
-    frames: [], // [{time, dataUrl}]
+    frames: [],
     cuts: [],
     activeCutIdx: -1,
     startTime: 0,
@@ -463,9 +484,11 @@
     loopCut: true,
     aspect: '9:16',
     subStyle: 'viral',
-    subtitles: [], // [{start, end, text}]
+    showSubs: true,
+    subtitles: [],
     pngImg: null,
     pngProcessed: null,
+    draggingPng: false,
     thumbnails: [],
     creativeSeed: 0,
     accounts: JSON.parse(localStorage.getItem('cliphub_accounts') || JSON.stringify({
@@ -479,6 +502,16 @@
   const video = $('sourceVideo');
   const canvas = $('previewCanvas');
   const ctx = canvas.getContext('2d');
+
+  // ==================== TOAST (SIN ALERT) ====================
+  let toastTimer = null;
+  function showToast(msg, type = '') {
+    const box = $('toastBox');
+    box.textContent = msg;
+    box.className = 'show' + (type ? ' ' + type : '');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { box.className = ''; }, 3200);
+  }
 
   // ==================== UTILIDADES ====================
   function fmtTime(sec) {
@@ -547,19 +580,20 @@
         g.fillStyle = grad;
         g.fillRect(0, 0, 640, 360);
 
-        // Sol / esfera brillante
         g.fillStyle = '#fbbf24';
         g.beginPath();
         g.arc(160 + t * 80, 145 + Math.sin(t * 2.5) * 28, 44, 0, Math.PI * 2);
         g.fill();
 
-        // Montañas y agua
         g.fillStyle = '#0f172a';
-        g.beginPath(); g.moveTo(0, 265); g.lineTo(190, 160); g.lineTo(380, 265); g.lineTo(540, 175); g.lineTo(640, 265); g.lineTo(640, 360); g.lineTo(0, 360); g.fill();
+        g.beginPath();
+        g.moveTo(0, 265); g.lineTo(190, 160); g.lineTo(380, 265);
+        g.lineTo(540, 175); g.lineTo(640, 265); g.lineTo(640, 360); g.lineTo(0, 360);
+        g.fill();
+
         g.fillStyle = 'rgba(56,189,248,0.35)';
         g.fillRect(0, 265, 640, 95);
 
-        // Etiqueta animada
         g.fillStyle = '#fff';
         g.font = 'bold 28px Segoe UI';
         g.fillText(`ESCENA ${Math.min(3, Math.floor(t / 1.4) + 1)} • DEMO CLIPHUB`, 145, 70);
@@ -587,6 +621,7 @@
       $('endInput').value = state.endTime.toFixed(1);
       $('seekBar').max = state.duration;
       updateCutRangeLabel();
+      showToast(`Video "${state.videoName}" cargado`, 'ok');
       if ($('autoAnalyzeCheck').checked) {
         await runFullAnalysis();
       }
@@ -607,15 +642,19 @@
 
   // ==================== EXTRACCIÓN SEGURA DE FOTOGRAMAS (SIN CUADROS NEGROS) ====================
   function isFrameMostlyBlack(c) {
-    const g = c.getContext('2d');
-    const data = g.getImageData(0, 0, c.width, c.height).data;
-    let sum = 0;
-    const step = 4 * 16;
-    for (let i = 0; i < data.length; i += step) {
-      sum += data[i] + data[i + 1] + data[i + 2];
+    try {
+      const g = c.getContext('2d');
+      const data = g.getImageData(0, 0, c.width, c.height).data;
+      let sum = 0;
+      const step = 4 * 16;
+      for (let i = 0; i < data.length; i += step) {
+        sum += data[i] + data[i + 1] + data[i + 2];
+      }
+      const avg = sum / (data.length / step);
+      return avg < 12;
+    } catch (_) {
+      return false;
     }
-    const avg = sum / (data.length / step);
-    return avg < 12;
   }
 
   async function seekAndCapture(t) {
@@ -625,9 +664,8 @@
       const finish = () => { if (!done) { done = true; resolve(); } };
       video.addEventListener('seeked', finish, { once: true });
       video.currentTime = target;
-      setTimeout(finish, 900);
+      setTimeout(finish, 950);
     });
-    // Esperar 2 frames de pintado real en GPU
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
     const c = document.createElement('canvas');
@@ -665,20 +703,27 @@
     if (!wasPaused) video.play().catch(() => {});
 
     state.frames = results;
-    $('framesStrip').innerHTML = results.map(f => `
-      <div class="frame-box">
-        <img src="${f.dataUrl}" alt="Fotograma ${fmtTime(f.time)}" />
+    $('framesStrip').innerHTML = results.map((f, idx) => `
+      <div class="frame-box" data-frame-time="${f.time}" title="Saltar a ${fmtTime(f.time)}">
+        <img src="${f.dataUrl}" alt="Fotograma ${idx + 1}" />
         <span class="frame-ts">${fmtTime(f.time)}</span>
       </div>
     `).join('');
+
+    document.querySelectorAll('.frame-box[data-frame-time]').forEach(box => {
+      box.addEventListener('click', () => {
+        video.currentTime = Number(box.dataset.frameTime);
+      });
+    });
+
     setStep(1, 'done', `${results.length} fotogramas reales`);
   }
 
-  // ==================== MOTOR CREATIVO DE CORTES, SUBTÍTULOS Y COPYS ====================
+  // ==================== BANCO CREATIVO VARIADO (NUNCA REPETITIVO) ====================
   const CREATIVE_BANK = [
     {
       titles: ['El giro que cambia toda la historia', 'Nadie esperaba este segundo exacto', 'El detalle oculto que lo explica todo'],
-      hooks: ['¡MIRA ESTO!', 'NO LO CREERÁS', 'EL SECRETO'],
+      hooks: ['¡GIRO TOTAL!', 'NO LO CREERÁS', 'EL SECRETO'],
       badges: ['MOMENTO CLAVE', 'ALTO IMPACTO', 'VIRAL 98%'],
       subs: [
         ['Quédate hasta el final porque aquí pasa algo increíble', 'Fíjate bien en este detalle que casi todos pasan por alto', 'Justo en este segundo la historia da un giro total', '¿Tú también lo viste? Déjamelo en los comentarios'],
@@ -687,13 +732,23 @@
       ]
     },
     {
-      titles: ['La escena más intensa en 15 segundos', 'Por qué todos están hablando de esto', 'El clímax que dispara la retención'],
-      hooks: ['¡INCREÍBLE!', 'PASÓ ESTO...', 'BRUTAL 🔥'],
-      badges: ['RETENCIÓN TOP', 'RECOMENDADO', 'EXCLUSIVO'],
+      titles: ['La escena más intensa en pocos segundos', 'Por qué todos están hablando de esto', 'El clímax que dispara la retención'],
+      hooks: ['¡IMPACTO REAL!', 'PASÓ ESTO...', 'BRUTAL 🔥'],
+      badges: ['RETENCIÓN TOP', 'DEBATE VIRAL', 'EXCLUSIVO'],
       subs: [
         ['No parpadees durante los próximos cinco segundos', 'Todo lo que pasó antes llevaba directo a este momento', 'La reacción aquí es simplemente espectacular', 'Dale like si quieres más momentos así de épicos'],
         ['Muchos lo intentan, pero pocos logran este resultado', 'Observa la precisión en cada cuadro de esta toma', 'Ese remate final hace que quieras verlo en bucle', 'Cuéntame qué puntuación le das del 1 al 10'],
         ['Este instante vale oro para tu próximo Short', 'Arranca con fuerza desde el primer segundo sin pausas', 'Mantén la intriga viva hasta el último instante', 'Activa la campanita para no perderte el próximo episodio']
+      ]
+    },
+    {
+      titles: ['Lo que ocurre justo antes del desenlace', 'El contraste visual que atrapa la mirada', 'Cierre dinámico listo para publicar hoy'],
+      hooks: ['SIN FILTROS', '¿QUÉ HARÍAS?', 'PURA ACCIÓN'],
+      badges: ['ESTRENO', 'TENDENCIA', 'TOP CTR'],
+      subs: [
+        ['Parece una toma tranquila durante dos segundos', 'Pero la energía sube de golpe sin avisar', 'Ese contraste visual retiene hasta el final', 'Compártelo con alguien que disfrute este tema'],
+        ['Aquí está la pieza que conecta toda la idea', 'Cada palabra acompaña el movimiento del video', 'Así conviertes un video largo en tres Shorts potentes', 'Déjame tu veredicto abajo en los comentarios'],
+        ['Cerramos con el fragmento de mayor dinamismo', 'Ritmo ágil, titular fuerte y lectura instantánea', 'Perfecto para programar en horario pico hoy', '¿Cuál de los tres cortes fue tu favorito?']
       ]
     }
   ];
@@ -709,7 +764,7 @@
         title: pack.titles[i],
         hookText: pack.hooks[i],
         badge: pack.badges[i],
-        score: 96 - i * 3,
+        score: 97 - i * 2,
         start: s,
         end: e > s + 1 ? e : d,
         frameIdx: Math.min(state.frames.length - 1, i === 0 ? 0 : i === 1 ? 2 : 4),
@@ -722,7 +777,7 @@
     if (!state.apiKey) return null;
     const prompt = `Eres director creativo de videos virales (Shorts/Reels/TikTok).
 Analiza estos fotogramas del video "${state.videoName}" (duración ${state.duration.toFixed(1)} segundos).
-Crea 3 cortes DISTINTOS, creativos y NO repetitivos.
+Crea 3 cortes DISTINTOS, muy creativos y SIN repetir frases ni ganchos.
 Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exacta:
 {"cuts":[{"title":"título creativo","hookText":"2-3 PALABRAS IMPACTO","badge":"ETIQUETA CORTA","score":95,"start":0,"end":5,"frameIdx":0,"lines":["frase 1","frase 2","frase 3","frase 4"]}]}`;
 
@@ -731,7 +786,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
       parts.push({ inline_data: { mime_type: 'image/jpeg', data: f.dataUrl.split(',')[1] } });
     });
 
-    const models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+    const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     for (const model of models) {
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(state.apiKey)}`, {
@@ -742,17 +797,17 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
         if (!res.ok) continue;
         const json = await res.json();
         const raw = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const cleaned = raw.replace(/```json|```/gi, '').trim();
+        const cleaned = raw.replace(/\x60\x60\x60json|\x60\x60\x60/gi, '').trim();
         const parsed = JSON.parse(cleaned);
         if (Array.isArray(parsed.cuts) && parsed.cuts.length >= 1) {
           return parsed.cuts.slice(0, 3).map((c, i) => ({
             title: c.title || `Momento Viral #${i + 1}`,
             hookText: (c.hookText || '¡MIRA ESTO!').toUpperCase(),
             badge: (c.badge || 'TOP CTR').toUpperCase(),
-            score: Number(c.score) || 92,
+            score: Number(c.score) || 94,
             start: Math.max(0, Math.min(state.duration - 1, Number(c.start) || 0)),
             end: Math.max(1, Math.min(state.duration, Number(c.end) || state.duration)),
-            frameIdx: Math.min(state.frames.length - 1, Number(c.frameIdx) || i),
+            frameIdx: Math.min(state.frames.length - 1, Math.max(0, Number(c.frameIdx) || i)),
             lines: Array.isArray(c.lines) && c.lines.length ? c.lines : CREATIVE_BANK[0].subs[i]
           }));
         }
@@ -769,7 +824,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     const step = span / clean.length;
     return clean.map((text, idx) => ({
       start: start + idx * step,
-      end: start + (idx + 1) * step,
+      end: idx === clean.length - 1 ? end : start + (idx + 1) * step,
       text
     }));
   }
@@ -806,11 +861,14 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
       </div>
     `).join('');
     document.querySelectorAll('.cut-item').forEach(el => {
-      el.addEventListener('click', () => loadCutIntoPlayer(Number(el.dataset.cut), true));
+      el.addEventListener('click', () => {
+        loadCutIntoPlayer(Number(el.dataset.cut), true);
+        showToast(`Reproduciendo Corte #${Number(el.dataset.cut) + 1} con subtítulos`, 'ok');
+      });
     });
   }
 
-  // ==================== MINIATURAS CREATIVAS (3 ESTILOS DISTINTOS) ====================
+  // ==================== MINIATURAS CREATIVAS (4 ESTILOS DISTINTOS) ====================
   async function createCreativeThumbnail(cut, idx) {
     const c = document.createElement('canvas');
     c.width = 1280; c.height = 720;
@@ -822,40 +880,38 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
         const im = new Image(); im.onload = () => res(im); im.src = frameObj.dataUrl;
       });
       g.save();
-      g.filter = idx === 0 ? 'contrast(1.18) saturate(1.25)' : idx === 1 ? 'contrast(1.25) brightness(0.92) saturate(1.35)' : 'contrast(1.15) saturate(1.4)';
+      g.filter = idx === 0 ? 'contrast(1.18) saturate(1.28)' : idx === 1 ? 'contrast(1.25) brightness(0.92) saturate(1.38)' : 'contrast(1.16) saturate(1.42)';
       g.drawImage(img, 0, 0, 1280, 720);
       g.restore();
     } else {
       g.fillStyle = '#0f172a'; g.fillRect(0, 0, 1280, 720);
     }
 
-    const styleVariant = (idx + state.creativeSeed) % 3;
+    const styleVariant = (idx + state.creativeSeed) % 4;
 
     if (styleVariant === 0) {
-      // Estilo 1: Cine Impacto (Degradado lateral dorado/oscuro + texto dividido)
+      // Estilo 1: Cine Impacto
       const grad = g.createLinearGradient(0, 0, 1280, 720);
-      grad.addColorStop(0, 'rgba(6,10,22,0.85)');
+      grad.addColorStop(0, 'rgba(6,10,22,0.86)');
       grad.addColorStop(0.55, 'rgba(6,10,22,0.22)');
-      grad.addColorStop(1, 'rgba(245,158,11,0.38)');
+      grad.addColorStop(1, 'rgba(245,158,11,0.40)');
       g.fillStyle = grad; g.fillRect(0, 0, 1280, 720);
 
-      // Insignia superior
       g.fillStyle = '#f59e0b';
       drawRoundRect(g, 56, 52, 340, 56, 14); g.fill();
       g.fillStyle = '#090d16'; g.font = '900 28px Segoe UI';
       g.fillText(`⚡ ${cut.badge}`, 78, 90);
 
-      // Título gigante
       g.font = '900 104px Impact, Segoe UI';
       g.lineWidth = 14; g.strokeStyle = '#050811';
-      g.strokeText(cut.hookText, 56, 560);
-      g.fillStyle = '#ffffff'; g.fillText(cut.hookText, 56, 560);
+      g.strokeText(cut.hookText, 56, 560, 1160);
+      g.fillStyle = '#ffffff'; g.fillText(cut.hookText, 56, 560, 1160);
 
       g.font = '800 44px Segoe UI';
-      g.strokeText(cut.title.slice(0, 38), 56, 632);
-      g.fillStyle = '#fde047'; g.fillText(cut.title.slice(0, 38), 56, 632);
+      g.strokeText(cut.title.slice(0, 38), 56, 632, 1160);
+      g.fillStyle = '#fde047'; g.fillText(cut.title.slice(0, 38), 56, 632, 1160);
     } else if (styleVariant === 1) {
-      // Estilo 2: Misterio CTR (Viñeta radial + marco neón cian + tarjeta inclinada)
+      // Estilo 2: Misterio Neón CTR
       const rad = g.createRadialGradient(640, 340, 140, 640, 360, 760);
       rad.addColorStop(0, 'rgba(0,0,0,0.05)');
       rad.addColorStop(1, 'rgba(4,9,24,0.88)');
@@ -869,7 +925,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
       g.fillStyle = '#0ea5e9';
       drawRoundRect(g, -460, -70, 920, 128, 22); g.fill();
       g.fillStyle = '#ffffff'; g.font = '900 84px Impact, Segoe UI'; g.textAlign = 'center';
-      g.fillText(cut.hookText, 0, 22);
+      g.fillText(cut.hookText, 0, 22, 860);
       g.restore();
 
       g.fillStyle = '#ef4444';
@@ -877,11 +933,11 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
       g.fillStyle = '#fff'; g.font = '900 26px Segoe UI'; g.textAlign = 'center';
       g.fillText(`🔥 ${cut.badge}`, 1055, 88);
       g.textAlign = 'left';
-    } else {
-      // Estilo 3: Viral Pop (Banda inferior degradada violeta + sticker llamativo)
+    } else if (styleVariant === 2) {
+      // Estilo 3: Viral Pop Violeta
       const bGrad = g.createLinearGradient(0, 340, 0, 720);
       bGrad.addColorStop(0, 'rgba(0,0,0,0)');
-      bGrad.addColorStop(1, 'rgba(88,28,135,0.92)');
+      bGrad.addColorStop(1, 'rgba(88,28,135,0.94)');
       g.fillStyle = bGrad; g.fillRect(0, 340, 1280, 380);
 
       g.save();
@@ -895,12 +951,31 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
       g.textAlign = 'center';
       g.font = '900 108px Impact, Segoe UI';
       g.lineWidth = 14; g.strokeStyle = '#090d16';
-      g.strokeText(cut.hookText, 640, 585);
-      g.fillStyle = '#facc15'; g.fillText(cut.hookText, 640, 585);
+      g.strokeText(cut.hookText, 640, 585, 1160);
+      g.fillStyle = '#facc15'; g.fillText(cut.hookText, 640, 585, 1160);
 
       g.font = '700 38px Segoe UI';
-      g.fillStyle = '#ffffff'; g.fillText(cut.title.slice(0, 44), 640, 655);
+      g.fillStyle = '#ffffff'; g.fillText(cut.title.slice(0, 44), 640, 655, 1160);
       g.textAlign = 'left';
+    } else {
+      // Estilo 4: Editorial Fuego (Contraste Rojo/Negro)
+      const grad = g.createLinearGradient(0, 260, 0, 720);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, 'rgba(127,29,29,0.92)');
+      g.fillStyle = grad; g.fillRect(0, 260, 1280, 460);
+
+      g.fillStyle = '#ffffff';
+      drawRoundRect(g, 56, 48, 360, 58, 12); g.fill();
+      g.fillStyle = '#991b1b'; g.font = '900 28px Segoe UI';
+      g.fillText(`★ ${cut.badge}`, 80, 88);
+
+      g.font = '900 106px Impact, Segoe UI';
+      g.lineWidth = 14; g.strokeStyle = '#050811';
+      g.strokeText(cut.hookText, 56, 565, 1160);
+      g.fillStyle = '#fb923c'; g.fillText(cut.hookText, 56, 565, 1160);
+
+      g.font = '800 42px Segoe UI';
+      g.fillStyle = '#f8fafc'; g.fillText(cut.title.slice(0, 42), 56, 640, 1160);
     }
 
     return c.toDataURL('image/png');
@@ -920,13 +995,14 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
 
   function renderThumbnailsGrid() {
     if (!state.thumbnails.length) return;
+    const styleNames = ['Cine Impacto', 'Misterio Neón', 'Viral Pop', 'Editorial Fuego'];
     $('thumbsGrid').innerHTML = state.thumbnails.map((t, i) => `
       <div class="thumb-card">
         <img src="${t.dataUrl}" alt="Miniatura ${i + 1}" />
         <div class="thumb-body">
           <div class="row" style="justify-content:space-between; margin-bottom:6px;">
             <strong>Corte #${i + 1}: ${t.hook}</strong>
-            <span class="badge amber">Estilo ${((i + state.creativeSeed) % 3) + 1}</span>
+            <span class="badge amber">${styleNames[(i + state.creativeSeed) % 4]}</span>
           </div>
           <p class="muted" style="margin-bottom:10px;">${t.title}</p>
           <div class="row">
@@ -946,6 +1022,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
   async function runFullAnalysis() {
     if (!video.src) {
       $('pipelineMsg').textContent = 'Primero sube un video o pulsa "Cargar Video Demo".';
+      showToast('Sube un video o carga el demo primero', 'warn');
       return;
     }
     $('pipelineMsg').textContent = 'Analizando video, extrayendo fotogramas reales y diseñando miniaturas...';
@@ -954,7 +1031,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     setStep(2, 'run', 'Detectando momentos...');
     const aiCuts = await askGeminiForCuts();
     state.cuts = aiCuts || buildSmartCutsFallback();
-    setStep(2, 'done', `${state.cuts.length} cortes (${aiCuts ? 'Gemini IA' : 'Motor Pro'})`);
+    setStep(2, 'done', `${state.cuts.length} cortes (${aiCuts ? 'Gemini IA' : 'Motor Creativo'})`);
 
     setStep(3, 'run', 'Sincronizando texto...');
     loadCutIntoPlayer(0, true);
@@ -962,11 +1039,15 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
 
     await buildAllThumbnails();
     $('pipelineMsg').textContent = '✅ ¡Todo listo! Reproduce el video para ver los subtítulos en vivo, revisa tus miniaturas creativas o programa tus fechas.';
+    showToast('¡Cortes, subtítulos en vivo y 3 miniaturas listos!', 'ok');
   }
 
   $('analyzeBtn').addEventListener('click', runFullAnalysis);
   $('regenThumbsBtn').addEventListener('click', async () => {
-    if (!state.cuts.length) return;
+    if (!state.cuts.length) {
+      showToast('Analiza un video primero en Estudio de Cortes', 'warn');
+      return;
+    }
     state.creativeSeed++;
     const fresh = buildSmartCutsFallback();
     state.cuts.forEach((c, i) => {
@@ -976,11 +1057,12 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     });
     renderCutsList();
     await buildAllThumbnails();
+    showToast('¡Nuevos estilos y titulares creativos aplicados!', 'ok');
   });
 
-  // ==================== MOTOR DE RENDER EN VIVO (VIDEO + PNG + SUBTÍTULOS) ====================
+  // ==================== MOTOR DE RENDER EN VIVO (VIDEO + PNG + SUBTÍTULOS ANIMADOS) ====================
   function wrapText(c, text, maxW) {
-    const words = text.split(' ');
+    const words = text.split(/\s+/).filter(Boolean);
     const lines = [];
     let cur = '';
     for (const w of words) {
@@ -994,28 +1076,35 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
   }
 
   function drawSubtitleOverlay(c, w, h, now) {
-    const active = state.subtitles.find(s => now >= s.start && now <= s.end) ||
-                   (now >= state.startTime && now <= state.endTime ? state.subtitles[state.subtitles.length - 1] : null);
-    if (!active) return;
+    if (!state.showSubs || !state.subtitles.length) return;
+    let active = state.subtitles.find(s => now >= s.start && now <= s.end);
+    if (!active) {
+      if (now < state.subtitles[0].start) active = state.subtitles[0];
+      else active = state.subtitles[state.subtitles.length - 1];
+    }
+    if (!active || !active.text) return;
 
     const fontSize = state.aspect === '9:16' ? 34 : 38;
     c.save();
     c.font = `900 ${fontSize}px Segoe UI, Impact, sans-serif`;
     c.textAlign = 'center';
+    c.textBaseline = 'middle';
+
     const lines = wrapText(c, active.text.toUpperCase(), w * 0.86);
-    const lineH = fontSize * 1.24;
+    const lineH = fontSize * 1.28;
     const baseY = h * 0.78 - ((lines.length - 1) * lineH) / 2;
 
     lines.forEach((line, idx) => {
       const y = baseY + idx * lineH;
       if (state.subStyle === 'box') {
-        const tw = c.measureText(line).width + 28;
+        const tw = c.measureText(line).width + 30;
         c.fillStyle = 'rgba(255,255,255,0.95)';
-        drawRoundRect(c, w / 2 - tw / 2, y - fontSize * 0.85, tw, fontSize * 1.15, 10);
+        drawRoundRect(c, w / 2 - tw / 2, y - fontSize * 0.62, tw, fontSize * 1.22, 10);
         c.fill();
         c.fillStyle = '#090d16';
         c.fillText(line, w / 2, y);
       } else {
+        c.lineJoin = 'round';
         c.lineWidth = 8;
         c.strokeStyle = '#050811';
         c.strokeText(line, w / 2, y);
@@ -1032,7 +1121,6 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     ctx.fillRect(0, 0, w, h);
 
     if (video.readyState >= 2 && video.videoWidth > 0) {
-      // Encuadre cover centrado
       const vr = video.videoWidth / video.videoHeight;
       const cr = w / h;
       let sx = 0, sy = 0, sw = video.videoWidth, sh = video.videoHeight;
@@ -1045,7 +1133,6 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
       }
       ctx.drawImage(video, sx, sy, sw, sh, 0, 0, w, h);
 
-      // Loop dentro del corte
       if (!video.paused && state.loopCut && video.currentTime >= state.endTime) {
         video.currentTime = state.startTime;
       }
@@ -1053,7 +1140,6 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
       $('timeNow').textContent = fmtTime(video.currentTime);
     }
 
-    // PNG sin fondo
     if (state.pngProcessed) {
       const scale = Number($('pngScale').value) / 100;
       const pw = w * scale;
@@ -1063,15 +1149,32 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
       ctx.drawImage(state.pngProcessed, px, py, pw, ph);
     }
 
-    // Subtítulos en vivo SIEMPRE visibles
     drawSubtitleOverlay(ctx, w, h, video.currentTime);
     requestAnimationFrame(renderFrameLoop);
   }
   requestAnimationFrame(renderFrameLoop);
 
+  // Arrastrar PNG directamente sobre el canvas (mouse y táctil)
+  function movePngFromEvent(e) {
+    if (!state.draggingPng || !state.pngProcessed) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    const xPct = Math.max(5, Math.min(95, Math.round(((cx - rect.left) / rect.width) * 100)));
+    const yPct = Math.max(5, Math.min(95, Math.round(((cy - rect.top) / rect.height) * 100)));
+    $('pngX').value = xPct;
+    $('pngY').value = yPct;
+  }
+  canvas.addEventListener('mousedown', e => { if (state.pngProcessed) { state.draggingPng = true; movePngFromEvent(e); } });
+  window.addEventListener('mousemove', movePngFromEvent);
+  window.addEventListener('mouseup', () => { state.draggingPng = false; });
+  canvas.addEventListener('touchstart', e => { if (state.pngProcessed) { state.draggingPng = true; movePngFromEvent(e); } }, { passive: true });
+  window.addEventListener('touchmove', movePngFromEvent, { passive: true });
+  window.addEventListener('touchend', () => { state.draggingPng = false; });
+
   // Controles reproductor
   $('playPauseBtn').addEventListener('click', () => {
-    if (!video.src) return;
+    if (!video.src) { showToast('Sube un video o carga el demo primero', 'warn'); return; }
     if (video.paused) {
       if (video.currentTime < state.startTime || video.currentTime >= state.endTime) video.currentTime = state.startTime;
       video.play();
@@ -1092,6 +1195,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     else { canvas.width = 960; canvas.height = 540; canvas.classList.add('landscape'); }
   });
   $('subStyleSelect').addEventListener('change', e => { state.subStyle = e.target.value; });
+  $('showSubsCheck').addEventListener('change', e => { state.showSubs = e.target.checked; });
 
   function updateCutRangeLabel() {
     $('cutRangeLabel').textContent = `Corte: ${fmtTime(state.startTime)} - ${fmtTime(state.endTime)}`;
@@ -1105,6 +1209,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     video.currentTime = state.startTime;
     video.play().catch(() => {});
     $('playPauseBtn').textContent = '⏸ Pausar';
+    showToast('Subtítulos aplicados en todo el corte', 'ok');
   });
 
   // ==================== PNG SIN FONDO ====================
@@ -1133,23 +1238,38 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
   $('pngInput').addEventListener('change', e => {
     const f = e.target.files[0]; if (!f) return;
     const img = new Image();
-    img.onload = () => { state.pngImg = img; processPngChroma(); };
+    img.onload = () => {
+      state.pngImg = img;
+      processPngChroma();
+      showToast('Foto PNG añadida. Puedes arrastrarla sobre el video.', 'ok');
+    };
     img.src = URL.createObjectURL(f);
   });
   $('chromaSelect').addEventListener('change', processPngChroma);
   $('clearPngBtn').addEventListener('click', () => { state.pngImg = null; state.pngProcessed = null; });
 
-  // ==================== EXPORTAR Y PREVISUALIZAR CLIP ====================
+  // ==================== EXPORTAR Y PREVISUALIZAR CLIP (CON AUDIO) ====================
   $('exportClipBtn').addEventListener('click', async () => {
-    if (!video.src) return;
+    if (!video.src) { showToast('Sube un video o carga el demo primero', 'warn'); return; }
     $('exportModal').classList.add('open');
     $('exportedVideoPreview').style.display = 'none';
     $('downloadExportBtn').style.display = 'none';
     $('exportProgress').style.width = '5%';
-    $('exportStatus').textContent = 'Renderizando corte con subtítulos y capa PNG...';
+    $('exportStatus').textContent = 'Renderizando corte con subtítulos, PNG y audio...';
 
-    const stream = canvas.captureStream(30);
-    const rec = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    const canvasStream = canvas.captureStream(30);
+    let combinedStream = canvasStream;
+    try {
+      if (typeof video.captureStream === 'function') {
+        const vStream = video.captureStream();
+        const audioTracks = vStream.getAudioTracks();
+        if (audioTracks.length) {
+          combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]);
+        }
+      }
+    } catch (_) {}
+
+    const rec = new MediaRecorder(combinedStream, { mimeType: 'video/webm' });
     const chunks = [];
     rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
 
@@ -1168,6 +1288,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     clearInterval(timer);
     rec.stop();
     video.pause();
+    $('playPauseBtn').textContent = '▶ Reproducir';
 
     await new Promise(r => { rec.onstop = r; });
     const blob = new Blob(chunks, { type: 'video/webm' });
@@ -1179,7 +1300,10 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     $('downloadExportBtn').href = url;
     $('downloadExportBtn').style.display = 'inline-flex';
   });
-  $('closeExportModal').addEventListener('click', () => $('exportModal').classList.remove('open'));
+  $('closeExportModal').addEventListener('click', () => {
+    $('exportedVideoPreview').pause();
+    $('exportModal').classList.remove('open');
+  });
 
   // ==================== YOUTUBE DIRECTO ====================
   $('toggleYtBtn').addEventListener('click', () => {
@@ -1187,10 +1311,11 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
   });
   $('loadYtEmbedBtn').addEventListener('click', () => {
     const url = $('ytUrlInput').value.trim();
-    const m = url.match(/(?:v=|youtu\.be\/|live\/)([a-zA-Z0-9_-]{11})/);
-    if (!m) return alert('Pega un enlace válido de YouTube.');
+    const m = url.match(/(?:v=|youtu\.be\/|live\/|shorts\/)([a-zA-Z0-9_-]{11})/);
+    if (!m) { showToast('Pega un enlace válido de YouTube o directo.', 'warn'); return; }
     $('ytIframe').src = `https://www.youtube.com/embed/${m[1]}?autoplay=1`;
     $('ytEmbedWrap').style.display = 'block';
+    showToast('Video/Directo de YouTube cargado', 'ok');
   });
   $('ytQuickCutBtn').addEventListener('click', () => {
     const idx = state.cuts.length;
@@ -1205,6 +1330,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     });
     renderCutsList();
     loadCutIntoPlayer(idx, false);
+    showToast(`Corte en directo #${idx + 1} añadido`, 'ok');
   });
 
   // ==================== REDES SOCIALES Y PROGRAMACIÓN DE FECHAS ====================
@@ -1218,7 +1344,8 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
       `🔥 ${title} — ¡Míralo hasta el último segundo!`,
       `👀 ¿Notaste este detalle? ${title}`,
       `⚡ El momento más intenso del video: ${title}`,
-      `🎬 No podrás verlo solo una vez: ${title}`
+      `🎬 No podrás verlo solo una vez: ${title}`,
+      `🚀 Así se atrapa la atención en 3 segundos: ${title}`
     ];
     const tags = {
       'YouTube Shorts': '#Shorts #Viral #Contenido #Tendencia',
@@ -1257,6 +1384,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     state.accounts[editingAccountKey].handle = h;
     saveAccounts();
     $('accountModal').classList.remove('open');
+    showToast(h ? `Cuenta ${h} vinculada` : 'Cuenta desconectada', 'ok');
   });
   $('closeAccModal').addEventListener('click', () => $('accountModal').classList.remove('open'));
 
@@ -1289,6 +1417,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
   window._delSched = id => {
     state.schedule = state.schedule.filter(x => x.id !== id);
     saveSchedule();
+    showToast('Publicación eliminada', '');
   };
   window._pubNow = id => {
     const item = state.schedule.find(x => x.id === id);
@@ -1313,7 +1442,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
   $('addScheduleBtn').addEventListener('click', () => {
     const title = $('schedTitle').value.trim();
     const date = $('schedDate').value;
-    if (!title || !date) return alert('Completa el título y la fecha/hora de publicación.');
+    if (!title || !date) { showToast('Completa el título y la fecha/hora de publicación.', 'warn'); return; }
     state.schedule.push({
       id: String(Date.now()) + Math.random().toString(16).slice(2, 6),
       title,
@@ -1324,11 +1453,13 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     });
     saveSchedule();
     $('schedTitle').value = '';
+    showToast('¡Publicación programada en el calendario!', 'ok');
   });
 
   $('genDynamicCopyBtn').addEventListener('click', () => {
     const title = $('schedTitle').value.trim() || (state.cuts[state.activeCutIdx]?.title || 'Nuevo Clip Viral');
     $('schedCaption').value = makeDynamicCopy(title, $('schedPlatform').value);
+    showToast('Copy dinámico generado', 'ok');
   });
 
   $('sendCutToSchedBtn').addEventListener('click', () => {
@@ -1339,10 +1470,11 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     $('schedDate').value = toLocalInputValue(nextDay);
     $('schedCaption').value = makeDynamicCopy(cut.title, $('schedPlatform').value, state.activeCutIdx);
     document.querySelector('[data-tab="social"]').click();
+    showToast('Corte enviado al programador de fechas', 'ok');
   });
 
   $('autoScheduleAllBtn').addEventListener('click', () => {
-    if (!state.cuts.length) return alert('Primero analiza un video para generar los 3 cortes.');
+    if (!state.cuts.length) { showToast('Primero analiza un video para generar los 3 cortes.', 'warn'); return; }
     const platforms = ['YouTube Shorts', 'Instagram Reels', 'TikTok'];
     state.cuts.forEach((c, i) => {
       const dt = new Date(Date.now() + (i + 1) * 24 * 3600 * 1000);
@@ -1358,6 +1490,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     });
     saveSchedule();
     document.querySelector('[data-tab="social"]').click();
+    showToast('¡3 cortes programados en fechas escalonadas!', 'ok');
   });
 
   // ==================== MODAL API KEY ====================
@@ -1371,6 +1504,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown) con esta estructura exac
     localStorage.setItem('cliphub_gemini_key', state.apiKey);
     refreshAiBadge();
     $('aiModal').classList.remove('open');
+    showToast(state.apiKey ? 'Clave de Gemini IA guardada' : 'Clave eliminada', 'ok');
   });
 
   // Inicialización
