@@ -20,7 +20,7 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: radial-gradient(circle at top right, #131c35, var(--bg) 55%);
       color: var(--text);
       min-height: 100vh;
@@ -88,7 +88,7 @@
     }
     label { font-size: 0.8rem; color: var(--muted); display: block; margin-bottom: 4px; }
 
-    /* Pipeline */
+    /* Pipeline de 4 pasos */
     .pipeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 12px 0; }
     .pipe-step {
       background: #0b1222; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px;
@@ -118,7 +118,7 @@
       font-size: 0.7rem; padding: 2px 6px; border-radius: 6px; font-weight: 700;
     }
 
-    /* Player Canvas */
+    /* Reproductor Canvas */
     .stage-wrap {
       display: flex; flex-direction: column; align-items: center; gap: 10px;
       background: #050811; border: 1px solid var(--border); border-radius: 14px; padding: 14px;
@@ -131,7 +131,7 @@
     #previewCanvas.landscape, #editorCanvas.landscape { max-width: 100%; aspect-ratio: 16/9; }
     #previewCanvas.square, #editorCanvas.square { max-width: 340px; aspect-ratio: 1/1; }
 
-    /* Cuts list */
+    /* Lista de cortes */
     .cut-item {
       background: #0b1222; border: 1px solid var(--border); border-radius: 12px; padding: 12px;
       margin-bottom: 10px; cursor: pointer; transition: .18s;
@@ -145,7 +145,7 @@
     .badge.amber { background: rgba(245,158,11,.18); color: var(--amber); }
     .badge.purple { background: rgba(139,92,246,.22); color: #c4b5fd; }
 
-    /* Thumbnails */
+    /* Miniaturas */
     .thumb-card {
       background: #0b1222; border: 1px solid var(--border); border-radius: 14px;
       overflow: hidden; display: flex; flex-direction: column;
@@ -167,7 +167,7 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .thumb-body { padding: 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 
-    /* Calendar / Social */
+    /* Redes y calendario */
     .social-card {
       background: #0b1222; border: 1px solid var(--border); border-radius: 14px; padding: 14px;
       display: flex; flex-direction: column; align-items: stretch; gap: 12px;
@@ -179,7 +179,7 @@
       margin-bottom: 10px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center;
     }
 
-    /* Modals */
+    /* Modales */
     .modal-bg {
       position: fixed; inset: 0; background: rgba(0,0,0,.72); backdrop-filter: blur(4px);
       display: none; place-items: center; z-index: 100; padding: 16px;
@@ -194,7 +194,7 @@
     .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width .25s; }
     .muted { color: var(--muted); font-size: 0.84rem; }
 
-    /* Toast Notification (sin alert()) */
+    /* Notificaciones Toast (sin alert()) */
     #toastBox {
       position: fixed; bottom: 20px; right: 20px; z-index: 200;
       padding: 11px 16px; border-radius: 12px; font-size: 0.85rem; font-weight: 700;
@@ -207,7 +207,7 @@
     #toastBox.ok { background: #064e3b; border-color: var(--green); color: #d1fae5; }
     #toastBox.warn { background: #451a03; border-color: var(--amber); color: #fef3c7; }
 
-    /* Configuración Avanzada IA & Redes */
+    /* Configuración avanzada IA y Redes */
     .modal-tabs {
       display: flex; gap: 6px; margin-bottom: 14px;
       background: #080e1c; padding: 5px; border-radius: 12px; border: 1px solid var(--border);
@@ -253,7 +253,7 @@
       color: #fff; border-color: transparent;
     }
 
-    /* Editor de Video */
+    /* Editor de video */
     .editor-grid { display: grid; grid-template-columns: 390px 1fr; gap: 18px; align-items: start; }
     @media (max-width: 980px) { .editor-grid { grid-template-columns: 1fr; } }
     .timeline-box {
@@ -290,7 +290,7 @@
     .range-head { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); margin-bottom: 3px; }
     .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 
-    /* Video fuente oculto visualmente pero decodificado por GPU (evita frames negros) */
+    /* Video fuente oculto visualmente pero decodificado por GPU (evita fotogramas negros) */
     #sourceVideo {
       position: fixed; bottom: 0; right: 0; width: 320px; height: 180px;
       opacity: 0.001; pointer-events: none; z-index: -1;
@@ -475,7 +475,7 @@
     </div>
   </section>
 
-  <!-- ==================== TAB 1B: EDITOR DE VIDEO COMPLETO ==================== -->
+  <!-- ==================== TAB 2: EDITOR DE VIDEO COMPLETO ==================== -->
   <section id="tab-editor" class="view">
     <div class="card">
       <div class="row" style="justify-content:space-between;">
@@ -491,7 +491,7 @@
     </div>
 
     <div class="editor-grid">
-      <!-- Visor y Línea de Tiempo -->
+      <!-- Monitor y Línea de Tiempo -->
       <div class="card">
         <h2>🖥️ Monitor del Editor</h2>
         <div class="stage-wrap">
@@ -528,7 +528,7 @@
         </div>
       </div>
 
-      <!-- Paneles de Herramientas de Edición -->
+      <!-- Paneles de herramientas de edición -->
       <div class="editor-section-grid">
         <!-- 1. Duración, Velocidad y Audio -->
         <div class="ed-panel">
@@ -654,7 +654,7 @@
     </div>
   </section>
 
-  <!-- ==================== TAB 2: MINIATURAS IA ==================== -->
+  <!-- ==================== TAB 3: MINIATURAS IA ==================== -->
   <section id="tab-thumbs" class="view">
     <div class="card">
       <div class="row" style="justify-content:space-between; margin-bottom:12px;">
@@ -682,13 +682,14 @@
           <input type="text" id="thumbCustomIdea" placeholder="Ej: expresión épica, rayos de luz, flecha roja apuntando al centro, fondo explosivo..." />
         </div>
       </div>
+      <div class="test-box" id="thumbDiagBox"></div>
     </div>
     <div class="grid-3" id="thumbsGrid">
       <div class="card muted">Analiza un video en el Estudio de Cortes para generar automáticamente 3 miniaturas únicas con IA.</div>
     </div>
   </section>
 
-  <!-- ==================== TAB 3: REDES & CALENDARIO ==================== -->
+  <!-- ==================== TAB 4: REDES & CALENDARIO ==================== -->
   <section id="tab-social" class="view">
     <div class="card">
       <div class="row" style="justify-content:space-between; margin-bottom:12px;">
@@ -751,14 +752,14 @@
       <h2 style="margin:0;">🤖 Configurar Proveedor de IA (Multi-IA)</h2>
       <span class="badge" id="aiVisionBadge">Visión + Texto + Imagen</span>
     </div>
-    <p class="muted" style="margin-bottom:14px;">Conecta cualquier motor de IA usando su API Key / Token. Todo se guarda localmente en tu navegador. Con <strong>Google Gemini</strong> también generas miniaturas reales con IA.</p>
+    <p class="muted" style="margin-bottom:14px;">Conecta cualquier motor de IA usando su API Key / Token. Todo se guarda localmente en tu navegador. Con <strong>Google Gemini</strong> u <strong>OpenAI</strong> también generas miniaturas reales con IA.</p>
 
     <div class="form-grid-2 field-block">
       <div>
         <label>Proveedor de IA</label>
         <select id="aiProviderSelect">
           <option value="gemini">Google Gemini (Recomendado + Miniaturas IA)</option>
-          <option value="openai">OpenAI (ChatGPT / GPT-4o / DALL-E)</option>
+          <option value="openai">OpenAI (ChatGPT / GPT-4o / DALL-E 3)</option>
           <option value="openrouter">OpenRouter (Claude, Llama, DeepSeek...)</option>
           <option value="anthropic">Anthropic (Claude)</option>
           <option value="groq">Groq (Ultra Rápido)</option>
@@ -769,7 +770,7 @@
       </div>
       <div>
         <label>Modelo</label>
-        <input type="text" id="aiModelInput" list="aiModelSuggestions" placeholder="Ej: gemini-3-flash-preview" />
+        <input type="text" id="aiModelInput" list="aiModelSuggestions" placeholder="Ej: gemini-2.5-flash" />
         <datalist id="aiModelSuggestions"></datalist>
       </div>
     </div>
@@ -808,7 +809,7 @@
 <div class="modal-bg" id="exportModal">
   <div class="modal">
     <h2 style="margin-bottom:8px;">🎬 Vista Previa del Clip Renderizado</h2>
-    <div id="exportStatus" class="muted">Renderizando clip con subtítulos y PNG...</div>
+    <div id="exportStatus" class="muted">Renderizando clip con subtítulos, filtros y capa PNG...</div>
     <div class="progress-bar"><div class="progress-fill" id="exportProgress"></div></div>
     <video id="exportedVideoPreview" controls style="width:100%; max-height:360px; border-radius:12px; display:none; background:#000;"></video>
     <div class="row" style="margin-top:14px; justify-content:flex-end;">
@@ -921,6 +922,7 @@
 
 <script>
 (() => {
+  'use strict';
   const $ = id => document.getElementById(id);
 
   // ==================== ALMACENAMIENTO SEGURO ====================
@@ -928,18 +930,17 @@
     try {
       const val = window.localStorage.getItem(key);
       return val !== null ? val : fallback;
-    } catch (_) { return fallback; }
+    } catch (_) {
+      return fallback;
+    }
   }
   function safeSet(key, val) {
     try { window.localStorage.setItem(key, val); } catch (_) {}
   }
-  function safeRemove(key) {
-    try { window.localStorage.removeItem(key); } catch (_) {}
-  }
 
   // ==================== FETCH CON BACKOFF EXPONENCIAL ====================
-  async function fetchWithBackoff(url, options, maxRetries = 3) {
-    let delay = 1000;
+  async function fetchWithBackoff(url, options, maxRetries = 2) {
+    let delay = 800;
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       const res = await fetch(url, options);
       if (res.ok) return res;
@@ -950,6 +951,7 @@
       }
       return res;
     }
+    throw new Error('Error de red al conectar con el servidor');
   }
 
   // ==================== PRESETS MULTI-IA ====================
@@ -958,11 +960,11 @@
       name: 'Google Gemini',
       short: 'Gemini',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: 'gemini-3-flash-preview',
-      models: ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-2.0-flash'],
+      defaultModel: 'gemini-2.5-flash',
+      models: ['gemini-2.5-flash', 'gemini-3-flash-preview', 'gemini-2.0-flash'],
       vision: true,
       portal: 'https://aistudio.google.com/apikey',
-      placeholder: 'AIzaSy... (o déjalo vacío en modo Canvas)'
+      placeholder: 'AIzaSy... (clave de Google AI Studio)'
     },
     openai: {
       name: 'OpenAI (ChatGPT)',
@@ -1060,7 +1062,7 @@
 
   function loadAccounts() {
     let saved = {};
-    try { saved = JSON.parse(safeGet('cliphub_accounts', '{}')); } catch (_) {}
+    try { saved = JSON.parse(safeGet('cliphub_accounts', '{}')) || {}; } catch (_) {}
     const merged = {};
     for (const [k, def] of Object.entries(DEFAULT_ACCOUNTS)) {
       merged[k] = { ...def, ...(saved[k] || {}) };
@@ -1130,7 +1132,7 @@
   const editorCanvas = $('editorCanvas');
   const editorCtx = editorCanvas.getContext('2d');
 
-  // ==================== TOAST Y PORTAPAPELES (SIN ALERT) ====================
+  // ==================== TOAST, CAJAS Y PORTAPAPELES (SIN ALERT) ====================
   let toastTimer = null;
   function showToast(msg, type = '') {
     const box = $('toastBox');
@@ -1138,6 +1140,13 @@
     box.className = 'show' + (type ? ' ' + type : '');
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { box.className = ''; }, 3400);
+  }
+
+  function showBoxMsg(elId, type, msg) {
+    const el = $(elId);
+    if (!el) return;
+    el.textContent = msg;
+    el.className = `test-box show ${type || 'info'}`;
   }
 
   function copyTextSafe(text) {
@@ -1160,7 +1169,15 @@
     return Boolean(state.ai.apiKey || (state.ai.provider === 'custom' && state.ai.baseUrl));
   }
 
-  // ==================== UTILIDADES ====================
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ==================== UTILIDADES DE TIEMPO Y DIBUJO ====================
   function fmtTime(sec) {
     if (!isFinite(sec) || sec < 0) sec = 0;
     const m = Math.floor(sec / 60);
@@ -1195,7 +1212,7 @@
     const ok = isAiConfigured();
     const prov = AI_PROVIDERS[state.ai.provider] || AI_PROVIDERS.gemini;
     $('aiDot').className = 'dot' + (ok ? ' ok' : '');
-    $('aiStatusText').textContent = ok ? `${prov.short} Conectada` : 'IA Lista (Gemini)';
+    $('aiStatusText').textContent = ok ? `${prov.short} Conectada` : 'Configurar IA';
   }
 
   function updateCutRangeLabel() {
@@ -1256,6 +1273,120 @@
   $('openEditorFromStudioBtn').addEventListener('click', () => {
     document.querySelector('[data-tab="editor"]').click();
   });
+
+  // ==================== BANCO CREATIVO DINÁMICO (CERO REPETICIONES) ====================
+  const CREATIVE_PACKS = [
+    {
+      title: 'El giro inesperado que cambia toda la historia',
+      hook: '¡MIRA ESTE GIRO!',
+      badge: 'MOMENTO CLAVE',
+      lines: [
+        'Quédate hasta el final porque aquí pasa algo increíble',
+        'Fíjate en este detalle que casi todos pasan por alto',
+        'Justo en este segundo toda la escena cambia por completo',
+        '¿Tú también lo notaste? Cuéntamelo en los comentarios'
+      ]
+    },
+    {
+      title: 'Nadie esperaba lo que ocurre en este segundo',
+      hook: 'NO LO CREERÁS',
+      badge: 'ALTO IMPACTO',
+      lines: [
+        'No parpadees durante los próximos segundos del clip',
+        'Todo lo que vino antes llevaba directo a este instante',
+        'Mira cómo cambia el ritmo en menos de tres segundos',
+        'Guarda este video para verlo de nuevo más tarde'
+      ]
+    },
+    {
+      title: 'El detalle oculto que explica todo el video',
+      hook: 'EL SECRETO OCULTO',
+      badge: 'VIRAL 98%',
+      lines: [
+        'Al principio parece una toma tranquila, pero espera...',
+        'Aquí es donde la tensión sube al máximo nivel',
+        'Ese pequeño movimiento lo transforma absolutamente todo',
+        'Comparte esto con alguien que necesite verlo hoy'
+      ]
+    },
+    {
+      title: 'La escena más intensa resumida al instante',
+      hook: '¡BRUTAL FINAL! 🔥',
+      badge: 'RETENCIÓN TOP',
+      lines: [
+        'Esto es lo que separa un clip normal de uno viral',
+        'Observa la precisión y el color en cada cuadro',
+        'Ese remate final hace que quieras verlo en bucle',
+        '¿Del 1 al 10 qué puntuación le das a este momento?'
+      ]
+    },
+    {
+      title: 'Por qué todos están hablando de esta toma',
+      hook: '¡IMPOSIBLE VERLO SOLO 1 VEZ!',
+      badge: 'TENDENCIA',
+      lines: [
+        'Arranca con fuerza desde el primer segundo sin pausas',
+        'Mantén los ojos en el centro de la pantalla ahora',
+        'La reacción aquí es simplemente espectacular',
+        'Suscríbete si quieres ver la segunda parte muy pronto'
+      ]
+    },
+    {
+      title: 'El clímax exacto que dispara la audiencia',
+      hook: 'PASÓ ESTO EN VIVO',
+      badge: 'EXCLUSIVO',
+      lines: [
+        'Este instante vale oro para tus Shorts y Reels',
+        'Muchos intentan lograr este efecto pero pocos lo consiguen',
+        'El contraste entre el inicio y el cierre atrapa al instante',
+        'Dale like y comenta qué parte te sorprendió más'
+      ]
+    }
+  ];
+
+  function getUniqueCreativePack(seedIndex) {
+    const idx = Math.abs(Math.floor(seedIndex)) % CREATIVE_PACKS.length;
+    const pack = CREATIVE_PACKS[idx];
+    return {
+      title: pack.title,
+      hook: pack.hook,
+      badge: pack.badge,
+      lines: [...pack.lines]
+    };
+  }
+
+  function buildSmartCutsFallback() {
+    const d = Math.max(3, state.duration || 15);
+    const desiredLen = Math.min(d, Math.max(3, state.cutDuration || 15));
+    const maxStart = Math.max(0, d - desiredLen);
+    const starts = [
+      0,
+      Number((maxStart * 0.5).toFixed(1)),
+      Number(maxStart.toFixed(1))
+    ];
+    // Si el video es corto y maxStart es 0, repartirlo en 3 segmentos reales
+    const shortMode = maxStart < 0.8;
+    const seg = d / 3;
+
+    return [0, 1, 2].map(i => {
+      const pack = getUniqueCreativePack(state.creativeSeed + i * 2);
+      const s = shortMode ? Number((i * seg).toFixed(1)) : starts[i];
+      const e = shortMode
+        ? Number(Math.min(d, (i + 1) * seg).toFixed(1))
+        : Number(Math.min(d, s + desiredLen).toFixed(1));
+      const frameIdx = Math.min(Math.max(0, state.frames.length - 1), i === 0 ? 0 : i === 1 ? 2 : 4);
+      return {
+        title: pack.title,
+        hookText: pack.hook,
+        badge: pack.badge,
+        score: 97 - i * 2,
+        start: s,
+        end: e > s + 0.5 ? e : d,
+        frameIdx,
+        lines: pack.lines
+      };
+    });
+  }
 
   // ==================== SELECTOR DE SEGUNDOS POR CORTE ====================
   function setCutDuration(secs, applyToCurrent = true) {
@@ -1324,23 +1455,25 @@
     const canvasStream = c.captureStream(30);
     const tracks = [...canvasStream.getVideoTracks()];
 
-    // Audio suave opcional generado en WebAudio
     let audioCtx = null;
     try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const dest = audioCtx.createMediaStreamDestination();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(220, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(330, audioCtx.currentTime + 2);
-      osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 4);
-      gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
-      osc.connect(gain);
-      gain.connect(dest);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 4.3);
-      tracks.push(...dest.stream.getAudioTracks());
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        audioCtx = new AudioCtx();
+        const dest = audioCtx.createMediaStreamDestination();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(330, audioCtx.currentTime + 2);
+        osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 4);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(dest);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 4.3);
+        tracks.push(...dest.stream.getAudioTracks());
+      }
     } catch (_) {}
 
     const combined = new MediaStream(tracks);
@@ -1357,7 +1490,6 @@
       function tick(now) {
         const t = (now - start) / 1000;
         if (t < 1.4) {
-          // Escena 1: Atardecer Tropical
           const grad = g.createLinearGradient(0, 0, 0, 360);
           grad.addColorStop(0, '#311068');
           grad.addColorStop(0.55, '#db2777');
@@ -1371,7 +1503,6 @@
           g.fillStyle = '#fff'; g.font = '900 28px Segoe UI';
           g.fillText('ESCENA 1 • ATARDECER ÉPICO', 120, 62);
         } else if (t < 2.8) {
-          // Escena 2: Ciudad Neón Cyber
           const grad = g.createLinearGradient(0, 0, 640, 360);
           grad.addColorStop(0, '#020617');
           grad.addColorStop(1, '#1e1b4b');
@@ -1391,7 +1522,6 @@
           g.fillStyle = '#38bdf8'; g.font = '900 28px Segoe UI';
           g.fillText('ESCENA 2 • CIUDAD CYBER', 145, 62);
         } else {
-          // Escena 3: Espacio & Energía Dorada
           const grad = g.createRadialGradient(320, 180, 20, 320, 180, 360);
           grad.addColorStop(0, '#7c3aed');
           grad.addColorStop(0.5, '#1e1b4b');
@@ -1419,7 +1549,7 @@
     return new Blob(chunks, { type: 'video/webm' });
   }
 
-  // ==================== CARGA DE VIDEO ROBUSTA (NUNCA SE QUEDA CARGANDO) ====================
+  // ==================== CARGA DE VIDEO ROBUSTA ====================
   let activeVideoUrl = null;
   let loadWatchdog = null;
 
@@ -1439,7 +1569,6 @@
       handled = true;
       if (loadWatchdog) clearTimeout(loadWatchdog);
 
-      // Corregir duración Infinity común en blobs WebM de MediaRecorder
       let detectedDur = video.duration;
       if (!isFinite(detectedDur) || detectedDur <= 0) {
         detectedDur = fallbackDuration;
@@ -1476,7 +1605,6 @@
     video.onloadeddata = onReady;
     video.oncanplay = onReady;
 
-    // Watchdog de seguridad (si el navegador tarda en disparar eventos pero ya tiene datos)
     loadWatchdog = setTimeout(() => {
       if (!handled && video.src === url) {
         if (video.readyState >= 1 || video.videoWidth > 0) {
@@ -1533,7 +1661,9 @@
       }
       const avg = sum / (data.length / step);
       return avg < 10;
-    } catch (_) { return false; }
+    } catch (_) {
+      return false;
+    }
   }
 
   async function seekAndCapture(t) {
@@ -1614,32 +1744,45 @@
     const cfg = cfgOverride || state.ai;
     const provider = cfg.provider || 'gemini';
     const meta = AI_PROVIDERS[provider] || AI_PROVIDERS.custom;
-    const model = cfg.model || meta.defaultModel;
+    const model = (cfg.model || meta.defaultModel).trim();
     const apiKey = (cfg.apiKey || '').trim();
     const baseUrl = (cfg.baseUrl || meta.baseUrl).trim();
 
     if (provider === 'gemini') {
+      if (!apiKey) throw new Error('Falta API Key de Gemini en "Configurar IA"');
       const cleanBase = baseUrl.replace(/\/+$/, '');
-      const url = `${cleanBase}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
       const parts = [{ text: prompt }];
       frameBase64List.forEach(b64 => {
         parts.push({ inlineData: { mimeType: 'image/jpeg', data: b64 } });
       });
-      const res = await fetchWithBackoff(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts }] })
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.error?.message || `HTTP ${res.status}`);
-      return json?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+
+      const candidateModels = [...new Set([model, 'gemini-2.5-flash', 'gemini-2.0-flash'])];
+      let lastErr = 'Error desconocido en Gemini';
+      for (const m of candidateModels) {
+        const url = `${cleanBase}/models/${encodeURIComponent(m)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const res = await fetchWithBackoff(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts }] })
+        });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok) {
+          return json?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+        }
+        lastErr = json?.error?.message || `HTTP ${res.status}`;
+        if (res.status !== 404 && res.status !== 400) break;
+      }
+      throw new Error(lastErr);
     }
 
     if (provider === 'anthropic') {
-      if (!apiKey) throw new Error('Falta tu API Key de Anthropic.');
+      if (!apiKey) throw new Error('Falta API Key de Anthropic');
       const content = [{ type: 'text', text: prompt }];
       frameBase64List.forEach(b64 => {
-        content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } });
+        content.push({
+          type: 'image',
+          source: { type: 'base64', media_type: 'image/jpeg', data: b64 }
+        });
       });
       const res = await fetchWithBackoff(baseUrl, {
         method: 'POST',
@@ -1653,26 +1796,23 @@
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error?.message || `HTTP ${res.status}`);
-      return json?.content?.[0]?.text || '';
+      return json?.content?.map(c => c.text || '').join('') || '';
     }
 
-    // Proveedores OpenAI-compatible (OpenAI, OpenRouter, Groq, DeepSeek, xAI, Custom/Ollama)
+    // Proveedores compatibles con OpenAI (OpenAI, OpenRouter, Groq, DeepSeek, xAI, Custom/Ollama)
     const headers = { 'Content-Type': 'application/json' };
     if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
     if (provider === 'openrouter') {
-      headers['HTTP-Referer'] = window.location.origin;
+      headers['HTTP-Referer'] = window.location.origin || 'https://cliphub.studio';
       headers['X-Title'] = 'ClipHub Studio Pro';
     }
 
     let userContent = prompt;
     if (meta.vision && frameBase64List.length) {
-      userContent = [
-        { type: 'text', text: prompt },
-        ...frameBase64List.map(b64 => ({
-          type: 'image_url',
-          image_url: { url: `data:image/jpeg;base64,${b64}` }
-        }))
-      ];
+      userContent = [{ type: 'text', text: prompt }];
+      frameBase64List.forEach(b64 => {
+        userContent.push({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${b64}` } });
+      });
     }
 
     const res = await fetchWithBackoff(baseUrl, {
@@ -1681,105 +1821,54 @@
       body: JSON.stringify({
         model,
         messages: [{ role: 'user', content: userContent }],
-        temperature: 0.9
+        temperature: 0.8
       })
     });
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(json?.error?.message || `HTTP ${res.status}`);
+    if (!res.ok) throw new Error(json?.error?.message || json?.message || `HTTP ${res.status}`);
     return json?.choices?.[0]?.message?.content || '';
   }
 
-  // ==================== BANCO CREATIVO NO REPETITIVO ====================
-  const DYNAMIC_POOL = [
-    { title: 'El giro que cambia toda la historia', hook: '¡NADIE LO VIO!', badge: 'GIRO TOTAL', lines: ['Quédate hasta el final porque aquí pasa algo inesperado', 'Fíjate bien en este detalle que casi todos ignoran', 'Justo en este segundo cambia todo el panorama', '¿Tú también lo notaste? Cuéntame abajo'] },
-    { title: 'El segundo exacto que dispara la atención', hook: '¡MIRA ESTO!', badge: 'ALTO CTR', lines: ['No parpadees durante los próximos segundos', 'Todo lo anterior llevaba directo a este instante', 'Observa cómo sube la tensión sin previo aviso', 'Guarda este clip antes de seguir bajando'] },
-    { title: 'El detalle oculto que lo explica todo', hook: 'EL SECRETO', badge: 'DETALLE OCULTO', lines: ['A simple vista parece normal, pero mira más cerca', 'Aquí está la clave que marca toda la diferencia', 'Pocos se dan cuenta a la primera reproducción', 'Compártelo con alguien que ame descubrir esto'] },
-    { title: 'Por qué esta escena atrapa desde el inicio', hook: 'BRUTAL 🔥', badge: 'RETENCIÓN 98%', lines: ['Así se engancha a la audiencia en menos de tres segundos', 'Cada movimiento suma ritmo y curiosidad', 'Este remate hace que quieras verlo en bucle', '¿Del 1 al 10 qué nota le das a esta toma?'] },
-    { title: 'Lo que pasa cuando menos lo esperas', hook: '¿QUÉ PASÓ?', badge: 'IMPACTO VIVO', lines: ['Empieza tranquilo, pero prepárate para el cambio', 'El ritmo acelera justo en la mitad del corte', 'Ese contraste visual atrapa todas las miradas', 'Suscríbete si quieres ver la continuación'] },
-    { title: 'El clímax perfecto para Shorts y Reels', hook: 'NIVEL DIOS', badge: 'TOP VIRAL', lines: ['Este fragmento tiene todo para hacerse tendencia', 'Colores vivos, acción directa y cero relleno', 'Mantén la mirada en el centro de la pantalla', 'Déjame un 🔥 si quieres más clips así'] },
-    { title: 'La técnica visual que multiplica vistas', hook: '¡IMPOSIBLE!', badge: 'EFECTO WOW', lines: ['Muchos pasan de largo sin ver el truco real', 'Fíjate en la transición justo en este punto', 'Un cambio pequeño genera un resultado enorme', 'Guárdalo para aplicarlo en tu próximo video'] },
-    { title: 'El momento más comentado del video', hook: 'TODOS HABLAN', badge: 'TENDENCIA', lines: ['Esta es la parte que la gente repite tres veces', 'La energía cambia de cero a cien al instante', 'Imposible no reaccionar cuando llega el final', 'Comenta qué habrías hecho tú en ese momento'] },
-    { title: 'Pura adrenalina en formato vertical', hook: 'SIN PAUSA', badge: 'ACCIÓN TOP', lines: ['Directo al grano desde el primer fotograma', 'Sin introducciones largas ni tiempos muertos', 'Así se retiene al espectador hasta el final', 'Dale like si este corte te atrapó'] }
-  ];
-
-  function getUniqueCreativePack(seedOffset = 0) {
-    const idx = Math.abs(state.creativeSeed + seedOffset) % DYNAMIC_POOL.length;
-    return DYNAMIC_POOL[idx];
-  }
-
-  function buildSmartCutsFallback() {
-    const d = Math.max(3, state.duration || 12);
-    const targetLen = Math.min(d, state.cutDuration || 15);
-    const used = new Set();
-    const picks = [];
-    for (let i = 0; i < 3; i++) {
-      let idx = (state.creativeSeed + i * 2 + Math.floor(Math.random() * DYNAMIC_POOL.length)) % DYNAMIC_POOL.length;
-      while (used.has(idx)) idx = (idx + 1) % DYNAMIC_POOL.length;
-      used.add(idx);
-      picks.push(DYNAMIC_POOL[idx]);
-    }
-
-    return [0, 1, 2].map(i => {
-      let s, e;
-      if (d <= targetLen * 1.15) {
-        const seg = d / 3;
-        s = Number((i * seg).toFixed(1));
-        e = Number(Math.min(d, (i + 1) * seg).toFixed(1));
-      } else {
-        const maxStart = Math.max(0, d - targetLen);
-        s = Number(((maxStart / 2) * i).toFixed(1));
-        e = Number(Math.min(d, s + targetLen).toFixed(1));
-      }
-      if (e <= s + 0.6) e = Number(d.toFixed(1));
-      return {
-        title: picks[i].title,
-        hookText: picks[i].hook,
-        badge: picks[i].badge,
-        score: 91 + Math.floor(Math.random() * 8),
-        start: s,
-        end: e,
-        frameIdx: Math.min(Math.max(0, state.frames.length - 1), i === 0 ? 0 : i === 1 ? 2 : 4),
-        lines: [...picks[i].lines]
-      };
-    });
-  }
-
   async function askAIForCuts() {
-    const entropy = `${Date.now()}-${Math.floor(Math.random() * 9999)}`;
-    const prompt = `Eres director creativo experto en YouTube Shorts, Reels y TikTok (Semilla creativa: ${entropy}).
-Analiza estos fotogramas del video "${state.videoName}" (duración total: ${state.duration.toFixed(1)}s).
-El usuario desea cortes de aproximadamente ${Math.min(state.duration, state.cutDuration).toFixed(1)} segundos cada uno.
-Crea 3 cortes COMPLETAMENTE DIFERENTES entre sí, con títulos originales, ganchos impactantes (máx 3 palabras) y 4 líneas de subtítulos atractivas en español que describan lo que se ve. NO repitas clichés ni frases iguales entre cortes.
-Responde ÚNICAMENTE con JSON válido sin bloques markdown:
-{"cuts":[{"title":"título único","hookText":"2-3 PALABRAS","badge":"ETIQUETA","score":96,"start":0,"end":5,"frameIdx":0,"lines":["frase 1","frase 2","frase 3","frase 4"]}]}`;
+    if (!isAiConfigured()) return null;
+    const dur = state.duration || 15;
+    const targetLen = Math.min(dur, state.cutDuration || 15);
+    const prompt = `Eres director creativo de videos virales (YouTube Shorts, Reels, TikTok).
+Analiza estos fotogramas del video "${state.videoName}" (duración total: ${dur.toFixed(1)} segundos, duración deseada por corte: ~${targetLen.toFixed(1)}s).
+Crea 3 cortes DISTINTOS, creativos y NO repetitivos en español.
+Responde ÚNICAMENTE con un JSON válido (sin texto adicional ni markdown) con esta estructura:
+{"cuts":[{"title":"título creativo","hookText":"2-4 PALABRAS IMPACTO","badge":"ETIQUETA CORTA","score":95,"start":0,"end":5,"frameIdx":0,"lines":["frase 1","frase 2","frase 3","frase 4"]}]}`;
 
-    const frameB64s = state.frames.slice(0, 3).map(f => f.dataUrl.split(',')[1]);
+    const framesB64 = state.frames.slice(0, 3)
+      .map(f => (f.dataUrl && f.dataUrl.includes(',')) ? f.dataUrl.split(',')[1] : '')
+      .filter(Boolean);
+
     try {
-      const raw = await callConfiguredAI(prompt, frameB64s);
-      const startIdx = raw.indexOf('{');
-      const endIdx = raw.lastIndexOf('}');
-      if (startIdx === -1 || endIdx === -1) return null;
-      const parsed = JSON.parse(raw.slice(startIdx, endIdx + 1));
-      if (Array.isArray(parsed.cuts) && parsed.cuts.length >= 1) {
-        return parsed.cuts.slice(0, 3).map((c, i) => {
-          const fallback = getUniqueCreativePack(i * 3);
-          const s = Math.max(0, Math.min(Math.max(0, state.duration - 1), Number(c.start) || 0));
-          let e = Number(c.end) || (s + state.cutDuration);
-          e = Math.max(s + 0.8, Math.min(state.duration, e));
-          return {
-            title: c.title || fallback.title,
-            hookText: String(c.hookText || fallback.hook).toUpperCase().slice(0, 22),
-            badge: String(c.badge || fallback.badge).toUpperCase().slice(0, 18),
-            score: Math.min(99, Math.max(85, Number(c.score) || (92 + i * 2))),
-            start: Number(s.toFixed(1)),
-            end: Number(e.toFixed(1)),
-            frameIdx: Math.min(Math.max(0, state.frames.length - 1), Number.isFinite(Number(c.frameIdx)) ? Number(c.frameIdx) : i),
-            lines: Array.isArray(c.lines) && c.lines.length ? c.lines.map(String) : [...fallback.lines]
-          };
-        });
-      }
-    } catch (_) {}
-    return null;
+      const raw = await callConfiguredAI(prompt, framesB64);
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (!match) return null;
+      const parsed = JSON.parse(match[0]);
+      if (!Array.isArray(parsed.cuts) || !parsed.cuts.length) return null;
+
+      return parsed.cuts.slice(0, 3).map((c, i) => {
+        const pack = getUniqueCreativePack(state.creativeSeed + i);
+        const s = Math.max(0, Math.min(dur - 0.5, Number(c.start) || 0));
+        const rawEnd = Number(c.end) || (s + targetLen);
+        const e = Math.max(s + 0.5, Math.min(dur, rawEnd));
+        return {
+          title: c.title || pack.title,
+          hookText: String(c.hookText || pack.hook).toUpperCase().slice(0, 28),
+          badge: String(c.badge || pack.badge).toUpperCase().slice(0, 18),
+          score: Math.min(99, Math.max(82, Number(c.score) || (96 - i * 2))),
+          start: Number(s.toFixed(1)),
+          end: Number(e.toFixed(1)),
+          frameIdx: Math.min(Math.max(0, state.frames.length - 1), Number(c.frameIdx) || i),
+          lines: Array.isArray(c.lines) && c.lines.length ? c.lines.map(String) : pack.lines
+        };
+      });
+    } catch (_) {
+      return null;
+    }
   }
 
   // ==================== SUBTÍTULOS EN TODO EL CORTE ====================
@@ -1799,17 +1888,23 @@ Responde ÚNICAMENTE con JSON válido sin bloques markdown:
     const cut = state.cuts[idx];
     if (!cut) return;
     state.activeCutIdx = idx;
-    state.startTime = Math.max(0, Math.min(state.duration || 15, cut.start));
-    state.endTime = cut.end > state.startTime + 0.4 ? Math.min(state.duration || cut.end, cut.end) : (state.duration || 15);
+    state.startTime = Math.max(0, cut.start);
+    state.endTime = cut.end > cut.start + 0.4 ? cut.end : (state.duration || 15);
     $('startInput').value = state.startTime.toFixed(1);
     $('endInput').value = state.endTime.toFixed(1);
-    $('subsTextarea').value = (cut.lines || []).join('\n');
+    $('subsTextarea').value = cut.lines.join('\n');
     state.subtitles = buildTimedSubtitles(cut.lines, state.startTime, state.endTime);
+
+    if (!state.edit.hookText) {
+      $('edHookInput').value = cut.hookText;
+      state.edit.hookText = cut.hookText;
+    }
+
     updateCutRangeLabel();
     renderCutsList();
 
     if (video.src) {
-      try { video.currentTime = state.startTime; } catch (_) {}
+      video.currentTime = state.startTime;
       if (autoPlay) {
         video.play().then(syncPlayButtons).catch(syncPlayButtons);
       }
@@ -1818,122 +1913,57 @@ Responde ÚNICAMENTE con JSON válido sin bloques markdown:
 
   function renderCutsList() {
     if (!state.cuts.length) {
-      $('cutsContainer').innerHTML = '<div class="muted">Aún no hay cortes generados. Pulsa "🚀 Auto-Analizar Todo (IA)".</div>';
+      $('cutsContainer').innerHTML = '<div class="muted">Aún no hay cortes generados. Sube un video o pulsa "✨ Cargar Video Demo".</div>';
       return;
     }
     $('cutsContainer').innerHTML = state.cuts.map((c, i) => `
       <div class="cut-item ${i === state.activeCutIdx ? 'active' : ''}" data-cut="${i}">
         <div class="row" style="justify-content:space-between; margin-bottom:4px;">
-          <strong>#${i + 1} ${c.title}</strong>
-          <div class="row" style="gap:6px;">
-            <span class="badge green">CTR ${c.score}%</span>
-            <button type="button" class="btn btn-sm btn-danger" data-del-cut="${i}" title="Eliminar corte" style="padding:2px 7px;">✕</button>
-          </div>
+          <strong>#${i + 1} ${escapeHtml(c.title)}</strong>
+          <span class="badge green">CTR ${c.score}%</span>
         </div>
-        <div class="muted">${fmtTime(c.start)} → ${fmtTime(c.end)} (${Math.max(0.5, c.end - c.start).toFixed(1)}s) • Gancho: <strong>${c.hookText}</strong> • ${(c.lines || []).length} subtítulos</div>
+        <div class="muted">${fmtTime(c.start)} → ${fmtTime(c.end)} (${Math.max(0.5, c.end - c.start).toFixed(1)}s) • Gancho: <strong>${escapeHtml(c.hookText)}</strong> • ${c.lines.length} bloques de subtítulos</div>
       </div>
     `).join('');
-
     document.querySelectorAll('.cut-item').forEach(el => {
-      el.addEventListener('click', e => {
-        if (e.target.closest('[data-del-cut]')) return;
-        loadCutIntoPlayer(Number(el.dataset.cut), true);
-      });
-    });
-
-    document.querySelectorAll('[data-del-cut]').forEach(btn => {
-      btn.addEventListener('click', e => {
-        e.stopPropagation();
-        const delIdx = Number(btn.dataset.delCut);
-        state.cuts.splice(delIdx, 1);
-        if (state.activeCutIdx === delIdx) state.activeCutIdx = state.cuts.length ? 0 : -1;
-        else if (state.activeCutIdx > delIdx) state.activeCutIdx--;
-        renderCutsList();
-        if (state.activeCutIdx >= 0) loadCutIntoPlayer(state.activeCutIdx, false);
-        showToast('Corte eliminado', '');
-      });
+      el.addEventListener('click', () => loadCutIntoPlayer(Number(el.dataset.cut), true));
     });
   }
 
-  // ==================== GENERADOR DE MINIATURAS REALES CON IA (ESTILOS ÚNICOS) ====================
-  const AI_THUMB_STYLES = [
-    {
-      key: 'viral',
-      name: 'Ultra Viral Alto Contraste',
-      desc: 'MrBeast-style high-contrast studio rim lighting, hyper-vivid saturated colors, dramatic depth of field, glowing aura around the main subject, bold explosive yellow and white 3D display typography with thick black outline',
-      canvasMode: 0
-    },
-    {
-      key: 'cinema',
-      name: 'Póster Cinematográfico',
-      desc: 'Hollywood movie poster grading with rich teal-and-orange cinema lighting, subtle anamorphic lens flare, moody dramatic shadows, clean metallic white epic headline typography positioned cleanly',
-      canvasMode: 1
-    },
-    {
-      key: 'cyber',
-      name: 'Neón Cyberpunk',
-      desc: 'Futuristic cyberpunk aesthetic with electric cyan and hot magenta neon rim light, glowing light streaks, dark glossy atmosphere, sleek neon-lit bold futuristic headline text',
-      canvasMode: 2
-    },
-    {
-      key: 'mystery',
-      name: 'Documental Misterio CTR',
-      desc: 'High-tension investigative documentary thumbnail, dramatic spotlight cutting through dark shadows, subtle red focus highlight ring or directional accent, crisp urgent white-and-red bold headline',
-      canvasMode: 3
-    },
-    {
-      key: 'comic',
-      name: 'Cómic Pop-Art Dinámico',
-      desc: 'Energetic stylized pop-art comic burst background, punchy contrasting colors, subtle halftone speed lines, vibrant tilted banner sticker with bold expressive display text',
-      canvasMode: 4
-    },
-    {
-      key: 'luxury',
-      name: 'Editorial Lujo Dorado',
-      desc: 'Premium luxury editorial photography, obsidian dark backdrop with warm golden bokeh flares, crisp spotlighting, elegant high-impact gold-and-white headline typography',
-      canvasMode: 5
-    },
-    {
-      key: 'fire_ice',
-      name: 'Choque Fuego y Rayo',
-      desc: 'Epic split-lighting composition with glowing fiery orange embers on the left and electric blue lightning energy on the right, ultra sharp subject in center, fiery bold headline text',
-      canvasMode: 0
-    },
-    {
-      key: 'retro',
-      name: 'Retro Acción 90s',
-      desc: 'Vibrant 1990s action poster aesthetic with rich warm film colors, dynamic diagonal composition, subtle chromatic sheen, bold arcade-inspired headline text',
-      canvasMode: 2
-    },
-    {
-      key: 'minimal',
-      name: 'Moderno Minimal Pro',
-      desc: 'Clean modern creator thumbnail, sharp crisp subject isolation, sleek asymmetric color accent panel, ultra-legible Swiss bold headline typography, zero clutter',
-      canvasMode: 1
-    }
+  // ==================== MINIATURAS GENERADAS POR IA + MOTOR CREATIVO VARIADO ====================
+  const THUMB_ART_STYLES = [
+    { key: 'viral', name: 'Ultra Viral Alto Contraste', desc: 'Vibrant YouTube creator thumbnail, dramatic rim lighting, high saturation, punchy yellow and dark shadows, dynamic diagonal framing', accent: '#facc15', secondary: '#ef4444', bgTint: 'rgba(15,23,42,0.78)', layout: 0 },
+    { key: 'cinema', name: 'Póster Cinematográfico', desc: 'Epic Hollywood movie poster lighting, teal and orange color grade, moody lens flare, dramatic depth of field', accent: '#fb923c', secondary: '#0ea5e9', bgTint: 'rgba(6,10,22,0.82)', layout: 1 },
+    { key: 'cyber', name: 'Neón Cyberpunk & Energía', desc: 'Futuristic neon cyan and magenta glowing highlights, electric energy arcs, sleek dark cyberpunk atmosphere', accent: '#38bdf8', secondary: '#ec4899', bgTint: 'rgba(15,10,40,0.82)', layout: 2 },
+    { key: 'mystery', name: 'Misterio Documental', desc: 'Suspenseful investigative documentary aesthetic, spotlight vignette, bold red warning accents, intense contrast', accent: '#f43f5e', secondary: '#fde047', bgTint: 'rgba(10,5,12,0.86)', layout: 3 },
+    { key: 'comic', name: 'Cómic Pop-Art Dinámico', desc: 'Bold graphic novel halftone action lines, bright pop-art energy burst, crisp heavy outlines and energetic colors', accent: '#22c55e', secondary: '#facc15', bgTint: 'rgba(20,12,48,0.75)', layout: 4 },
+    { key: 'luxury', name: 'Editorial Lujo Dorado', desc: 'Sleek luxury magazine editorial, warm metallic gold light leaks, rich deep obsidian backdrop, refined typography', accent: '#f59e0b', secondary: '#fef08a', bgTint: 'rgba(12,10,6,0.84)', layout: 5 }
   ];
 
   const EXTRA_VISUAL_TWISTS = [
-    'use a dramatic low-angle dynamic perspective',
-    'add subtle glowing bokeh light particles in the background',
-    'frame the focal subject slightly off-center using rule of thirds for maximum text readability',
-    'enhance color contrast with luminous rim lighting on the edges',
-    'create a dramatic before-and-after or split-tone energy mood',
-    'use energetic diagonal visual leading lines drawing the eye to the subject'
+    'dramatic golden hour rim light and subtle motion blur background',
+    'bold spotlight beam focusing attention on the center subject',
+    'cinematic anamorphic lens flare with crisp high-detail foreground',
+    'energetic color-split duotone background with glowing sparks',
+    'ultra-clean modern documentary framing with sharp depth contrast',
+    'explosive speed lines and vivid HDR dynamic range'
   ];
 
-  function pickStyleForIndex(idx, moodChoice) {
-    if (moodChoice && moodChoice !== 'random') {
-      const exact = AI_THUMB_STYLES.find(s => s.key === moodChoice);
-      if (exact) return exact;
+  function pickStyleForCard(idx, freshTwist) {
+    const mood = $('thumbMoodSelect').value;
+    if (mood !== 'random') {
+      const found = THUMB_ART_STYLES.find(s => s.key === mood);
+      if (found) return found;
     }
-    // Garantiza que cada tarjeta use un estilo distinto y rote en cada regeneración
-    const offset = (state.creativeSeed + idx * 3 + Math.floor(Math.random() * 2)) % AI_THUMB_STYLES.length;
-    return AI_THUMB_STYLES[offset];
+    const offset = (state.creativeSeed + (freshTwist ? 3 : 0) + idx * 2) % THUMB_ART_STYLES.length;
+    return THUMB_ART_STYLES[offset];
   }
 
   async function callGeminiImageThumbnail(frameDataUrl, cut, styleObj, customIdea) {
     const apiKey = state.ai.provider === 'gemini' ? (state.ai.apiKey || '').trim() : '';
+    if (!apiKey) {
+      throw new Error('No hay API Key de Gemini configurada en "Configurar IA"');
+    }
     const twist = EXTRA_VISUAL_TWISTS[Math.floor(Math.random() * EXTRA_VISUAL_TWISTS.length)];
     const uniqueId = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 
@@ -1954,155 +1984,256 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       });
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${encodeURIComponent(apiKey)}`;
-    const payload = {
-      contents: [{ role: 'user', parts }],
-      generationConfig: {
-        responseModalities: ['IMAGE'],
-        imageConfig: { aspectRatio: '16:9' }
+    const attempts = [
+      {
+        model: 'gemini-3.1-flash-image',
+        generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '16:9' } }
+      },
+      {
+        model: 'gemini-3.1-flash-lite-image',
+        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+      },
+      {
+        model: 'gemini-2.5-flash-image',
+        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+      },
+      {
+        model: 'gemini-2.0-flash-exp-image-generation',
+        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
       }
-    };
+    ];
 
-    const res = await fetchWithBackoff(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }, 2);
+    let lastErrorMsg = 'Sin respuesta de imagen';
+    for (const att of attempts) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${att.model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const payload = {
+        contents: [{ role: 'user', parts }],
+        generationConfig: att.generationConfig
+      };
 
-    if (!res.ok) throw new Error(`Gemini Image HTTP ${res.status}`);
-    const json = await res.json();
-    const imgPart = json?.candidates?.[0]?.content?.parts?.find(p => p.inlineData?.data);
-    if (!imgPart) throw new Error('Sin imagen en la respuesta de Gemini');
-    const mime = imgPart.inlineData.mimeType || 'image/png';
-    return `data:${mime};base64,${imgPart.inlineData.data}`;
+      const res = await fetchWithBackoff(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }, 1);
+
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        const imgPart = json?.candidates?.[0]?.content?.parts?.find(p => p.inlineData?.data);
+        if (imgPart) {
+          const mime = imgPart.inlineData.mimeType || 'image/png';
+          return { dataUrl: `data:${mime};base64,${imgPart.inlineData.data}`, modelUsed: att.model };
+        }
+        lastErrorMsg = `${att.model} respondió sin imagen`;
+      } else {
+        const apiErr = json?.error?.message || `HTTP ${res.status}`;
+        lastErrorMsg = `${att.model}: ${apiErr}`;
+        if (/API key/i.test(apiErr) || res.status === 401) break;
+      }
+    }
+
+    throw new Error(lastErrorMsg);
   }
 
   async function callOpenAIImageThumbnail(cut, styleObj, customIdea) {
-    if (state.ai.provider !== 'openai' || !state.ai.apiKey) throw new Error('OpenAI no activo');
-    const twist = EXTRA_VISUAL_TWISTS[Math.floor(Math.random() * EXTRA_VISUAL_TWISTS.length)];
-    const prompt = `Create a vivid 16:9 YouTube thumbnail about "${cut.title}". Style: ${styleObj.name} (${styleObj.desc}). ${twist}. ${customIdea || ''} Feature bold Spanish text "${cut.hookText}". High contrast, professional creator design.`;
+    const apiKey = (state.ai.apiKey || '').trim();
+    if (!apiKey) throw new Error('Falta API Key de OpenAI');
+    const prompt = `High-CTR 16:9 YouTube thumbnail about "${cut.title}". Style: ${styleObj.name}, ${styleObj.desc}. ${customIdea || ''}. Dramatic lighting, bold vivid visual focal point, ultra sharp professional photography, no cluttered tiny text.`;
     const res = await fetchWithBackoff('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${state.ai.apiKey.trim()}`
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: 'dall-e-3',
         prompt,
+        n: 1,
         size: '1792x1024',
         response_format: 'b64_json'
       })
     }, 1);
-    if (!res.ok) throw new Error(`OpenAI Image HTTP ${res.status}`);
-    const json = await res.json();
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json?.error?.message || `HTTP ${res.status}`);
     const b64 = json?.data?.[0]?.b64_json;
-    if (!b64) throw new Error('Sin imagen OpenAI');
+    if (!b64) throw new Error('OpenAI no devolvió imagen');
     return `data:image/png;base64,${b64}`;
   }
 
-  // Respaldo artístico variado (6 composiciones distintas) si la API de imagen no está disponible
   async function createCanvasFallbackThumbnail(cut, styleObj) {
     const c = document.createElement('canvas');
     c.width = 1280; c.height = 720;
     const g = c.getContext('2d');
 
     const frameObj = state.frames[cut.frameIdx] || state.frames[0];
-    if (frameObj) {
+    if (frameObj && frameObj.dataUrl) {
       const img = await new Promise(res => {
-        const im = new Image(); im.onload = () => res(im); im.src = frameObj.dataUrl;
+        const im = new Image();
+        im.onload = () => res(im);
+        im.onerror = () => res(null);
+        im.src = frameObj.dataUrl;
       });
-      g.save();
-      const filters = [
-        'contrast(1.22) saturate(1.45)',
-        'contrast(1.28) brightness(0.88) saturate(1.15)',
-        'contrast(1.3) saturate(1.6) hue-rotate(15deg)',
-        'contrast(1.35) brightness(0.82)',
-        'contrast(1.18) saturate(1.7)',
-        'contrast(1.25) sepia(0.25) saturate(1.3)'
-      ];
-      g.filter = filters[styleObj.canvasMode % filters.length];
-      g.drawImage(img, 0, 0, 1280, 720);
-      g.restore();
+      if (img) {
+        g.save();
+        const filters = [
+          'contrast(1.22) saturate(1.32)',
+          'contrast(1.28) brightness(0.92) saturate(1.25)',
+          'contrast(1.25) saturate(1.5) hue-rotate(-10deg)',
+          'contrast(1.35) brightness(0.84) saturate(1.1)',
+          'contrast(1.2) saturate(1.6)',
+          'contrast(1.18) sepia(0.25) saturate(1.35)'
+        ];
+        g.filter = filters[styleObj.layout % filters.length];
+        g.drawImage(img, 0, 0, 1280, 720);
+        g.restore();
+      }
     } else {
-      const bg = g.createLinearGradient(0, 0, 1280, 720);
-      bg.addColorStop(0, '#1e1b4b'); bg.addColorStop(1, '#0f172a');
-      g.fillStyle = bg; g.fillRect(0, 0, 1280, 720);
+      const gr = g.createLinearGradient(0, 0, 1280, 720);
+      gr.addColorStop(0, '#0f172a');
+      gr.addColorStop(1, '#1e1b4b');
+      g.fillStyle = gr;
+      g.fillRect(0, 0, 1280, 720);
     }
 
-    const mode = styleObj.canvasMode % 6;
-    if (mode === 0) {
-      // Diagonal Viral Dorado
+    const variant = styleObj.layout % 6;
+
+    if (variant === 0) {
+      // Viral Alto Contraste: degradado diagonal + franja superior izquierda + texto gigante con doble borde
       const grad = g.createLinearGradient(0, 0, 1280, 720);
       grad.addColorStop(0, 'rgba(6,10,22,0.88)');
-      grad.addColorStop(0.55, 'rgba(6,10,22,0.18)');
-      grad.addColorStop(1, 'rgba(245,158,11,0.45)');
+      grad.addColorStop(0.55, 'rgba(6,10,22,0.20)');
+      grad.addColorStop(1, 'rgba(239,68,68,0.42)');
       g.fillStyle = grad; g.fillRect(0, 0, 1280, 720);
-      g.fillStyle = '#f59e0b'; drawRoundRect(g, 54, 48, 340, 56, 14); g.fill();
-      g.fillStyle = '#090d16'; g.font = '900 28px Segoe UI'; g.fillText(`⚡ ${cut.badge}`, 78, 86);
-      g.font = '900 106px Impact, Segoe UI'; g.lineWidth = 14; g.strokeStyle = '#050811';
-      g.strokeText(cut.hookText, 54, 565); g.fillStyle = '#ffffff'; g.fillText(cut.hookText, 54, 565);
-      g.font = '800 42px Segoe UI'; g.strokeText(cut.title.slice(0, 38), 54, 636);
-      g.fillStyle = '#fde047'; g.fillText(cut.title.slice(0, 38), 54, 636);
-    } else if (mode === 1) {
-      // Cine Letterbox Teal & Orange
-      const grad = g.createLinearGradient(0, 320, 0, 720);
-      grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(2,6,23,0.94)');
-      g.fillStyle = grad; g.fillRect(0, 320, 1280, 400);
-      g.fillStyle = 'rgba(0,0,0,0.92)'; g.fillRect(0, 0, 1280, 54); g.fillRect(0, 666, 1280, 54);
+
+      g.fillStyle = styleObj.accent;
+      drawRoundRect(g, 54, 48, 360, 62, 16); g.fill();
+      g.fillStyle = '#090d16'; g.font = '900 30px Segoe UI';
+      g.fillText(`⚡ ${cut.badge}`, 78, 90);
+
+      g.font = '900 106px Impact, Segoe UI';
+      g.lineWidth = 16; g.strokeStyle = '#050811';
+      g.strokeText(cut.hookText, 54, 555);
+      g.fillStyle = '#ffffff'; g.fillText(cut.hookText, 54, 555);
+
+      g.font = '800 42px Segoe UI';
+      g.lineWidth = 10; g.strokeText(cut.title.slice(0, 42), 54, 634);
+      g.fillStyle = styleObj.accent; g.fillText(cut.title.slice(0, 42), 54, 634);
+    } else if (variant === 1) {
+      // Póster Cinematográfico: barras de cine + iluminación teal/orange + texto centrado abajo
+      const grad = g.createLinearGradient(0, 260, 0, 720);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, 'rgba(4,9,24,0.94)');
+      g.fillStyle = grad; g.fillRect(0, 260, 1280, 460);
+
+      g.fillStyle = 'rgba(0,0,0,0.85)';
+      g.fillRect(0, 0, 1280, 44);
+      g.fillRect(0, 676, 1280, 44);
+
       g.textAlign = 'center';
-      g.font = '900 98px Impact, Segoe UI'; g.lineWidth = 12; g.strokeStyle = '#020617';
-      g.strokeText(cut.hookText, 640, 545); g.fillStyle = '#f8fafc'; g.fillText(cut.hookText, 640, 545);
-      g.font = '700 34px Segoe UI'; g.fillStyle = '#38bdf8'; g.fillText(`— ${cut.title.slice(0, 46)} —`, 640, 618);
+      g.fillStyle = styleObj.secondary;
+      drawRoundRect(g, 470, 64, 340, 48, 999); g.fill();
+      g.fillStyle = '#fff'; g.font = '900 24px Segoe UI';
+      g.fillText(`🎬 ${cut.badge}`, 640, 96);
+
+      g.font = '900 102px Impact, Segoe UI';
+      g.lineWidth = 14; g.strokeStyle = '#020617';
+      g.strokeText(cut.hookText, 640, 560);
+      g.fillStyle = styleObj.accent; g.fillText(cut.hookText, 640, 560);
+
+      g.font = '700 36px Segoe UI';
+      g.fillStyle = '#f8fafc'; g.fillText(cut.title.slice(0, 46), 640, 635);
       g.textAlign = 'left';
-    } else if (mode === 2) {
-      // Cyberpunk Neón Frame
-      const rad = g.createRadialGradient(640, 340, 120, 640, 360, 760);
-      rad.addColorStop(0, 'rgba(0,0,0,0.05)'); rad.addColorStop(1, 'rgba(15,4,36,0.9)');
+    } else if (variant === 2) {
+      // Cyberpunk Neón: marco luminoso + tarjeta inclinada
+      const rad = g.createRadialGradient(640, 340, 130, 640, 360, 780);
+      rad.addColorStop(0, 'rgba(0,0,0,0.06)');
+      rad.addColorStop(1, 'rgba(15,6,36,0.9)');
       g.fillStyle = rad; g.fillRect(0, 0, 1280, 720);
-      g.strokeStyle = '#38bdf8'; g.lineWidth = 12; drawRoundRect(g, 24, 24, 1232, 672, 26); g.stroke();
-      g.strokeStyle = '#ec4899'; g.lineWidth = 5; drawRoundRect(g, 38, 38, 1204, 644, 20); g.stroke();
-      g.save(); g.translate(640, 560); g.rotate(-0.035);
-      g.fillStyle = '#ec4899'; drawRoundRect(g, -460, -68, 920, 124, 20); g.fill();
+
+      g.strokeStyle = styleObj.accent; g.lineWidth = 14;
+      drawRoundRect(g, 22, 22, 1236, 676, 26); g.stroke();
+
+      g.save();
+      g.translate(640, 560); g.rotate(-0.035);
+      g.fillStyle = styleObj.secondary;
+      drawRoundRect(g, -480, -68, 960, 128, 22); g.fill();
       g.fillStyle = '#ffffff'; g.font = '900 84px Impact, Segoe UI'; g.textAlign = 'center';
-      g.fillText(cut.hookText, 0, 22); g.restore();
-      g.fillStyle = '#0ea5e9'; drawRoundRect(g, 890, 56, 320, 54, 999); g.fill();
-      g.fillStyle = '#fff'; g.font = '900 25px Segoe UI'; g.textAlign = 'center';
-      g.fillText(`⚡ ${cut.badge}`, 1050, 92); g.textAlign = 'left';
-    } else if (mode === 3) {
-      // Misterio Documental con Círculo Rojo
-      const rad = g.createRadialGradient(640, 340, 80, 640, 360, 680);
-      rad.addColorStop(0, 'rgba(0,0,0,0)'); rad.addColorStop(1, 'rgba(0,0,0,0.92)');
+      g.fillText(cut.hookText, 0, 24);
+      g.restore();
+
+      g.fillStyle = '#0ea5e9';
+      drawRoundRect(g, 880, 52, 340, 58, 999); g.fill();
+      g.fillStyle = '#04101f'; g.font = '900 26px Segoe UI'; g.textAlign = 'center';
+      g.fillText(`⚡ ${cut.badge}`, 1050, 90);
+      g.textAlign = 'left';
+    } else if (variant === 3) {
+      // Misterio Documental: viñeta intensa + banda lateral roja
+      const rad = g.createRadialGradient(780, 320, 90, 640, 360, 740);
+      rad.addColorStop(0, 'rgba(0,0,0,0.04)');
+      rad.addColorStop(1, 'rgba(4,4,10,0.92)');
       g.fillStyle = rad; g.fillRect(0, 0, 1280, 720);
-      g.strokeStyle = '#ef4444'; g.lineWidth = 12;
-      g.beginPath(); g.arc(880, 310, 130, 0, Math.PI * 2); g.stroke();
-      g.fillStyle = '#ef4444'; drawRoundRect(g, 58, 430, 690, 120, 16); g.fill();
-      g.fillStyle = '#fff'; g.font = '900 86px Impact, Segoe UI'; g.fillText(cut.hookText, 86, 522);
-      g.font = '800 38px Segoe UI'; g.fillStyle = '#f8fafc'; g.fillText(cut.title.slice(0, 36), 62, 616);
-    } else if (mode === 4) {
-      // Cómic Pop-Art
-      const bGrad = g.createLinearGradient(0, 350, 0, 720);
-      bGrad.addColorStop(0, 'rgba(0,0,0,0)'); bGrad.addColorStop(1, 'rgba(88,28,135,0.92)');
-      g.fillStyle = bGrad; g.fillRect(0, 350, 1280, 370);
-      g.save(); g.translate(220, 110); g.rotate(-0.08);
-      g.fillStyle = '#22c55e'; drawRoundRect(g, -165, -38, 330, 76, 16); g.fill();
-      g.strokeStyle = '#020617'; g.lineWidth = 6; g.stroke();
-      g.fillStyle = '#04101f'; g.font = '900 32px Segoe UI'; g.textAlign = 'center';
-      g.fillText(cut.badge, 0, 11); g.restore();
+
+      g.fillStyle = styleObj.accent;
+      g.fillRect(46, 420, 16, 230);
+
+      g.fillStyle = styleObj.accent;
+      drawRoundRect(g, 82, 422, 310, 48, 8); g.fill();
+      g.fillStyle = '#fff'; g.font = '900 25px Segoe UI';
+      g.fillText(`🔎 ${cut.badge}`, 102, 455);
+
+      g.font = '900 96px Impact, Segoe UI';
+      g.lineWidth = 14; g.strokeStyle = '#000';
+      g.strokeText(cut.hookText, 82, 565);
+      g.fillStyle = '#fff'; g.fillText(cut.hookText, 82, 565);
+
+      g.font = '700 38px Segoe UI';
+      g.fillStyle = styleObj.secondary; g.fillText(cut.title.slice(0, 42), 82, 635);
+    } else if (variant === 4) {
+      // Cómic Pop-Art: sticker girado + banda inferior púrpura vibrante
+      const bGrad = g.createLinearGradient(0, 330, 0, 720);
+      bGrad.addColorStop(0, 'rgba(0,0,0,0)');
+      bGrad.addColorStop(1, 'rgba(88,28,135,0.94)');
+      g.fillStyle = bGrad; g.fillRect(0, 330, 1280, 390);
+
+      g.save();
+      g.translate(220, 110); g.rotate(-0.08);
+      g.fillStyle = styleObj.accent;
+      drawRoundRect(g, -165, -38, 330, 76, 16); g.fill();
+      g.lineWidth = 6; g.strokeStyle = '#090d16'; g.stroke();
+      g.fillStyle = '#04101f'; g.font = '900 30px Segoe UI'; g.textAlign = 'center';
+      g.fillText(`💥 ${cut.badge}`, 0, 11);
+      g.restore();
+
       g.textAlign = 'center';
-      g.font = '900 108px Impact, Segoe UI'; g.lineWidth = 16; g.strokeStyle = '#090d16';
-      g.strokeText(cut.hookText, 640, 585); g.fillStyle = '#facc15'; g.fillText(cut.hookText, 640, 585);
-      g.font = '700 38px Segoe UI'; g.fillStyle = '#ffffff'; g.fillText(cut.title.slice(0, 44), 640, 655);
+      g.font = '900 108px Impact, Segoe UI';
+      g.lineWidth = 16; g.strokeStyle = '#090d16';
+      g.strokeText(cut.hookText, 640, 585);
+      g.fillStyle = styleObj.secondary; g.fillText(cut.hookText, 640, 585);
+
+      g.font = '800 38px Segoe UI';
+      g.fillStyle = '#ffffff'; g.fillText(cut.title.slice(0, 44), 640, 655);
       g.textAlign = 'left';
     } else {
-      // Editorial Lujo Dorado
-      const grad = g.createLinearGradient(0, 0, 1280, 0);
-      grad.addColorStop(0, 'rgba(9,13,22,0.92)'); grad.addColorStop(0.58, 'rgba(9,13,22,0.35)'); grad.addColorStop(1, 'rgba(9,13,22,0.08)');
+      // Editorial Lujo Dorado: líneas finas doradas + tipografía elegante
+      const grad = g.createLinearGradient(0, 0, 1280, 720);
+      grad.addColorStop(0, 'rgba(10,8,4,0.88)');
+      grad.addColorStop(0.55, 'rgba(10,8,4,0.35)');
+      grad.addColorStop(1, 'rgba(245,158,11,0.35)');
       g.fillStyle = grad; g.fillRect(0, 0, 1280, 720);
-      g.fillStyle = '#fbbf24'; g.fillRect(60, 120, 12, 460);
-      g.fillStyle = '#fbbf24'; g.font = '800 30px Segoe UI'; g.fillText(cut.badge, 98, 175);
-      g.fillStyle = '#ffffff'; g.font = '900 94px Impact, Segoe UI'; g.fillText(cut.hookText, 98, 340);
-      g.fillStyle = '#cbd5e1'; g.font = '700 40px Segoe UI'; g.fillText(cut.title.slice(0, 32), 98, 430);
+
+      g.strokeStyle = styleObj.accent; g.lineWidth = 6;
+      drawRoundRect(g, 36, 36, 1208, 648, 12); g.stroke();
+
+      g.fillStyle = styleObj.accent; g.font = '900 28px Segoe UI';
+      g.fillText(`✦ ${cut.badge} ✦`, 72, 102);
+
+      g.font = '900 98px Impact, Segoe UI';
+      g.lineWidth = 12; g.strokeStyle = '#090704';
+      g.strokeText(cut.hookText, 72, 545);
+      g.fillStyle = styleObj.secondary; g.fillText(cut.hookText, 72, 545);
+
+      g.font = '700 38px Segoe UI';
+      g.fillStyle = '#f8fafc'; g.fillText(cut.title.slice(0, 44), 72, 622);
     }
 
     return c.toDataURL('image/png');
@@ -2110,43 +2241,45 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
 
   async function generateSingleThumbnail(idx, freshTwist = false) {
     const cut = state.cuts[idx];
-    if (!cut) return;
+    if (!cut) return { isAI: false, error: 'Corte no encontrado' };
+
     if (freshTwist) {
-      state.creativeSeed += 1 + Math.floor(Math.random() * 5);
-      const pack = getUniqueCreativePack(idx * 2 + Math.floor(Math.random() * 7));
-      cut.hookText = pack.hook;
-      cut.badge = pack.badge;
-      cut.title = pack.title;
+      const freshPack = getUniqueCreativePack(state.creativeSeed + idx * 3 + Math.floor(Math.random() * 50));
+      cut.hookText = freshPack.hook;
+      cut.badge = freshPack.badge;
+      cut.title = freshPack.title;
       renderCutsList();
     }
 
-    const moodChoice = $('thumbMoodSelect').value;
+    const styleObj = pickStyleForCard(idx, freshTwist);
     const customIdea = $('thumbCustomIdea').value.trim();
-    const styleObj = pickStyleForIndex(idx, moodChoice);
-    const frameObj = state.frames[cut.frameIdx] || state.frames[idx % Math.max(1, state.frames.length)];
+    const frameObj = state.frames[cut.frameIdx] || state.frames[0];
 
-    // Mostrar estado cargando en esa tarjeta
     state.thumbnails[idx] = {
       cutIdx: idx,
       title: cut.title,
       hook: cut.hookText,
       styleName: styleObj.name,
-      source: 'loading',
-      dataUrl: state.thumbnails[idx]?.dataUrl || (frameObj?.dataUrl || '')
+      source: '⏳ Generando...',
+      loading: true,
+      dataUrl: frameObj?.dataUrl || ''
     };
     renderThumbnailsGrid();
 
     let dataUrl = '';
-    let sourceLabel = '🎨 Estudio Creativo';
+    let sourceLabel = '🎨 Diseño Dinámico';
+    let lastAiError = '';
     try {
       if (state.ai.provider === 'openai' && state.ai.apiKey) {
         dataUrl = await callOpenAIImageThumbnail(cut, styleObj, customIdea);
         sourceLabel = '✨ IA OpenAI';
       } else {
-        dataUrl = await callGeminiImageThumbnail(frameObj?.dataUrl, cut, styleObj, customIdea);
+        const resImg = await callGeminiImageThumbnail(frameObj?.dataUrl, cut, styleObj, customIdea);
+        dataUrl = resImg.dataUrl;
         sourceLabel = '✨ IA Gemini';
       }
-    } catch (_) {
+    } catch (err) {
+      lastAiError = err?.message || 'Error de conexión';
       dataUrl = await createCanvasFallbackThumbnail(cut, styleObj);
       sourceLabel = '🎨 Diseño Dinámico';
     }
@@ -2157,9 +2290,12 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       hook: cut.hookText,
       styleName: styleObj.name,
       source: sourceLabel,
+      loading: false,
+      aiError: lastAiError,
       dataUrl
     };
     renderThumbnailsGrid();
+    return { isAI: sourceLabel.includes('IA'), error: lastAiError };
   }
 
   async function buildAllThumbnails(freshTwist = false) {
@@ -2170,124 +2306,127 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     setStep(4, 'run', 'Creando miniaturas con IA...');
     $('regenThumbsBtn').disabled = true;
     $('regenThumbsBtn').textContent = '⏳ Generando Miniaturas IA...';
+    $('thumbDiagBox').className = 'test-box';
 
     const count = Math.min(3, state.cuts.length);
     state.thumbnails = new Array(count);
 
-    // Generar en paralelo para máxima velocidad con estilos distintos en cada tarjeta
-    await Promise.all(
+    const outcomes = await Promise.all(
       Array.from({ length: count }, (_, i) => generateSingleThumbnail(i, freshTwist))
     );
 
-    const aiCount = state.thumbnails.filter(t => t && t.source.includes('IA')).length;
+    const aiCount = outcomes.filter(o => o && o.isAI).length;
+    const firstErr = outcomes.find(o => o && o.error)?.error || '';
+
+    if (aiCount === 0 && firstErr) {
+      const noKeyHint = (!state.ai.apiKey && state.ai.provider === 'gemini')
+        ? ' En GitHub Pages necesitas pegar tu API Key de Google AI Studio en "Configurar IA".'
+        : ' Verifica en Google AI Studio o OpenAI que tu API Key tenga generación de imágenes habilitada o cuota disponible.';
+      showBoxMsg('thumbDiagBox', 'err', `ℹ️ Se usó el Diseño Dinámico local porque la API de imágenes devolvió: ${firstErr}.${noKeyHint}`);
+    } else if (aiCount > 0) {
+      showBoxMsg('thumbDiagBox', 'ok', `✨ ${aiCount} miniatura(s) generada(s) directamente por IA.`);
+    }
+
     setStep(4, 'done', aiCount > 0 ? `${aiCount} miniaturas IA listas` : `${count} miniaturas variadas listas`);
     $('regenThumbsBtn').disabled = false;
     $('regenThumbsBtn').textContent = '✨ Generar 3 Miniaturas Nuevas con IA';
   }
 
   function renderThumbnailsGrid() {
-    if (!state.thumbnails.length) {
+    const valid = state.thumbnails.filter(Boolean);
+    if (!valid.length) {
       $('thumbsGrid').innerHTML = '<div class="card muted">Analiza un video en el Estudio de Cortes para generar automáticamente 3 miniaturas únicas con IA.</div>';
       return;
     }
     $('thumbsGrid').innerHTML = state.thumbnails.map((t, i) => {
       if (!t) return '';
-      const isLoading = t.source === 'loading';
-      const isAI = t.source.includes('IA');
       return `
         <div class="thumb-card">
           <div class="thumb-img-wrap">
             ${t.dataUrl ? `<img src="${t.dataUrl}" alt="Miniatura ${i + 1}" />` : ''}
-            ${isLoading ? `
-              <div class="thumb-loader">
-                <div class="spinner"></div>
-                <div>Creando miniatura única con IA...<br><span class="muted">${t.styleName}</span></div>
-              </div>
-            ` : ''}
+            ${t.loading ? `<div class="thumb-loader"><div class="spinner"></div><span>Creando estilo: ${escapeHtml(t.styleName)}...</span></div>` : ''}
           </div>
           <div class="thumb-body">
             <div class="row" style="justify-content:space-between;">
-              <strong>Corte #${i + 1}: ${t.hook}</strong>
-              <span class="badge ${isAI ? 'purple' : 'amber'}">${isLoading ? '⏳ Generando' : t.source}</span>
+              <strong>Corte #${i + 1}: ${escapeHtml(t.hook)}</strong>
+              <span class="badge ${t.source.includes('IA') ? 'purple' : 'amber'}">${escapeHtml(t.source)}</span>
             </div>
-            <div class="muted" style="font-size:0.78rem;">Estilo: <strong>${t.styleName}</strong></div>
-            <p class="muted" style="flex:1;">${t.title}</p>
-            <div class="row">
-              <button type="button" class="btn btn-sm btn-purple" onclick="window._regenOneThumb(${i})" ${isLoading ? 'disabled' : ''}>🎲 Otra con IA</button>
-              <a class="btn btn-sm btn-green" href="${t.dataUrl || '#'}" download="miniatura_ia_corte_${i + 1}.png" style="text-decoration:none; ${isLoading ? 'pointer-events:none; opacity:.5;' : ''}">⬇️ PNG</a>
-              <button type="button" class="btn btn-sm btn-primary" onclick="window._useCut(${i})">✂️ Corte</button>
+            <div class="muted" style="font-size:0.78rem;">Estilo: <strong>${escapeHtml(t.styleName)}</strong></div>
+            <p class="muted">${escapeHtml(t.title)}</p>
+            <div class="row" style="margin-top:auto;">
+              ${!t.loading && t.dataUrl ? `<a class="btn btn-sm btn-green" href="${t.dataUrl}" download="miniatura_corte_${i + 1}.png" style="text-decoration:none;">⬇️ Descargar</a>` : ''}
+              <button type="button" class="btn btn-sm btn-primary" data-open-cut="${i}">✂️ Corte</button>
+              <button type="button" class="btn btn-sm btn-purple" data-regen-one="${i}" ${t.loading ? 'disabled' : ''}>🎲 Otra con IA</button>
             </div>
           </div>
         </div>
       `;
     }).join('');
+
+    document.querySelectorAll('[data-open-cut]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelector('[data-tab="studio"]').click();
+        loadCutIntoPlayer(Number(btn.dataset.openCut), true);
+      });
+    });
+    document.querySelectorAll('[data-regen-one]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        state.creativeSeed += 1 + Math.floor(Math.random() * 5);
+        await generateSingleThumbnail(Number(btn.dataset.regenOne), true);
+      });
+    });
   }
-
-  window._useCut = idx => {
-    document.querySelector('[data-tab="studio"]').click();
-    loadCutIntoPlayer(idx, true);
-  };
-
-  window._regenOneThumb = async idx => {
-    showToast(`Generando nueva variante con IA para Corte #${idx + 1}...`, '');
-    await generateSingleThumbnail(idx, true);
-    showToast(`¡Nueva miniatura #${idx + 1} lista!`, 'ok');
-  };
-
-  $('regenThumbsBtn').addEventListener('click', async () => {
-    if (!state.cuts.length) {
-      showToast('Primero carga un video y analízalo en "Estudio de Cortes"', 'warn');
-      return;
-    }
-    state.creativeSeed += 3 + Math.floor(Math.random() * 11);
-    showToast('Creando 3 miniaturas nuevas con estilos y textos distintos...', '');
-    await buildAllThumbnails(true);
-    showToast('¡3 nuevas miniaturas generadas!', 'ok');
-  });
 
   // ==================== PIPELINE COMPLETO ====================
   async function runFullAnalysis() {
+    if (state.isAnalyzing) return;
     if (!video.src) {
       $('pipelineMsg').textContent = 'Primero sube un video o pulsa "✨ Cargar Video Demo".';
-      showToast('Sube un video o carga el demo primero', 'warn');
+      showToast('Sube un video o carga el video demo primero', 'warn');
       return;
     }
-    if (state.isAnalyzing) return;
+
     state.isAnalyzing = true;
     $('analyzeBtn').disabled = true;
-    $('analyzeBtn').textContent = '⏳ Analizando...';
-
+    $('pipelineMsg').textContent = 'Analizando video, extrayendo fotogramas reales, cortes y miniaturas IA...';
     try {
-      state.creativeSeed += 1 + Math.floor(Math.random() * 7);
-      $('pipelineMsg').textContent = 'Analizando video, extrayendo fotogramas reales y creando cortes + miniaturas con IA...';
-
       await extractRealFrames();
 
       setStep(2, 'run', 'Detectando momentos...');
+      state.creativeSeed += 1;
       const aiCuts = await askAIForCuts();
       state.cuts = aiCuts || buildSmartCutsFallback();
-      setStep(2, 'done', `${state.cuts.length} cortes (${aiCuts ? 'IA Conectada' : 'Motor Creativo'})`);
+      const provName = (AI_PROVIDERS[state.ai.provider] || AI_PROVIDERS.gemini).short;
+      setStep(2, 'done', `${state.cuts.length} cortes (${aiCuts ? provName : 'Motor Pro'})`);
 
-      setStep(3, 'run', 'Sincronizando subtítulos...');
+      setStep(3, 'run', 'Sincronizando texto...');
       loadCutIntoPlayer(0, true);
       setStep(3, 'done', 'Subtítulos en vivo listos');
 
       await buildAllThumbnails(false);
-      $('pipelineMsg').textContent = '✅ ¡Todo listo! Reproduce el video con subtítulos en vivo, edítalo en el Editor o revisa tus miniaturas IA.';
-      showToast('¡Análisis completado: cortes, subtítulos y miniaturas IA listos!', 'ok');
+      $('pipelineMsg').textContent = '✅ ¡Todo listo! Reproduce el video para ver subtítulos en vivo, edítalo o revisa tus miniaturas creativas.';
+      showToast('Análisis completo: cortes, subtítulos y miniaturas listos', 'ok');
     } catch (err) {
-      $('pipelineMsg').textContent = `⚠️ Ocurrió un detalle al analizar: ${err.message}`;
-      showToast('Error durante el análisis. Intenta de nuevo.', 'warn');
+      setStep(2, 'err', 'Error en análisis');
+      $('pipelineMsg').textContent = `⚠️ Ocurrió un problema durante el análisis: ${err.message}`;
+      showToast('Error al analizar el video', 'warn');
     } finally {
       state.isAnalyzing = false;
       $('analyzeBtn').disabled = false;
-      $('analyzeBtn').textContent = '🚀 Auto-Analizar Todo (IA)';
     }
   }
 
   $('analyzeBtn').addEventListener('click', runFullAnalysis);
+  $('regenThumbsBtn').addEventListener('click', async () => {
+    if (!state.cuts.length) {
+      showToast('Primero carga y analiza un video', 'warn');
+      return;
+    }
+    state.creativeSeed += 3 + Math.floor(Math.random() * 7);
+    await buildAllThumbnails(true);
+  });
 
-  // ==================== MOTOR DE RENDER EN VIVO (ESTUDIO + EDITOR + EXPORTACIÓN) ====================
+  // ==================== MOTOR DE RENDER EN VIVO (VIDEO + FILTROS + ZOOM + GANCHO + MARCA + PNG + SUBTÍTULOS) ====================
   function wrapText(c, text, maxW) {
     const words = String(text || '').split(' ');
     const lines = [];
@@ -2295,38 +2434,37 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     for (const w of words) {
       const test = cur ? cur + ' ' + w : w;
       if (c.measureText(test).width > maxW && cur) {
-        lines.push(cur); cur = w;
-      } else cur = test;
+        lines.push(cur);
+        cur = w;
+      } else {
+        cur = test;
+      }
     }
     if (cur) lines.push(cur);
     return lines;
   }
 
-  function buildCanvasFilterString() {
+  function buildFilterString() {
     const e = state.edit;
-    const parts = [
-      `brightness(${e.brightness}%)`,
-      `contrast(${e.contrast}%)`,
-      `saturate(${e.saturate}%)`
-    ];
-    if (e.grayscale > 0) parts.push(`grayscale(${e.grayscale}%)`);
-    if (e.sepia > 0) parts.push(`sepia(${e.sepia}%)`);
-    return parts.join(' ');
+    let f = `brightness(${e.brightness}%) contrast(${e.contrast}%) saturate(${e.saturate}%)`;
+    if (e.grayscale > 0) f += ` grayscale(${e.grayscale}%)`;
+    if (e.sepia > 0) f += ` sepia(${e.sepia}%)`;
+    return f;
   }
 
   function drawSubtitleOverlay(c, w, h, now) {
     if (!state.showSubs || !state.subtitles.length) return;
     const active = state.subtitles.find(s => now >= s.start && now <= s.end) ||
-      (now >= state.startTime && now <= state.endTime ? state.subtitles[state.subtitles.length - 1] : null);
+                   (now >= state.startTime && now <= state.endTime ? state.subtitles[state.subtitles.length - 1] : null);
     if (!active) return;
 
-    const fontSize = state.aspect === '9:16' ? 32 : state.aspect === '1:1' ? 34 : 36;
+    const fontSize = state.aspect === '9:16' ? 32 : 36;
     c.save();
     c.font = `900 ${fontSize}px Segoe UI, Impact, sans-serif`;
     c.textAlign = 'center';
     const lines = wrapText(c, active.text.toUpperCase(), w * 0.86);
     const lineH = fontSize * 1.24;
-    const baseY = h * 0.79 - ((lines.length - 1) * lineH) / 2;
+    const baseY = h * 0.80 - ((lines.length - 1) * lineH) / 2;
 
     lines.forEach((line, idx) => {
       const y = baseY + idx * lineH;
@@ -2348,54 +2486,11 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     c.restore();
   }
 
-  function drawHookAndWatermark(c, w, h) {
-    const e = state.edit;
-    // Barra de gancho superior
-    if (e.showHook && e.hookText.trim()) {
-      c.save();
-      const padX = w * 0.06;
-      const barW = w - padX * 2;
-      const barH = Math.max(54, h * 0.075);
-      const barY = h * 0.045;
-      c.fillStyle = e.hookColor || '#f59e0b';
-      drawRoundRect(c, padX, barY, barW, barH, 14);
-      c.fill();
-      c.fillStyle = (e.hookColor === '#f59e0b' || e.hookColor === '#10b981') ? '#090d16' : '#ffffff';
-      const fSize = Math.max(20, Math.min(30, Math.round(w * 0.048)));
-      c.font = `900 ${fSize}px Segoe UI, sans-serif`;
-      c.textAlign = 'center';
-      c.textBaseline = 'middle';
-      c.fillText(e.hookText.trim().toUpperCase().slice(0, 38), w / 2, barY + barH / 2);
-      c.restore();
-    }
-
-    // Marca de agua
-    if (e.watermark.trim()) {
-      c.save();
-      c.globalAlpha = e.watermarkOpacity;
-      const fSize = Math.max(18, Math.round(w * 0.036));
-      c.font = `800 ${fSize}px Segoe UI, sans-serif`;
-      const txt = e.watermark.trim();
-      const pad = 20;
-      const topOffset = (e.showHook && e.hookText.trim()) ? h * 0.15 : pad + fSize;
-      let x = w - pad, y = topOffset;
-      if (e.watermarkPos === 'tl') { c.textAlign = 'left'; x = pad; y = topOffset; }
-      else if (e.watermarkPos === 'tr') { c.textAlign = 'right'; x = w - pad; y = topOffset; }
-      else if (e.watermarkPos === 'bl') { c.textAlign = 'left'; x = pad; y = h - pad; }
-      else { c.textAlign = 'right'; x = w - pad; y = h - pad; }
-      c.lineWidth = 4; c.strokeStyle = 'rgba(0,0,0,0.8)';
-      c.strokeText(txt, x, y);
-      c.fillStyle = '#ffffff';
-      c.fillText(txt, x, y);
-      c.restore();
-    }
-  }
-
-  function drawCompositeFrame(targetCtx, w, h) {
+  function drawSceneToCanvas(targetCtx, w, h) {
     targetCtx.fillStyle = '#050811';
     targetCtx.fillRect(0, 0, w, h);
 
-    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+    if (video.readyState >= 2 && video.videoWidth > 0) {
       const vr = video.videoWidth / video.videoHeight;
       const cr = w / h;
       let sx = 0, sy = 0, sw = video.videoWidth, sh = video.videoHeight;
@@ -2408,75 +2503,100 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       }
 
       targetCtx.save();
-      targetCtx.filter = buildCanvasFilterString();
+      targetCtx.filter = buildFilterString();
       targetCtx.translate(w / 2 + (state.edit.panX / 100) * w, h / 2 + (state.edit.panY / 100) * h);
       targetCtx.rotate((state.edit.rotation * Math.PI) / 180);
-      targetCtx.scale((state.edit.flipX ? -1 : 1) * state.edit.zoom, state.edit.zoom);
+      targetCtx.scale(state.edit.flipX ? -state.edit.zoom : state.edit.zoom, state.edit.zoom);
       targetCtx.drawImage(video, sx, sy, sw, sh, -w / 2, -h / 2, w, h);
       targetCtx.restore();
     } else {
       targetCtx.save();
       targetCtx.fillStyle = '#64748b';
-      targetCtx.font = '700 22px Segoe UI';
+      targetCtx.font = '700 20px Segoe UI';
       targetCtx.textAlign = 'center';
-      targetCtx.fillText('Sube un video o pulsa', w / 2, h / 2 - 14);
-      targetCtx.fillStyle = '#38bdf8';
-      targetCtx.fillText('✨ Cargar Video Demo', w / 2, h / 2 + 22);
+      targetCtx.fillText('Sube un video o carga el Demo', w / 2, h / 2);
       targetCtx.restore();
     }
 
-    // PNG sin fondo
+    // Gancho superior del editor
+    if (state.edit.showHook && state.edit.hookText.trim()) {
+      targetCtx.save();
+      const padX = w * 0.06;
+      const boxW = w - padX * 2;
+      const boxH = state.aspect === '9:16' ? 74 : 64;
+      targetCtx.fillStyle = state.edit.hookColor || '#f59e0b';
+      drawRoundRect(targetCtx, padX, 24, boxW, boxH, 16);
+      targetCtx.fill();
+      targetCtx.fillStyle = '#090d16';
+      targetCtx.font = `900 ${state.aspect === '9:16' ? 24 : 26}px Segoe UI`;
+      targetCtx.textAlign = 'center';
+      targetCtx.fillText(state.edit.hookText.trim().slice(0, 38).toUpperCase(), w / 2, 24 + boxH * 0.65);
+      targetCtx.restore();
+    }
+
+    // Marca de agua
+    if (state.edit.watermark.trim()) {
+      targetCtx.save();
+      targetCtx.globalAlpha = state.edit.watermarkOpacity;
+      targetCtx.font = '800 22px Segoe UI';
+      const txt = state.edit.watermark.trim();
+      const tw = targetCtx.measureText(txt).width + 20;
+      const pos = state.edit.watermarkPos;
+      const x = (pos === 'tr' || pos === 'br') ? w - tw - 18 : 18;
+      const y = (pos === 'bl' || pos === 'br') ? h - 52 : (state.edit.showHook ? 112 : 24);
+      targetCtx.fillStyle = 'rgba(0,0,0,0.58)';
+      drawRoundRect(targetCtx, x, y, tw, 34, 999);
+      targetCtx.fill();
+      targetCtx.fillStyle = '#ffffff';
+      targetCtx.fillText(txt, x + 10, y + 24);
+      targetCtx.restore();
+    }
+
+    // Foto PNG sin fondo
     if (state.pngProcessed) {
       const scale = Number($('pngScale').value) / 100;
       const pw = w * scale;
-      const ph = pw * (state.pngProcessed.height / state.pngProcessed.width);
+      const ph = pw * (state.pngProcessed.height / Math.max(1, state.pngProcessed.width));
       const px = (Number($('pngX').value) / 100) * w - pw / 2;
       const py = (Number($('pngY').value) / 100) * h - ph / 2;
       targetCtx.drawImage(state.pngProcessed, px, py, pw, ph);
     }
-
-    // Gancho superior + Marca de agua
-    drawHookAndWatermark(targetCtx, w, h);
 
     // Subtítulos en vivo
     drawSubtitleOverlay(targetCtx, w, h, video.currentTime || 0);
   }
 
   function renderFrameLoop() {
-    if (video.readyState >= 2 && !video.paused && !state.isExporting) {
-      if (state.loopCut && state.endTime > state.startTime && video.currentTime >= state.endTime) {
+    if (video.readyState >= 2) {
+      if (!video.paused && state.loopCut && !state.isExporting && video.currentTime >= state.endTime) {
         video.currentTime = state.startTime;
       }
-    }
-    if (video.src && !state.draggingTimeline) {
-      $('seekBar').value = video.currentTime || 0;
-      const tTxt = fmtTime(video.currentTime || 0);
-      $('timeNow').textContent = tTxt;
-      $('edTimeNow').textContent = tTxt;
+      const now = video.currentTime || 0;
+      $('seekBar').value = now;
+      const formatted = fmtTime(now);
+      $('timeNow').textContent = formatted;
+      $('edTimeNow').textContent = formatted;
       updateTimelineUI();
     }
 
-    if (state.activeTab === 'editor' && !state.isExporting) {
-      drawCompositeFrame(editorCtx, editorCanvas.width, editorCanvas.height);
-    } else {
-      drawCompositeFrame(ctx, canvas.width, canvas.height);
+    drawSceneToCanvas(ctx, canvas.width, canvas.height);
+    if (state.activeTab === 'editor') {
+      drawSceneToCanvas(editorCtx, editorCanvas.width, editorCanvas.height);
     }
-
     requestAnimationFrame(renderFrameLoop);
   }
   requestAnimationFrame(renderFrameLoop);
 
-  // ==================== CONTROLES DE REPRODUCCIÓN (ESTUDIO + EDITOR) ====================
+  // ==================== CONTROLES DE REPRODUCCIÓN Y SUBTÍTULOS ====================
   function togglePlayPause() {
     if (!video.src) {
-      showToast('Primero sube un video o pulsa "✨ Cargar Video Demo"', 'warn');
+      showToast('Sube un video o pulsa "✨ Cargar Video Demo" primero', 'warn');
       return;
     }
     if (video.paused) {
       if (video.currentTime < state.startTime || video.currentTime >= state.endTime) {
         video.currentTime = state.startTime;
       }
-      video.playbackRate = state.edit.speed;
       video.play().then(syncPlayButtons).catch(syncPlayButtons);
     } else {
       video.pause();
@@ -2487,149 +2607,152 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
   $('playPauseBtn').addEventListener('click', togglePlayPause);
   $('edPlayPauseBtn').addEventListener('click', togglePlayPause);
 
-  function toggleLoopCut() {
+  function toggleLoop() {
     state.loopCut = !state.loopCut;
     syncLoopButtons();
-    showToast(state.loopCut ? 'Loop del corte activado' : 'Loop del corte desactivado', '');
+    showToast(state.loopCut ? 'Loop del corte activado' : 'Loop desactivado', '');
   }
-  $('loopCutBtn').addEventListener('click', toggleLoopCut);
-  $('edLoopCutBtn').addEventListener('click', toggleLoopCut);
-
-  $('aspectSelect').addEventListener('change', e => applyAspectRatio(e.target.value));
-  $('edAspectSelect').addEventListener('change', e => applyAspectRatio(e.target.value));
+  $('loopCutBtn').addEventListener('click', toggleLoop);
+  $('edLoopCutBtn').addEventListener('click', toggleLoop);
 
   $('seekBar').addEventListener('input', e => {
-    if (!video.src) return;
-    video.currentTime = Number(e.target.value);
+    if (video.src) video.currentTime = Number(e.target.value);
+  });
+  $('aspectSelect').addEventListener('change', e => applyAspectRatio(e.target.value));
+  $('edAspectSelect').addEventListener('change', e => applyAspectRatio(e.target.value));
+  $('subStyleSelect').addEventListener('change', e => { state.subStyle = e.target.value; });
+  $('showSubsCheck').addEventListener('change', e => { state.showSubs = e.target.checked; });
+
+  $('applySubsBtn').addEventListener('click', () => {
+    state.startTime = Math.max(0, Number($('startInput').value) || 0);
+    state.endTime = Math.max(state.startTime + 0.5, Number($('endInput').value) || state.duration || 15);
+    if (state.duration > 0) state.endTime = Math.min(state.duration, state.endTime);
+    const lines = $('subsTextarea').value.split('\n');
+    state.subtitles = buildTimedSubtitles(lines, state.startTime, state.endTime);
+    if (state.activeCutIdx >= 0 && state.cuts[state.activeCutIdx]) {
+      state.cuts[state.activeCutIdx].start = state.startTime;
+      state.cuts[state.activeCutIdx].end = state.endTime;
+      state.cuts[state.activeCutIdx].lines = lines.map(l => l.trim()).filter(Boolean);
+      renderCutsList();
+    }
+    updateCutRangeLabel();
+    if (video.src) {
+      video.currentTime = state.startTime;
+      video.play().then(syncPlayButtons).catch(syncPlayButtons);
+    }
+    showToast('Subtítulos aplicados a todo el corte', 'ok');
   });
 
-  video.addEventListener('ended', syncPlayButtons);
-
-  // ==================== LÍNEA DE TIEMPO INTERACTIVA DEL EDITOR ====================
-  function scrubTimelineFromPointer(e) {
-    if (!video.src || state.duration <= 0) return;
+  // ==================== CONTROLES DEL EDITOR DE VIDEO ====================
+  function seekFromTimelinePointer(clientX) {
+    if (!video.src || !state.duration) return;
     const rect = $('timelineTrack').getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const t = ratio * state.duration;
-    video.currentTime = t;
-    $('edTimeNow').textContent = fmtTime(t);
-    $('timeNow').textContent = fmtTime(t);
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / Math.max(1, rect.width)));
+    video.currentTime = pct * state.duration;
     updateTimelineUI();
   }
 
-  $('timelineTrack').addEventListener('pointerdown', e => {
+  $('timelineTrack').addEventListener('mousedown', e => {
     state.draggingTimeline = true;
-    scrubTimelineFromPointer(e);
+    seekFromTimelinePointer(e.clientX);
   });
-  window.addEventListener('pointermove', e => {
-    if (state.draggingTimeline) scrubTimelineFromPointer(e);
+  window.addEventListener('mousemove', e => {
+    if (state.draggingTimeline) seekFromTimelinePointer(e.clientX);
   });
-  window.addEventListener('pointerup', () => { state.draggingTimeline = false; });
+  window.addEventListener('mouseup', () => { state.draggingTimeline = false; });
+
+  $('timelineTrack').addEventListener('touchstart', e => {
+    if (e.touches[0]) {
+      state.draggingTimeline = true;
+      seekFromTimelinePointer(e.touches[0].clientX);
+    }
+  }, { passive: true });
+  $('timelineTrack').addEventListener('touchmove', e => {
+    if (state.draggingTimeline && e.touches[0]) seekFromTimelinePointer(e.touches[0].clientX);
+  }, { passive: true });
+  $('timelineTrack').addEventListener('touchend', () => { state.draggingTimeline = false; });
 
   $('edMarkStartBtn').addEventListener('click', () => {
-    if (!video.src) return showToast('Carga un video primero', 'warn');
-    const t = Number((video.currentTime || 0).toFixed(1));
-    state.startTime = Math.min(t, Math.max(0, state.endTime - 0.5));
+    if (!video.src) return;
+    state.startTime = Number(Math.max(0, Math.min(state.endTime - 0.5, video.currentTime)).toFixed(1));
     $('startInput').value = state.startTime.toFixed(1);
-    if (state.activeCutIdx >= 0 && state.cuts[state.activeCutIdx]) {
-      state.cuts[state.activeCutIdx].start = state.startTime;
-      state.subtitles = buildTimedSubtitles(state.cuts[state.activeCutIdx].lines, state.startTime, state.endTime);
-      renderCutsList();
-    }
+    state.subtitles = buildTimedSubtitles($('subsTextarea').value.split('\n'), state.startTime, state.endTime);
     updateCutRangeLabel();
-    showToast(`Inicio del corte marcado en ${fmtTime(state.startTime)}`, 'ok');
+    showToast(`Inicio fijado en ${fmtTime(state.startTime)}`, 'ok');
   });
 
   $('edMarkEndBtn').addEventListener('click', () => {
-    if (!video.src) return showToast('Carga un video primero', 'warn');
-    const t = Number((video.currentTime || state.duration).toFixed(1));
-    state.endTime = Math.max(t, Math.min(state.duration, state.startTime + 0.5));
+    if (!video.src) return;
+    state.endTime = Number(Math.max(state.startTime + 0.5, Math.min(state.duration, video.currentTime)).toFixed(1));
     $('endInput').value = state.endTime.toFixed(1);
-    if (state.activeCutIdx >= 0 && state.cuts[state.activeCutIdx]) {
-      state.cuts[state.activeCutIdx].end = state.endTime;
-      state.subtitles = buildTimedSubtitles(state.cuts[state.activeCutIdx].lines, state.startTime, state.endTime);
-      renderCutsList();
-    }
+    state.subtitles = buildTimedSubtitles($('subsTextarea').value.split('\n'), state.startTime, state.endTime);
     updateCutRangeLabel();
-    showToast(`Fin del corte marcado en ${fmtTime(state.endTime)}`, 'ok');
+    showToast(`Fin fijado en ${fmtTime(state.endTime)}`, 'ok');
   });
 
   $('edSplitCutBtn').addEventListener('click', () => {
-    if (!video.src) return showToast('Carga un video primero', 'warn');
-    const splitAt = Number((video.currentTime || 0).toFixed(1));
-    if (splitAt <= state.startTime + 0.4 || splitAt >= state.endTime - 0.4) {
-      showToast('Coloca el cursor amarillo dentro del rango del corte para dividirlo', 'warn');
+    if (!video.src) return;
+    const mid = Number((video.currentTime || 0).toFixed(1));
+    if (mid <= state.startTime + 0.5 || mid >= state.endTime - 0.5) {
+      showToast('Coloca el cabezal amarillo dentro del corte para dividirlo', 'warn');
       return;
     }
-    const baseCut = state.cuts[state.activeCutIdx] || {
-      title: 'Corte Editado',
-      hookText: 'PARTE 1',
-      badge: 'DIVIDIDO',
-      score: 94,
-      frameIdx: 0,
-      lines: $('subsTextarea').value.split('\n').filter(Boolean)
-    };
-    const lines = baseCut.lines?.length ? baseCut.lines : ['Primera parte del corte', 'Segunda parte del corte'];
-    const mid = Math.max(1, Math.floor(lines.length / 2));
-    const part1 = { ...baseCut, title: `${baseCut.title} (Parte 1)`, start: state.startTime, end: splitAt, lines: lines.slice(0, mid) };
-    const part2 = { ...baseCut, title: `${baseCut.title} (Parte 2)`, start: splitAt, end: state.endTime, lines: lines.slice(mid).length ? lines.slice(mid) : lines };
-
-    if (state.activeCutIdx >= 0) {
-      state.cuts.splice(state.activeCutIdx, 1, part1, part2);
-    } else {
-      state.cuts.push(part1, part2);
-      state.activeCutIdx = state.cuts.length - 2;
+    const oldEnd = state.endTime;
+    state.endTime = mid;
+    $('endInput').value = mid.toFixed(1);
+    if (state.activeCutIdx >= 0 && state.cuts[state.activeCutIdx]) {
+      state.cuts[state.activeCutIdx].end = mid;
     }
+    const fresh = getUniqueCreativePack(state.cuts.length + Date.now());
+    state.cuts.push({
+      title: `Parte 2 (${fmtTime(mid)} → ${fmtTime(oldEnd)})`,
+      hookText: fresh.hook,
+      badge: 'DIVIDIDO',
+      score: 93,
+      start: mid,
+      end: oldEnd,
+      frameIdx: 0,
+      lines: fresh.lines
+    });
     renderCutsList();
-    loadCutIntoPlayer(state.activeCutIdx, false);
-    showToast(`Corte dividido en 2 partes en ${fmtTime(splitAt)}`, 'ok');
+    updateCutRangeLabel();
+    showToast(`Corte dividido en ${fmtTime(mid)} (Parte 2 añadida)`, 'ok');
   });
 
   $('edSaveNewCutBtn').addEventListener('click', () => {
-    if (!video.src) return showToast('Carga un video primero', 'warn');
-    const idx = state.cuts.length;
-    const pack = getUniqueCreativePack(idx + 5);
+    if (!video.src) return;
     const lines = $('subsTextarea').value.split('\n').map(l => l.trim()).filter(Boolean);
-    state.cuts.push({
-      title: state.edit.hookText.trim() || `Corte Editado #${idx + 1}`,
-      hookText: (state.edit.hookText.trim() || pack.hook).toUpperCase().slice(0, 20),
+    const fresh = getUniqueCreativePack(state.cuts.length + 1);
+    const newCut = {
+      title: `Corte Editado #${state.cuts.length + 1}`,
+      hookText: (state.edit.hookText || fresh.hook).toUpperCase(),
       badge: 'EDITADO PRO',
       score: 95,
       start: state.startTime,
       end: state.endTime,
-      frameIdx: Math.min(Math.max(0, state.frames.length - 1), Math.floor((state.startTime / Math.max(1, state.duration)) * Math.max(1, state.frames.length))),
-      lines: lines.length ? lines : pack.lines
-    });
+      frameIdx: 0,
+      lines: lines.length ? lines : fresh.lines
+    };
+    state.cuts.push(newCut);
+    state.activeCutIdx = state.cuts.length - 1;
     renderCutsList();
-    loadCutIntoPlayer(idx, false);
-    showToast('Corte editado guardado en tu lista de cortes', 'ok');
+    showToast('Corte editado guardado en tu lista', 'ok');
   });
 
-  // ==================== VELOCIDAD, AUDIO, TRANSFORMACIÓN Y COLOR ====================
   $('edSpeedSelect').addEventListener('change', e => {
     state.edit.speed = Number(e.target.value) || 1;
     video.playbackRate = state.edit.speed;
-    showToast(`Velocidad: ${state.edit.speed}x`, '');
   });
-
   $('edVolumeRange').addEventListener('input', e => {
     const v = Number(e.target.value);
     state.edit.volume = v / 100;
     video.volume = state.edit.volume;
     $('edVolumeVal').textContent = `${v}%`;
-    if (v > 0 && state.edit.muted) {
-      state.edit.muted = false;
-      video.muted = false;
-      $('edMuteBtn').textContent = '🔊 Audio Activo (Clic para silenciar)';
-    }
   });
-
   $('edMuteBtn').addEventListener('click', () => {
     state.edit.muted = !state.edit.muted;
     video.muted = state.edit.muted;
-    $('edMuteBtn').textContent = state.edit.muted
-      ? '🔇 Audio Silenciado (Clic para activar)'
-      : '🔊 Audio Activo (Clic para silenciar)';
+    $('edMuteBtn').textContent = state.edit.muted ? '🔇 Silenciado (Clic para activar)' : '🔊 Audio Activo (Clic para silenciar)';
   });
 
   $('edZoomRange').addEventListener('input', e => {
@@ -2651,19 +2774,10 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
   });
   $('edFlipXBtn').addEventListener('click', () => {
     state.edit.flipX = !state.edit.flipX;
-    $('edFlipXBtn').style.borderColor = state.edit.flipX ? 'var(--accent)' : 'var(--border)';
+    showToast(state.edit.flipX ? 'Modo espejo activado' : 'Modo espejo desactivado', '');
   });
 
-  const FILTER_PRESETS = {
-    none: { brightness: 100, contrast: 100, saturate: 100, grayscale: 0, sepia: 0 },
-    cine: { brightness: 96, contrast: 128, saturate: 112, grayscale: 0, sepia: 8 },
-    vibrant: { brightness: 106, contrast: 116, saturate: 155, grayscale: 0, sepia: 0 },
-    warm: { brightness: 104, contrast: 108, saturate: 122, grayscale: 0, sepia: 32 },
-    bw: { brightness: 102, contrast: 132, saturate: 0, grayscale: 100, sepia: 0 },
-    cyber: { brightness: 95, contrast: 135, saturate: 165, grayscale: 0, sepia: 0 }
-  };
-
-  function syncColorSlidersUI() {
+  function syncColorSliders() {
     $('edBrightRange').value = state.edit.brightness;
     $('edBrightVal').textContent = `${state.edit.brightness}%`;
     $('edContrastRange').value = state.edit.contrast;
@@ -2673,11 +2787,20 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
   }
 
   $('edFilterPreset').addEventListener('change', e => {
-    const p = FILTER_PRESETS[e.target.value] || FILTER_PRESETS.none;
-    state.edit.filterPreset = e.target.value;
-    Object.assign(state.edit, p);
-    syncColorSlidersUI();
+    const p = e.target.value;
+    state.edit.filterPreset = p;
+    const presets = {
+      none: { brightness: 100, contrast: 100, saturate: 100, grayscale: 0, sepia: 0 },
+      cine: { brightness: 96, contrast: 126, saturate: 112, grayscale: 0, sepia: 8 },
+      vibrant: { brightness: 105, contrast: 116, saturate: 155, grayscale: 0, sepia: 0 },
+      warm: { brightness: 104, contrast: 108, saturate: 128, grayscale: 0, sepia: 28 },
+      bw: { brightness: 102, contrast: 135, saturate: 0, grayscale: 100, sepia: 0 },
+      cyber: { brightness: 95, contrast: 132, saturate: 165, grayscale: 0, sepia: 0 }
+    };
+    Object.assign(state.edit, presets[p] || presets.none);
+    syncColorSliders();
   });
+
   $('edBrightRange').addEventListener('input', e => {
     state.edit.brightness = Number(e.target.value);
     $('edBrightVal').textContent = `${state.edit.brightness}%`;
@@ -2709,64 +2832,32 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
   });
 
   $('edResetBtn').addEventListener('click', () => {
-    Object.assign(state.edit, {
+    state.edit = {
       speed: 1, volume: 1, muted: false, zoom: 1, panX: 0, panY: 0,
       rotation: 0, flipX: false, filterPreset: 'none',
       brightness: 100, contrast: 100, saturate: 100, grayscale: 0, sepia: 0,
       showHook: false, hookText: '', hookColor: '#f59e0b',
       watermark: '', watermarkPos: 'tr', watermarkOpacity: 0.75
-    });
+    };
     video.playbackRate = 1;
     video.volume = 1;
     video.muted = false;
     $('edSpeedSelect').value = '1';
-    $('edVolumeRange').value = 100; $('edVolumeVal').textContent = '100%';
+    $('edVolumeRange').value = '100'; $('edVolumeVal').textContent = '100%';
     $('edMuteBtn').textContent = '🔊 Audio Activo (Clic para silenciar)';
-    $('edZoomRange').value = 100; $('edZoomVal').textContent = '100%';
-    $('edPanXRange').value = 0; $('edPanXVal').textContent = '0%';
-    $('edPanYRange').value = 0; $('edPanYVal').textContent = '0%';
-    $('edFlipXBtn').style.borderColor = 'var(--border)';
+    $('edZoomRange').value = '100'; $('edZoomVal').textContent = '100%';
+    $('edPanXRange').value = '0'; $('edPanXVal').textContent = '0%';
+    $('edPanYRange').value = '0'; $('edPanYVal').textContent = '0%';
     $('edFilterPreset').value = 'none';
-    syncColorSlidersUI();
+    syncColorSliders();
     $('edShowHookCheck').checked = false;
     $('edHookInput').value = '';
-    $('edHookColorSelect').value = '#f59e0b';
     $('edWatermarkInput').value = '';
-    $('edWatermarkPos').value = 'tr';
-    $('edWatermarkOpacity').value = 75; $('edWmOpVal').textContent = '75%';
+    $('edWatermarkOpacity').value = '75'; $('edWmOpVal').textContent = '75%';
     showToast('Ajustes del editor restablecidos', 'ok');
   });
 
-  // ==================== SUBTÍTULOS ====================
-  $('subStyleSelect').addEventListener('change', e => { state.subStyle = e.target.value; });
-  $('showSubsCheck').addEventListener('change', e => { state.showSubs = e.target.checked; });
-
-  $('applySubsBtn').addEventListener('click', () => {
-    const maxDur = Math.max(1, state.duration || 15);
-    state.startTime = Math.max(0, Math.min(maxDur - 0.5, Number($('startInput').value) || 0));
-    state.endTime = Math.max(state.startTime + 0.5, Math.min(maxDur, Number($('endInput').value) || maxDur));
-    $('startInput').value = state.startTime.toFixed(1);
-    $('endInput').value = state.endTime.toFixed(1);
-
-    const lines = $('subsTextarea').value.split('\n');
-    state.subtitles = buildTimedSubtitles(lines, state.startTime, state.endTime);
-
-    if (state.activeCutIdx >= 0 && state.cuts[state.activeCutIdx]) {
-      state.cuts[state.activeCutIdx].start = state.startTime;
-      state.cuts[state.activeCutIdx].end = state.endTime;
-      state.cuts[state.activeCutIdx].lines = lines.map(l => l.trim()).filter(Boolean);
-      renderCutsList();
-    }
-
-    updateCutRangeLabel();
-    if (video.src) {
-      video.currentTime = state.startTime;
-      video.play().then(syncPlayButtons).catch(syncPlayButtons);
-    }
-    showToast('Subtítulos aplicados en todo el corte', 'ok');
-  });
-
-  // ==================== PNG SIN FONDO (CON ARRASTRE EN LIENZO) ====================
+  // ==================== PNG SIN FONDO + ARRASTRE EN CANVAS ====================
   function processPngChroma() {
     if (!state.pngImg) return;
     const mode = $('chromaSelect').value;
@@ -2780,9 +2871,9 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       const d = imgData.data;
       for (let i = 0; i < d.length; i += 4) {
         const r = d[i], gr = d[i + 1], b = d[i + 2];
-        if ((mode === 'white' && r > 225 && gr > 225 && b > 225) ||
-            (mode === 'black' && r < 30 && gr < 30 && b < 30) ||
-            (mode === 'green' && gr > 120 && gr > r * 1.3 && gr > b * 1.3)) {
+        if ((mode === 'white' && r > 222 && gr > 222 && b > 222) ||
+            (mode === 'black' && r < 32 && gr < 32 && b < 32) ||
+            (mode === 'green' && gr > 115 && gr > r * 1.28 && gr > b * 1.28)) {
           d[i + 3] = 0;
         }
       }
@@ -2798,79 +2889,83 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     img.onload = () => {
       state.pngImg = img;
       processPngChroma();
-      showToast('Foto PNG añadida (arrástrala sobre el video para moverla)', 'ok');
+      showToast('Foto PNG añadida (puedes arrastrarla sobre el video)', 'ok');
     };
-    img.onerror = () => showToast('No se pudo cargar la imagen seleccionada', 'warn');
     img.src = URL.createObjectURL(f);
     e.target.value = '';
   });
-
   $('chromaSelect').addEventListener('change', processPngChroma);
   $('clearPngBtn').addEventListener('click', () => {
     state.pngImg = null;
     state.pngProcessed = null;
-    showToast('Foto PNG quitada del video', '');
+    showToast('Foto PNG quitada', '');
   });
 
-  function movePngFromPointer(e, targetEl) {
-    const rect = targetEl.getBoundingClientRect();
-    const xPct = Math.max(5, Math.min(95, ((e.clientX - rect.left) / rect.width) * 100));
-    const yPct = Math.max(5, Math.min(95, ((e.clientY - rect.top) / rect.height) * 100));
-    $('pngX').value = Math.round(xPct);
-    $('pngY').value = Math.round(yPct);
-  }
-  [canvas, editorCanvas].forEach(cEl => {
-    cEl.addEventListener('pointerdown', e => {
+  function bindPngDrag(targetCanvas) {
+    const movePng = (clientX, clientY) => {
+      if (!state.draggingPng || !state.pngProcessed) return;
+      const rect = targetCanvas.getBoundingClientRect();
+      const xPct = Math.max(5, Math.min(95, Math.round(((clientX - rect.left) / Math.max(1, rect.width)) * 100)));
+      const yPct = Math.max(5, Math.min(95, Math.round(((clientY - rect.top) / Math.max(1, rect.height)) * 100)));
+      $('pngX').value = xPct;
+      $('pngY').value = yPct;
+    };
+    targetCanvas.addEventListener('mousedown', e => {
       if (!state.pngProcessed) return;
       state.draggingPng = true;
-      movePngFromPointer(e, cEl);
+      movePng(e.clientX, e.clientY);
     });
-    cEl.addEventListener('pointermove', e => {
-      if (state.draggingPng) movePngFromPointer(e, cEl);
-    });
-  });
-  window.addEventListener('pointerup', () => { state.draggingPng = false; });
-  window.addEventListener('pointercancel', () => { state.draggingPng = false; });
+    window.addEventListener('mousemove', e => movePng(e.clientX, e.clientY));
+    window.addEventListener('mouseup', () => { state.draggingPng = false; });
 
-  // ==================== EXPORTAR Y PREVISUALIZAR CLIP (CON AUDIO Y EDICIÓN) ====================
+    targetCanvas.addEventListener('touchstart', e => {
+      if (!state.pngProcessed || !e.touches[0]) return;
+      state.draggingPng = true;
+      movePng(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    targetCanvas.addEventListener('touchmove', e => {
+      if (state.draggingPng && e.touches[0]) movePng(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    targetCanvas.addEventListener('touchend', () => { state.draggingPng = false; });
+  }
+  bindPngDrag(canvas);
+  bindPngDrag(editorCanvas);
+
+  // ==================== EXPORTAR Y PREVISUALIZAR CLIP (CON AUDIO) ====================
   async function exportCurrentClip() {
     if (!video.src) {
-      showToast('Primero carga un video o pulsa "✨ Cargar Video Demo"', 'warn');
+      showToast('Primero carga un video para exportar', 'warn');
       return;
     }
+    if (state.isExporting) return;
     state.isExporting = true;
+
     $('exportModal').classList.add('open');
     $('exportedVideoPreview').style.display = 'none';
     $('downloadExportBtn').style.display = 'none';
     $('exportProgress').style.width = '5%';
-    $('exportStatus').textContent = 'Renderizando video editado con filtros, subtítulos, PNG y audio...';
+    $('exportStatus').textContent = 'Renderizando corte con subtítulos, filtros, PNG y audio...';
 
     try {
-      drawCompositeFrame(ctx, canvas.width, canvas.height);
-      const canvasStream = canvas.captureStream(30);
-      const tracks = [...canvasStream.getVideoTracks()];
-      if (!state.edit.muted) {
-        try {
-          const vidStream = typeof video.captureStream === 'function'
-            ? video.captureStream()
-            : (typeof video.mozCaptureStream === 'function' ? video.mozCaptureStream() : null);
-          if (vidStream) {
-            vidStream.getAudioTracks().forEach(t => tracks.push(t));
-          }
-        } catch (_) {}
-      }
+      const videoStream = canvas.captureStream(30);
+      const tracks = [...videoStream.getVideoTracks()];
 
-      const combinedStream = new MediaStream(tracks);
+      try {
+        const cap = video.captureStream ? video.captureStream() : (video.mozCaptureStream ? video.mozCaptureStream() : null);
+        if (cap && cap.getAudioTracks().length && !state.edit.muted) {
+          tracks.push(...cap.getAudioTracks());
+        }
+      } catch (_) {}
+
+      const combined = new MediaStream(tracks);
       const mimeTypes = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
-      const chosenMime = mimeTypes.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
-      const rec = chosenMime ? new MediaRecorder(combinedStream, { mimeType: chosenMime }) : new MediaRecorder(combinedStream);
-
+      const chosen = mimeTypes.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
+      const rec = chosen ? new MediaRecorder(combined, { mimeType: chosen }) : new MediaRecorder(combined);
       const chunks = [];
       rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
 
-      const speed = Math.max(0.25, state.edit.speed || 1);
-      const durMs = Math.min(90000, Math.max(1200, ((state.endTime - state.startTime) / speed) * 1000));
-      video.playbackRate = speed;
+      const clipSecs = Math.max(1.2, (state.endTime - state.startTime) / Math.max(0.5, state.edit.speed));
+      const durMs = Math.min(45000, clipSecs * 1000);
       video.currentTime = state.startTime;
       await video.play().catch(() => {});
       rec.start();
@@ -2878,7 +2973,7 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       const t0 = performance.now();
       const timer = setInterval(() => {
         const pct = Math.min(98, ((performance.now() - t0) / durMs) * 100);
-        $('exportProgress').style.width = pct + '%';
+        $('exportProgress').style.width = `${pct}%`;
       }, 100);
 
       await new Promise(r => setTimeout(r, durMs));
@@ -2888,17 +2983,17 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       syncPlayButtons();
 
       await new Promise(r => { rec.onstop = r; });
-      const blob = new Blob(chunks, { type: chosenMime || 'video/webm' });
+      const blob = new Blob(chunks, { type: 'video/webm' });
       const url = URL.createObjectURL(blob);
       $('exportProgress').style.width = '100%';
-      $('exportStatus').textContent = '✅ Video editado listo. Revísalo antes de descargarlo o publicarlo.';
+      $('exportStatus').textContent = '✅ Clip listo. Revísalo antes de descargarlo o publicarlo.';
       $('exportedVideoPreview').src = url;
       $('exportedVideoPreview').style.display = 'block';
       $('downloadExportBtn').href = url;
-      $('downloadExportBtn').download = `${state.videoName}_editado.webm`;
+      $('downloadExportBtn').download = `${state.videoName}_corte.webm`;
       $('downloadExportBtn').style.display = 'inline-flex';
     } catch (err) {
-      $('exportStatus').textContent = `⚠️ No se pudo renderizar el video: ${err.message}`;
+      $('exportStatus').textContent = `⚠️ Error al renderizar el clip: ${err.message}`;
     } finally {
       state.isExporting = false;
     }
@@ -2922,60 +3017,105 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     }
     $('ytIframe').src = `https://www.youtube.com/embed/${m[1]}?autoplay=1`;
     $('ytEmbedWrap').style.display = 'block';
-    showToast('Transmisión / video de YouTube cargado', 'ok');
+    showToast('Enlace de YouTube cargado en el panel', 'ok');
   });
 
   $('ytQuickCutBtn').addEventListener('click', () => {
     const idx = state.cuts.length;
-    const endSec = Math.min(state.cutDuration, state.duration || state.cutDuration);
-    const pack = getUniqueCreativePack(idx + 2);
+    const fresh = getUniqueCreativePack(idx + Date.now());
     state.cuts.push({
       title: `Momento en Directo #${idx + 1}`,
-      hookText: '¡EN VIVO!',
+      hookText: '¡PASÓ EN VIVO!',
       badge: 'DIRECTO YT',
-      score: 94,
+      score: 95,
       start: 0,
-      end: endSec,
+      end: Math.min(state.cutDuration, state.duration || state.cutDuration),
       frameIdx: 0,
-      lines: pack.lines
+      lines: [
+        'Esto acaba de ocurrir en plena transmisión en vivo',
+        'Mira la reacción en tiempo real sin ningún corte',
+        '¿Estabas conectado cuando pasó este momento?',
+        'Comenta y guarda este clip antes de que se pierda'
+      ]
     });
     renderCutsList();
     loadCutIntoPlayer(idx, false);
-    showToast(`Corte en directo #${idx + 1} añadido a la lista`, 'ok');
+    showToast(`Corte en directo #${idx + 1} añadido (${fresh.badge})`, 'ok');
   });
 
-  // ==================== UTILIDADES DE MODALES IA Y REDES ====================
-  function showBoxMsg(id, type, msg) {
-    const el = $(id);
-    el.className = `test-box show ${type}`;
-    el.textContent = msg;
+  // ==================== CONFIGURACIÓN MULTI-IA ====================
+  function syncAiModalFields(providerKey, keepKey = true) {
+    const p = AI_PROVIDERS[providerKey] || AI_PROVIDERS.gemini;
+    $('aiProviderSelect').value = providerKey;
+    $('aiModelInput').value = (providerKey === state.ai.provider && state.ai.model) ? state.ai.model : p.defaultModel;
+    $('aiBaseUrlInput').value = (providerKey === state.ai.provider && state.ai.baseUrl) ? state.ai.baseUrl : p.baseUrl;
+    if (!keepKey) $('apiKeyInput').value = '';
+    $('apiKeyInput').placeholder = p.placeholder;
+    $('aiPortalLink').href = p.portal;
+    $('aiVisionBadge').textContent = providerKey === 'gemini' || providerKey === 'openai'
+      ? 'Visión + Texto + Miniaturas IA'
+      : (p.vision ? 'Visión + Texto' : 'Solo Texto');
+    $('aiModelSuggestions').innerHTML = p.models.map(m => `<option value="${m}"></option>`).join('');
   }
 
-  function syncAiModalFields(providerKey, keepExisting = false) {
-    const meta = AI_PROVIDERS[providerKey] || AI_PROVIDERS.custom;
-    $('aiVisionBadge').textContent = providerKey === 'gemini' ? 'Visión + Texto + Miniaturas IA' : meta.vision ? 'Visión + Texto' : 'Solo Texto';
-    $('aiPortalLink').href = meta.portal;
-    $('apiKeyInput').placeholder = meta.placeholder;
-    $('aiModelSuggestions').innerHTML = meta.models.map(m => `<option value="${m}"></option>`).join('');
-    if (!keepExisting) {
-      $('aiModelInput').value = meta.defaultModel;
-      $('aiBaseUrlInput').value = meta.baseUrl;
+  $('openAiModal').addEventListener('click', () => {
+    syncAiModalFields(state.ai.provider, true);
+    $('apiKeyInput').value = state.ai.apiKey || '';
+    $('aiTestResult').className = 'test-box';
+    $('aiModal').classList.add('open');
+  });
+  $('closeAiModal').addEventListener('click', () => $('aiModal').classList.remove('open'));
+  $('aiProviderSelect').addEventListener('change', e => syncAiModalFields(e.target.value, true));
+
+  $('toggleAiKeyVis').addEventListener('click', () => {
+    const inp = $('apiKeyInput');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  });
+
+  $('testAiBtn').addEventListener('click', async () => {
+    const tempCfg = {
+      provider: $('aiProviderSelect').value,
+      apiKey: $('apiKeyInput').value.trim(),
+      model: $('aiModelInput').value.trim(),
+      baseUrl: $('aiBaseUrlInput').value.trim()
+    };
+    showBoxMsg('aiTestResult', 'info', '⏳ Probando conexión con el proveedor de IA...');
+    try {
+      const reply = await callConfiguredAI('Responde únicamente con la palabra: CONECTADO', [], tempCfg);
+      showBoxMsg('aiTestResult', 'ok', `✅ Conexión exitosa (${tempCfg.model}). Respuesta: "${reply.trim().slice(0, 60)}"`);
+    } catch (err) {
+      showBoxMsg('aiTestResult', 'err', `❌ Error al conectar: ${err.message}`);
     }
-  }
+  });
 
-  // ==================== REDES SOCIALES, CONEXIÓN Y PROGRAMACIÓN ====================
+  $('saveAiKeyBtn').addEventListener('click', () => {
+    state.ai = {
+      provider: $('aiProviderSelect').value,
+      apiKey: $('apiKeyInput').value.trim(),
+      model: $('aiModelInput').value.trim() || AI_PROVIDERS[$('aiProviderSelect').value].defaultModel,
+      baseUrl: $('aiBaseUrlInput').value.trim() || AI_PROVIDERS[$('aiProviderSelect').value].baseUrl
+    };
+    safeSet('cliphub_ai_config', JSON.stringify(state.ai));
+    if (state.ai.provider === 'gemini') safeSet('cliphub_gemini_key', state.ai.apiKey);
+    refreshAiBadge();
+    $('aiModal').classList.remove('open');
+    showToast(`Configuración de ${AI_PROVIDERS[state.ai.provider].name} guardada`, 'ok');
+  });
+
+  $('clearAiKeyBtn').addEventListener('click', () => {
+    state.ai.apiKey = '';
+    safeSet('cliphub_ai_config', JSON.stringify(state.ai));
+    safeSet('cliphub_gemini_key', '');
+    $('apiKeyInput').value = '';
+    refreshAiBadge();
+    showBoxMsg('aiTestResult', 'info', 'IA desconectada. Se usará el motor creativo local.');
+    showToast('Clave de IA eliminada', '');
+  });
+
+  // ==================== REDES SOCIALES Y CALENDARIO ====================
   function toLocalInputValue(date) {
     const pad = n => String(n).padStart(2, '0');
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  }
-
-  function platformToAccountKey(platform) {
-    const p = (platform || '').toLowerCase();
-    if (p.includes('youtube')) return 'youtube';
-    if (p.includes('instagram')) return 'instagram';
-    if (p.includes('tiktok')) return 'tiktok';
-    if (p.includes('facebook')) return 'facebook';
-    return 'x';
   }
 
   function makeDynamicCopy(title, platform, idx = 0) {
@@ -2990,60 +3130,36 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       'YouTube Shorts': '#Shorts #Viral #Contenido #Tendencia',
       'Instagram Reels': '#Reels #ExplorePage #Creatividad #VideoViral',
       'TikTok': '#ParaTi #FYP #TikTokViral #Clips',
-      'Facebook Reels': '#FacebookReels #Viral #VideoCorto',
-      'X (Twitter)': '#Video #Tendencia #Clip'
+      'Facebook Reels': '#ReelsFB #VideoViral #Tendencias',
+      'X (Twitter)': '#Viral #Video #Trending'
     };
-    const pick = openers[(idx + Math.floor(Math.random() * openers.length)) % openers.length];
-    return `${pick}\n\n💬 Cuéntame qué opinas en los comentarios.\n${tags[platform] || '#Viral'}`;
+    return `${openers[(idx + Math.floor(Math.random() * openers.length)) % openers.length]}\n\n💬 Cuéntame qué opinas en los comentarios.\n${tags[platform] || '#Viral'}`;
   }
 
   function saveAccounts() {
     safeSet('cliphub_accounts', JSON.stringify(state.accounts));
     renderAccounts();
   }
-
   function saveSchedule() {
     safeSet('cliphub_schedule', JSON.stringify(state.schedule));
     renderSchedule();
   }
 
-  const MODE_LABELS = { token: '🔑 Token API', webhook: '🔗 Webhook Auto', profile: '👤 Perfil Rápido' };
   let editingAccountKey = null;
-  let editingAccountMode = 'token';
+  let activeAccMode = 'token';
 
-  function renderAccounts() {
-    $('accountsGrid').innerHTML = Object.entries(state.accounts).map(([key, acc]) => `
-      <div class="social-card">
-        <div class="social-card-top">
-          <div>
-            <strong>${acc.icon} ${acc.name}</strong>
-            <div class="muted">${acc.connected ? (acc.handle || acc.loginUser || 'Cuenta vinculada') : 'Sin conectar'}</div>
-          </div>
-          <button type="button" class="btn btn-sm ${acc.connected ? 'btn-green' : ''}" onclick="window._openAcc('${key}')">
-            ${acc.connected ? '⚙️ Gestionar' : 'Conectar'}
-          </button>
-        </div>
-        <div class="social-meta">
-          <span class="badge ${acc.connected ? 'green' : ''}">${acc.connected ? 'Conectado' : 'Desconectado'}</span>
-          ${acc.connected ? `<span class="badge amber">${MODE_LABELS[acc.mode] || 'Vinculado'}</span>` : ''}
-          ${acc.verified ? `<span class="badge green">✓ Verificado</span>` : ''}
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function switchAccMode(mode) {
-    editingAccountMode = mode;
-    document.querySelectorAll('#accModeTabs .modal-tab').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.accMode === mode);
+  function setAccModalMode(mode) {
+    activeAccMode = mode;
+    document.querySelectorAll('#accModeTabs .modal-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.accMode === mode);
     });
     $('accPaneToken').style.display = mode === 'token' ? 'block' : 'none';
     $('accPaneWebhook').style.display = mode === 'webhook' ? 'block' : 'none';
     $('accPaneProfile').style.display = mode === 'profile' ? 'block' : 'none';
   }
 
-  document.querySelectorAll('#accModeTabs .modal-tab').forEach(btn => {
-    btn.addEventListener('click', () => switchAccMode(btn.dataset.accMode));
+  document.querySelectorAll('#accModeTabs .modal-tab').forEach(tab => {
+    tab.addEventListener('click', () => setAccModalMode(tab.dataset.accMode));
   });
 
   $('toggleAccTokenVis').addEventListener('click', () => {
@@ -3051,103 +3167,108 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     inp.type = inp.type === 'password' ? 'text' : 'password';
   });
 
-  window._openAcc = key => {
-    editingAccountKey = key;
+  function renderAccounts() {
+    const modeLabels = { token: '🔑 Token API', webhook: '🔗 Webhook', profile: '👤 Perfil' };
+    $('accountsGrid').innerHTML = Object.entries(state.accounts).map(([key, acc]) => `
+      <div class="social-card">
+        <div class="social-card-top">
+          <div>
+            <strong>${acc.icon} ${escapeHtml(acc.name)}</strong>
+            <div class="muted">${acc.connected ? escapeHtml(acc.handle || acc.loginUser || 'Cuenta vinculada') : 'Sin conectar'}</div>
+          </div>
+          <button type="button" class="btn btn-sm ${acc.connected ? 'btn-green' : ''}" data-open-acc="${key}">
+            ${acc.connected ? '✓ Configurar' : 'Conectar'}
+          </button>
+        </div>
+        <div class="social-meta">
+          <span class="badge ${acc.connected ? 'green' : 'amber'}">${acc.connected ? 'Conectada' : 'Pendiente'}</span>
+          ${acc.connected ? `<span class="badge">${modeLabels[acc.mode] || 'Conectada'}</span>` : ''}
+          ${acc.verified ? '<span class="badge purple">✓ Verificada</span>' : ''}
+        </div>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('[data-open-acc]').forEach(btn => {
+      btn.addEventListener('click', () => openAccountModal(btn.dataset.openAcc));
+    });
+  }
+
+  function openAccountModal(key) {
     const acc = state.accounts[key];
-    $('accModalTitle').textContent = `${acc.icon} Configurar ${acc.name}`;
+    if (!acc) return;
+    editingAccountKey = key;
+    $('accModalTitle').textContent = `${acc.icon} Conectar ${acc.name}`;
     $('accPortalLink').href = acc.portal;
     $('accHandleInput').value = acc.handle || '';
     $('accChannelIdInput').value = acc.channelId || '';
     $('accTokenInput').value = acc.token || '';
-    $('accTokenInput').type = 'password';
     $('accClientIdInput').value = acc.clientId || '';
     $('accWebhookUrlInput').value = acc.webhookUrl || '';
     $('accWebhookSecretInput').value = acc.webhookSecret || '';
     $('accLoginUserInput').value = acc.loginUser || '';
     $('accProfileUrlInput').value = acc.profileUrl || acc.studioUrl || '';
     $('accTestResult').className = 'test-box';
-    switchAccMode(acc.mode || 'token');
+    setAccModalMode(acc.mode || 'token');
     $('accountModal').classList.add('open');
-  };
-
-  async function verifyAccountDraft(key, draft) {
-    if (draft.mode === 'webhook') {
-      if (!draft.webhookUrl) throw new Error('Ingresa la URL del Webhook.');
-      const headers = { 'Content-Type': 'application/json' };
-      if (draft.webhookSecret) headers['Authorization'] = draft.webhookSecret;
-      const res = await fetch(draft.webhookUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ event: 'cliphub_test', network: key, handle: draft.handle, timestamp: new Date().toISOString() })
-      });
-      if (!res.ok) throw new Error(`El webhook respondió HTTP ${res.status}`);
-      return 'Webhook verificado correctamente (evento de prueba recibido).';
-    }
-
-    if (draft.mode === 'token') {
-      if (!draft.token) throw new Error('Ingresa tu Access Token oficial.');
-      if (key === 'youtube') {
-        const res = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
-          headers: { Authorization: `Bearer ${draft.token}` }
-        });
-        if (!res.ok) throw new Error(`YouTube API rechazó el token (HTTP ${res.status})`);
-        const data = await res.json();
-        const ch = data?.items?.[0];
-        if (ch) {
-          $('accHandleInput').value = ch.snippet?.title || draft.handle;
-          $('accChannelIdInput').value = ch.id || draft.channelId;
-          return `Canal detectado: ${ch.snippet?.title} (${ch.id})`;
-        }
-        return 'Token de YouTube válido.';
-      }
-      if (key === 'instagram' || key === 'facebook') {
-        const res = await fetch(`https://graph.facebook.com/v19.0/me?fields=id,name&access_token=${encodeURIComponent(draft.token)}`);
-        if (!res.ok) throw new Error(`Meta Graph API rechazó el token (HTTP ${res.status})`);
-        const data = await res.json();
-        if (data?.name) $('accHandleInput').value = data.name;
-        if (data?.id) $('accChannelIdInput').value = data.id;
-        return `Cuenta Meta verificada: ${data?.name || 'OK'} (${data?.id || ''})`;
-      }
-      return 'Token guardado en formato válido (listo para integrarse con tu servidor o app).';
-    }
-
-    if (!draft.handle && !draft.loginUser) throw new Error('Indica tu @usuario o correo del perfil.');
-    return 'Perfil vinculado para apertura directa de Studio y copiado instantáneo.';
   }
 
   $('testAccBtn').addEventListener('click', async () => {
-    if (!editingAccountKey) return;
-    const draft = {
-      mode: editingAccountMode,
-      handle: $('accHandleInput').value.trim(),
-      channelId: $('accChannelIdInput').value.trim(),
-      token: $('accTokenInput').value.trim(),
-      webhookUrl: $('accWebhookUrlInput').value.trim(),
-      webhookSecret: $('accWebhookSecretInput').value.trim(),
-      loginUser: $('accLoginUserInput').value.trim()
-    };
-    showBoxMsg('accTestResult', 'info', 'Verificando conexión...');
+    const key = editingAccountKey;
+    if (!key) return;
+    showBoxMsg('accTestResult', 'info', '⏳ Verificando conexión...');
     try {
-      const msg = await verifyAccountDraft(editingAccountKey, draft);
-      showBoxMsg('accTestResult', 'ok', `✅ ${msg}`);
+      if (activeAccMode === 'token') {
+        const token = $('accTokenInput').value.trim();
+        if (!token) throw new Error('Ingresa tu Access Token primero');
+        if (key === 'youtube') {
+          const res = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
+          const ch = data?.items?.[0];
+          if (ch) {
+            $('accHandleInput').value = ch.snippet?.title || $('accHandleInput').value;
+            $('accChannelIdInput').value = ch.id || $('accChannelIdInput').value;
+          }
+          showBoxMsg('accTestResult', 'ok', `✅ Token verificado en YouTube (${ch?.snippet?.title || 'Canal activo'})`);
+        } else if (key === 'instagram' || key === 'facebook') {
+          const res = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${encodeURIComponent(token)}`);
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
+          if (data?.name && !$('accHandleInput').value) $('accHandleInput').value = data.name;
+          if (data?.id) $('accChannelIdInput').value = data.id;
+          showBoxMsg('accTestResult', 'ok', `✅ Token verificado en Meta Graph API (${data?.name || data?.id})`);
+        } else {
+          showBoxMsg('accTestResult', 'ok', '✅ Token guardado con formato válido. Listo para usar con tu flujo.');
+        }
+      } else if (activeAccMode === 'webhook') {
+        const url = $('accWebhookUrlInput').value.trim();
+        if (!/^https?:\/\//i.test(url)) throw new Error('Ingresa una URL de Webhook válida (https://...)');
+        const headers = { 'Content-Type': 'application/json' };
+        const secret = $('accWebhookSecretInput').value.trim();
+        if (secret) headers['Authorization'] = secret;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ event: 'cliphub_test', platform: key, timestamp: new Date().toISOString() })
+        });
+        if (!res.ok) throw new Error(`El webhook respondió HTTP ${res.status}`);
+        showBoxMsg('accTestResult', 'ok', '✅ Webhook probado y operativo.');
+      } else {
+        const user = $('accLoginUserInput').value.trim() || $('accHandleInput').value.trim();
+        if (!user) throw new Error('Escribe tu usuario o @canal');
+        showBoxMsg('accTestResult', 'ok', `✅ Perfil "${user}" configurado para apertura directa en Studio.`);
+      }
     } catch (err) {
       showBoxMsg('accTestResult', 'err', `❌ ${err.message}`);
     }
   });
 
-  $('verifyAllAccountsBtn').addEventListener('click', () => {
-    const connectedCount = Object.values(state.accounts).filter(a => a.connected).length;
-    if (!connectedCount) {
-      showToast('Aún no tienes redes conectadas. Pulsa "Conectar" en alguna tarjeta.', 'warn');
-    } else {
-      showToast(`${connectedCount} red(es) configuradas y listas en tu estudio`, 'ok');
-    }
-  });
-
   $('saveAccBtn').addEventListener('click', () => {
-    if (!editingAccountKey) return;
     const acc = state.accounts[editingAccountKey];
-    acc.mode = editingAccountMode;
+    if (!acc) return;
+    acc.mode = activeAccMode;
     acc.handle = $('accHandleInput').value.trim();
     acc.channelId = $('accChannelIdInput').value.trim();
     acc.token = $('accTokenInput').value.trim();
@@ -3155,24 +3276,49 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     acc.webhookUrl = $('accWebhookUrlInput').value.trim();
     acc.webhookSecret = $('accWebhookSecretInput').value.trim();
     acc.loginUser = $('accLoginUserInput').value.trim();
-    acc.profileUrl = $('accProfileUrlInput').value.trim();
+    acc.profileUrl = $('accProfileUrlInput').value.trim() || acc.studioUrl;
     acc.connected = Boolean(acc.handle || acc.token || acc.webhookUrl || acc.loginUser);
     acc.verified = $('accTestResult').classList.contains('ok');
     saveAccounts();
     $('accountModal').classList.remove('open');
-    showToast(`${acc.name} actualizada correctamente`, 'ok');
+    showToast(`Conexión de ${acc.name} guardada`, 'ok');
   });
 
   $('disconnectAccBtn').addEventListener('click', () => {
-    if (!editingAccountKey) return;
-    const def = DEFAULT_ACCOUNTS[editingAccountKey];
-    state.accounts[editingAccountKey] = { ...def };
+    const acc = state.accounts[editingAccountKey];
+    if (!acc) return;
+    acc.connected = false;
+    acc.verified = false;
+    acc.token = '';
+    acc.webhookUrl = '';
+    acc.webhookSecret = '';
+    acc.handle = '';
+    acc.loginUser = '';
     saveAccounts();
     $('accountModal').classList.remove('open');
-    showToast(`${def.name} desconectada`, '');
+    showToast(`${acc.name} desconectada`, '');
+  });
+  $('closeAccModal').addEventListener('click', () => $('accountModal').classList.remove('open'));
+
+  $('verifyAllAccountsBtn').addEventListener('click', () => {
+    const connected = Object.values(state.accounts).filter(a => a.connected);
+    if (!connected.length) {
+      showToast('Aún no tienes redes conectadas. Pulsa "Conectar" en una tarjeta.', 'warn');
+    } else {
+      showToast(`${connected.length} red(es) conectada(s) y listas para publicar`, 'ok');
+    }
   });
 
-  $('closeAccModal').addEventListener('click', () => $('accountModal').classList.remove('open'));
+  function platformToAccountKey(platform) {
+    const p = String(platform || '').toLowerCase();
+    if (p.includes('youtube')) return 'youtube';
+    if (p.includes('instagram')) return 'instagram';
+    if (p.includes('tiktok')) return 'tiktok';
+    if (p.includes('facebook')) return 'facebook';
+    return 'x';
+  }
+
+  let currentPublishCaption = '';
 
   function renderSchedule() {
     $('schedCountBadge').textContent = `${state.schedule.length} programadas`;
@@ -3185,35 +3331,40 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       <div class="sched-item">
         <div style="flex:1; min-width:220px;">
           <div class="row" style="margin-bottom:4px;">
-            <span class="badge">${item.platform}</span>
-            <span class="badge ${item.status === 'Publicado' ? 'green' : 'amber'}">${item.status}</span>
+            <span class="badge">${escapeHtml(item.platform)}</span>
+            <span class="badge ${item.status === 'Publicado' ? 'green' : 'amber'}">${escapeHtml(item.status)}</span>
             <span class="muted">🗓️ ${new Date(item.date).toLocaleString()}</span>
           </div>
-          <strong>${item.title}</strong>
-          <div class="muted" style="white-space:pre-line; margin-top:4px;">${item.caption}</div>
+          <strong>${escapeHtml(item.title)}</strong>
+          <div class="muted" style="white-space:pre-line; margin-top:4px;">${escapeHtml(item.caption)}</div>
         </div>
         <div class="row">
-          <button type="button" class="btn btn-sm btn-primary" onclick="window._pubNow('${item.id}')">🚀 Publicar Ahora</button>
-          <button type="button" class="btn btn-sm btn-danger" onclick="window._delSched('${item.id}')">🗑️</button>
+          <button type="button" class="btn btn-sm btn-primary" data-pub-now="${item.id}">🚀 Publicar Ahora</button>
+          <button type="button" class="btn btn-sm btn-danger" data-del-sched="${item.id}">🗑️</button>
         </div>
       </div>
     `).join('');
+
+    document.querySelectorAll('[data-del-sched]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.schedule = state.schedule.filter(x => x.id !== btn.dataset.delSched);
+        saveSchedule();
+        showToast('Publicación eliminada del calendario', '');
+      });
+    });
+
+    document.querySelectorAll('[data-pub-now]').forEach(btn => {
+      btn.addEventListener('click', () => publishScheduledItem(btn.dataset.pubNow));
+    });
   }
 
-  window._delSched = id => {
-    state.schedule = state.schedule.filter(x => x.id !== id);
-    saveSchedule();
-    showToast('Publicación eliminada de la cola', '');
-  };
-
-  let lastPublishedCaption = '';
-  window._pubNow = async id => {
+  async function publishScheduledItem(id) {
     const item = state.schedule.find(x => x.id === id);
     if (!item) return;
     const accKey = platformToAccountKey(item.platform);
     const acc = state.accounts[accKey] || DEFAULT_ACCOUNTS.youtube;
-    lastPublishedCaption = `${item.title}\n\n${item.caption}`;
-    copyTextSafe(lastPublishedCaption);
+    currentPublishCaption = `${item.title}\n\n${item.caption}`;
+    copyTextSafe(currentPublishCaption);
 
     $('pubModalTitle').textContent = `🚀 Publicando en ${item.platform}`;
     $('pubProgress').style.width = '20%';
@@ -3223,44 +3374,54 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     $('publishModal').classList.add('open');
 
     if (acc.connected && acc.mode === 'webhook' && acc.webhookUrl) {
-      $('pubProgress').style.width = '60%';
-      $('pubStatus').textContent = 'Enviando publicación automática a tu Webhook...';
       try {
+        $('pubProgress').style.width = '65%';
+        $('pubStatus').textContent = 'Enviando paquete automático a tu Webhook...';
         const headers = { 'Content-Type': 'application/json' };
         if (acc.webhookSecret) headers['Authorization'] = acc.webhookSecret;
         const res = await fetch(acc.webhookUrl, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ event: 'cliphub_publish', ...item, account: acc.handle })
+          body: JSON.stringify({
+            event: 'cliphub_publish',
+            platform: item.platform,
+            account: acc.handle || acc.loginUser,
+            title: item.title,
+            caption: item.caption,
+            scheduledDate: item.date
+          })
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw new Error(`Webhook HTTP ${res.status}`);
         $('pubProgress').style.width = '100%';
-        $('pubStatus').textContent = `✅ Enviado con éxito al Webhook de ${item.platform}.`;
+        $('pubStatus').textContent = `✅ Enviado automáticamente a tu Webhook de ${item.platform}.`;
+        $('pubLinks').style.display = 'flex';
+        item.status = 'Publicado';
+        saveSchedule();
+        return;
       } catch (err) {
+        $('pubStatus').textContent = `⚠️ Webhook falló (${err.message}). Descripción copiada al portapapeles para subir manualmente:`;
         $('pubProgress').style.width = '100%';
-        $('pubStatus').textContent = `⚠️ El Webhook devolvió un error (${err.message}), pero tu copy ya está copiado para subirlo directo:`;
+        $('pubLinks').style.display = 'flex';
+        return;
       }
-      $('pubLinks').style.display = 'flex';
-      item.status = 'Publicado';
-      saveSchedule();
-      return;
     }
 
     setTimeout(() => {
       $('pubProgress').style.width = '65%';
       $('pubStatus').textContent = 'Preparando metadatos y portada CTR...';
-    }, 600);
+    }, 550);
     setTimeout(() => {
       $('pubProgress').style.width = '100%';
-      $('pubStatus').textContent = `✅ Descripción copiada al portapapeles. Abre el Studio de ${item.platform} para finalizar la subida:`;
+      $('pubStatus').textContent = `✅ Listo para publicar en ${item.platform}. La descripción ya se copió al portapapeles; abre tu Studio para completar la subida:`;
       $('pubLinks').style.display = 'flex';
       item.status = 'Publicado';
       saveSchedule();
-    }, 1300);
-  };
+    }, 1250);
+  }
 
   $('pubCopyAgainBtn').addEventListener('click', () => {
-    if (copyTextSafe(lastPublishedCaption)) showToast('Descripción copiada al portapapeles', 'ok');
+    copyTextSafe(currentPublishCaption);
+    showToast('Descripción copiada al portapapeles', 'ok');
   });
   $('closePubModal').addEventListener('click', () => $('publishModal').classList.remove('open'));
 
@@ -3272,7 +3433,7 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       return;
     }
     state.schedule.push({
-      id: String(Date.now()) + Math.random().toString(16).slice(2, 6),
+      id: `${Date.now()}_${Math.random().toString(16).slice(2, 6)}`,
       title,
       platform: $('schedPlatform').value,
       date,
@@ -3281,24 +3442,30 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     });
     saveSchedule();
     $('schedTitle').value = '';
-    showToast('Publicación guardada en tu calendario', 'ok');
+    showToast('Publicación guardada en el calendario', 'ok');
   });
 
   $('genDynamicCopyBtn').addEventListener('click', async () => {
     const title = $('schedTitle').value.trim() || (state.cuts[state.activeCutIdx]?.title || 'Nuevo Clip Viral');
     const platform = $('schedPlatform').value;
-    showToast('Generando copy creativo con IA...', '');
-    try {
-      const prompt = `Escribe una descripción corta, original, magnética y diferente (variación ${Date.now()}) con 4 hashtags relevantes para ${platform} sobre el video "${title}". Solo entrega el texto en español listo para pegar.`;
-      const aiText = await callConfiguredAI(prompt, []);
-      if (aiText.trim()) {
-        $('schedCaption').value = aiText.trim();
-        showToast('Copy creativo generado con IA', 'ok');
-        return;
+    if (isAiConfigured()) {
+      $('genDynamicCopyBtn').disabled = true;
+      $('genDynamicCopyBtn').textContent = '⏳ Generando...';
+      try {
+        const aiCopy = await callConfiguredAI(`Escribe una descripción corta, creativa y viral en español con 4 hashtags para ${platform} sobre el video titulado "${title}". Solo responde con el texto final.`);
+        if (aiCopy.trim()) {
+          $('schedCaption').value = aiCopy.trim();
+          showToast('Copy creativo generado por IA', 'ok');
+          return;
+        }
+      } catch (_) {}
+      finally {
+        $('genDynamicCopyBtn').disabled = false;
+        $('genDynamicCopyBtn').textContent = '✨ Variar Copy Creativo (IA)';
       }
-    } catch (_) {}
-    $('schedCaption').value = makeDynamicCopy(title, platform, Math.floor(Math.random() * 10));
-    showToast('Nuevo copy creativo generado', 'ok');
+    }
+    $('schedCaption').value = makeDynamicCopy(title, platform);
+    showToast('Copy creativo variado', 'ok');
   });
 
   $('sendCutToSchedBtn').addEventListener('click', () => {
@@ -3320,93 +3487,19 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     const platforms = ['YouTube Shorts', 'Instagram Reels', 'TikTok'];
     state.cuts.forEach((c, i) => {
       const dt = new Date(Date.now() + (i + 1) * 24 * 3600 * 1000);
-      dt.setHours(18 + (i % 4), 30, 0, 0);
+      dt.setHours(18 + (i % 3), 30, 0, 0);
       state.schedule.push({
-        id: String(Date.now() + i) + Math.random().toString(16).slice(2, 5),
+        id: `${Date.now()}_${i}_${Math.random().toString(16).slice(2, 5)}`,
         title: c.title,
-        platform: platforms[i % 3],
+        platform: platforms[i % platforms.length],
         date: toLocalInputValue(dt),
-        caption: makeDynamicCopy(c.title, platforms[i % 3], i),
+        caption: makeDynamicCopy(c.title, platforms[i % platforms.length], i),
         status: 'Programado'
       });
     });
     saveSchedule();
     document.querySelector('[data-tab="social"]').click();
-    showToast(`¡${state.cuts.length} cortes programados automáticamente en fechas escalonadas!`, 'ok');
-  });
-
-  // ==================== MODAL CONFIGURACIÓN DE IA ====================
-  $('aiProviderSelect').addEventListener('change', e => {
-    syncAiModalFields(e.target.value, false);
-    $('aiTestResult').className = 'test-box';
-  });
-
-  $('toggleAiKeyVis').addEventListener('click', () => {
-    const inp = $('apiKeyInput');
-    inp.type = inp.type === 'password' ? 'text' : 'password';
-  });
-
-  $('openAiModal').addEventListener('click', () => {
-    $('aiProviderSelect').value = state.ai.provider || 'gemini';
-    syncAiModalFields(state.ai.provider || 'gemini', true);
-    $('aiModelInput').value = state.ai.model || AI_PROVIDERS[state.ai.provider]?.defaultModel || '';
-    $('aiBaseUrlInput').value = state.ai.baseUrl || AI_PROVIDERS[state.ai.provider]?.baseUrl || '';
-    $('apiKeyInput').value = state.ai.apiKey || '';
-    $('apiKeyInput').type = 'password';
-    $('aiTestResult').className = 'test-box';
-    $('aiModal').classList.add('open');
-  });
-
-  $('testAiBtn').addEventListener('click', async () => {
-    const draftCfg = {
-      provider: $('aiProviderSelect').value,
-      model: $('aiModelInput').value.trim(),
-      baseUrl: $('aiBaseUrlInput').value.trim(),
-      apiKey: $('apiKeyInput').value.trim()
-    };
-    showBoxMsg('aiTestResult', 'info', `Probando conexión con ${AI_PROVIDERS[draftCfg.provider]?.name || 'tu IA'}...`);
-    const t0 = performance.now();
-    try {
-      const reply = await callConfiguredAI('Responde únicamente con la palabra: CONECTADO', [], draftCfg);
-      const ms = Math.round(performance.now() - t0);
-      showBoxMsg('aiTestResult', 'ok', `✅ ¡Conexión exitosa en ${ms} ms! Respuesta: "${reply.trim().slice(0, 60)}"`);
-    } catch (err) {
-      showBoxMsg('aiTestResult', 'err', `❌ No se pudo conectar: ${err.message}. Verifica tu token, modelo o permisos CORS del endpoint.`);
-    }
-  });
-
-  $('saveAiKeyBtn').addEventListener('click', () => {
-    const prov = $('aiProviderSelect').value;
-    const meta = AI_PROVIDERS[prov] || AI_PROVIDERS.custom;
-    state.ai = {
-      provider: prov,
-      apiKey: $('apiKeyInput').value.trim(),
-      model: $('aiModelInput').value.trim() || meta.defaultModel,
-      baseUrl: $('aiBaseUrlInput').value.trim() || meta.baseUrl
-    };
-    safeSet('cliphub_ai_config', JSON.stringify(state.ai));
-    if (prov === 'gemini') safeSet('cliphub_gemini_key', state.ai.apiKey);
-    refreshAiBadge();
-    $('aiModal').classList.remove('open');
-    showToast(isAiConfigured() ? `${meta.name} guardada correctamente` : 'IA configurada', 'ok');
-  });
-
-  $('clearAiKeyBtn').addEventListener('click', () => {
-    state.ai = { provider: 'gemini', apiKey: '', model: AI_PROVIDERS.gemini.defaultModel, baseUrl: AI_PROVIDERS.gemini.baseUrl };
-    safeRemove('cliphub_ai_config');
-    safeRemove('cliphub_gemini_key');
-    refreshAiBadge();
-    $('aiModal').classList.remove('open');
-    showToast('Token de IA desconectado', '');
-  });
-
-  $('closeAiModal').addEventListener('click', () => $('aiModal').classList.remove('open'));
-
-  // Cerrar modales al hacer clic fuera de la caja
-  ['aiModal', 'exportModal', 'accountModal', 'publishModal'].forEach(id => {
-    $(id).addEventListener('click', e => {
-      if (e.target.id === id && !state.isExporting) $(id).classList.remove('open');
-    });
+    showToast(`${state.cuts.length} cortes auto-programados en fechas escalonadas`, 'ok');
   });
 
   // ==================== INICIALIZACIÓN ====================
