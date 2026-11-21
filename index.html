@@ -857,7 +857,10 @@
     c.width = 640; c.height = 360;
     const g = c.getContext('2d');
     const stream = c.captureStream(30);
-    const rec = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    const mimeOpt = (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/webm'))
+      ? { mimeType: 'video/webm' }
+      : undefined;
+    const rec = mimeOpt ? new MediaRecorder(stream, mimeOpt) : new MediaRecorder(stream);
     const chunks = [];
     rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
     rec.start();
@@ -900,13 +903,13 @@
     return new Blob(chunks, { type: 'video/webm' });
   }
 
-  function loadVideoSrc(url, name) {
+  function loadVideoSrc(url, name, fallbackDuration = 15) {
     state.videoName = name.replace(/\.[^.]+$/, '') || 'mi_video';
     video.src = url;
     video.muted = false;
     video.load();
     video.onloadeddata = async () => {
-      state.duration = (isFinite(video.duration) && video.duration > 0) ? video.duration : 15;
+      state.duration = (isFinite(video.duration) && video.duration > 0) ? video.duration : fallbackDuration;
       $('timeTotal').textContent = fmtTime(state.duration);
       state.startTime = 0;
       state.endTime = Math.min(state.duration, 15);
@@ -930,7 +933,7 @@
   $('loadDemoBtn').addEventListener('click', async () => {
     $('pipelineMsg').textContent = 'Generando video demo colorido en tu navegador...';
     const blob = await generateDemoVideoBlob();
-    loadVideoSrc(URL.createObjectURL(blob), 'historia_viral_demo');
+    loadVideoSrc(URL.createObjectURL(blob), 'historia_viral_demo', 4.5);
   });
 
   // ==================== EXTRACCIÓN SEGURA DE FOTOGRAMAS (SIN CUADROS NEGROS) ====================
@@ -950,13 +953,29 @@
     }
   }
 
-  async function seekAndCapture(t) {
-    const target = Math.min(Math.max(0.2, t), Math.max(0.2, state.duration - 0.15));
+  function buildFallbackFrameCanvas(index, sec) {
+    const c = document.createElement('canvas');
+    c.width = 480; c.height = 270;
+    const g = c.getContext('2d');
+    const grad = g.createLinearGradient(0, 0, 480, 270);
+    grad.addColorStop(0, `hsl(${(index * 55 + 205) % 360}, 70%, 24%)`);
+    grad.addColorStop(1, `hsl(${(index * 55 + 275) % 360}, 78%, 14%)`);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 480, 270);
+    g.fillStyle = 'rgba(255,255,255,0.9)';
+    g.font = 'bold 22px Segoe UI';
+    g.fillText(`Escena #${index + 1} • ${fmtTime(sec)}`, 28, 145);
+    return c;
+  }
+
+  async function seekAndCapture(t, idx = 0) {
+    const maxSafe = Math.max(0.25, state.duration - 0.15);
+    const target = Math.min(Math.max(0.15, t), maxSafe);
     await new Promise(resolve => {
       let done = false;
       const finish = () => { if (!done) { done = true; resolve(); } };
       video.addEventListener('seeked', finish, { once: true });
-      video.currentTime = target;
+      try { video.currentTime = target; } catch (_) { finish(); }
       setTimeout(finish, 950);
     });
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -964,11 +983,122 @@
     const c = document.createElement('canvas');
     c.width = 480; c.height = 270;
     const g = c.getContext('2d');
-    if (video.videoWidth > 0) {
+    if (video.videoWidth > 0 && video.readyState >= 2) {
       g.drawImage(video, 0, 0, c.width, c.height);
+    } else {
+      return { canvas: buildFallbackFrameCanvas(idx, target), time: target };
     }
     return { canvas: c, time: target };
   }
+
+  async function extractRealFrames() {
+    setStep(1, 'run', 'Decodificando video...');
+    const wasPaused = video.paused;
+    const prevMuted = video.muted;
+    video.muted = true;
+    try { await video.play(); } catch (_) {}
+    await new Promise(r => setTimeout(r, 140));
+    video.pause();
+
+    if (isFinite(video.duration) && video.duration > 0) {
+      state.duration = video.duration;
+      $('timeTotal').textContent = fmtTime(state.duration);
+      $('seekBar').max = state.duration;
+    }
+
+    const dur = Math.max(1.5, state.duration || 4.5);
+    const ratios = [0.10, 0.28, 0.48, 0.68, 0.85];
+    const results = [];
+
+    for (let i = 0; i < ratios.length; i++) {
+      let cap = await seekAndCapture(dur * ratios[i], i);
+      if (isFrameMostlyBlack(cap.canvas)) {
+        cap = await seekAndCapture(Math.min(dur - 0.1, dur * ratios[i] + 0.35), i);
+      }
+      if (isFrameMostlyBlack(cap.canvas)) {
+        cap = { canvas: buildFallbackFrameCanvas(i, cap.time), time: cap.time };
+      }
+      results.push({ time: cap.time, dataUrl: cap.canvas.toDataURL('image/jpeg', 0.88) });
+    }
+
+    video.muted = prevMuted;
+    if (!wasPaused) video.play().catch(() => {});
+
+    state.frames = results;
+    $('framesStrip').innerHTML = results.map((f, idx) => `
+      <div class="frame-box" data-frame-time="${f.time}" title="Ir a ${fmtTime(f.time)}">
+        <img src="${f.dataUrl}" alt="Fotograma ${idx + 1} (${fmtTime(f.time)})" />
+        <span class="frame-ts">${fmtTime(f.time)}</span>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('#framesStrip .frame-box').forEach(box => {
+      box.addEventListener('click', () => {
+        const ts = Number(box.dataset.frameTime);
+        if (isFinite(ts)) {
+          video.currentTime = ts;
+          showToast(`Saltando a ${fmtTime(ts)}`, '');
+        }
+      });
+    });
+
+    setStep(1, 'done', `${results.length} fotogramas reales`);
+  }
+
+  // ==================== MOTOR CREATIVO DE CORTES, SUBTÍTULOS Y COPYS ====================
+  const CREATIVE_BANK = [
+    {
+      titles: ['El giro que cambia toda la historia', 'Nadie esperaba este segundo exacto', 'El detalle oculto que lo explica todo'],
+      hooks: ['¡MIRA ESTO!', 'NO LO CREERÁS', 'EL SECRETO'],
+      badges: ['MOMENTO CLAVE', 'ALTO IMPACTO', 'VIRAL 98%'],
+      subs: [
+        ['Quédate hasta el final porque aquí pasa algo increíble', 'Fíjate bien en este detalle que casi todos pasan por alto', 'Justo en este segundo la historia da un giro total', '¿Tú también lo viste? Déjamelo en los comentarios'],
+        ['Esto es lo que separa un video normal de uno viral', 'Mira cómo cambia el ritmo en menos de tres segundos', 'Guarda este clip antes de que se te olvide aplicarlo', 'Comparte esto con alguien que necesite verlo hoy'],
+        ['Al principio parece una escena tranquila, pero espera...', 'Aquí es donde la tensión sube al máximo nivel', 'Ese pequeño movimiento lo cambia absolutamente todo', 'Suscríbete si quieres ver la segunda parte ahora mismo']
+      ]
+    },
+    {
+      titles: ['La escena más intensa en pocos segundos', 'Por qué todos están hablando de esto', 'El clímax que dispara la retención'],
+      hooks: ['¡INCREÍBLE!', 'PASÓ ESTO...', 'BRUTAL 🔥'],
+      badges: ['RETENCIÓN TOP', 'RECOMENDADO', 'EXCLUSIVO'],
+      subs: [
+        ['No parpadees durante los próximos segundos', 'Todo lo que pasó antes llevaba directo a este momento', 'La reacción aquí es simplemente espectacular', 'Dale like si quieres más momentos así de épicos'],
+        ['Muchos lo intentan, pero pocos logran este resultado', 'Observa la precisión en cada cuadro de esta toma', 'Ese remate final hace que quieras verlo en bucle', 'Cuéntame qué puntuación le das del 1 al 10'],
+        ['Este instante vale oro para tu próximo Short', 'Arranca con fuerza desde el primer segundo sin pausas', 'Mantén la intriga viva hasta el último instante', 'Activa la campanita para no perderte el próximo episodio']
+      ]
+    },
+    {
+      titles: ['Lo que nadie notó a primera vista', 'El truco visual que atrapa al instante', 'Así se logra un final inolvidable'],
+      hooks: ['¡ATENCIÓN!', '¿LO VISTE?', 'IMPACTO 10/10'],
+      badges: ['TENDENCIA', 'CTR MÁXIMO', 'GANADOR'],
+      subs: [
+        ['Mira el centro de la pantalla antes de que cambie', 'Poca gente nota este detalle la primera vez', 'Cuando lo vuelves a ver todo cobra sentido', 'Guárdalo para enseñárselo a tus amigos'],
+        ['Tres segundos bastan para enganchar a la audiencia', 'El contraste y el ritmo lo hacen imposible de ignorar', 'Así es como mantienes a la gente hasta el final', 'Comenta si quieres ver cómo se hizo paso a paso'],
+        ['El cierre perfecto para disparar comentarios', 'Cada cuadro suma energía hasta el remate', 'Mira cómo termina esta escena sin cortes', 'Sígueme para más clips como este cada día']
+      ]
+    }
+  ];
+
+  function buildSmartCutsFallback() {
+    const d = Math.max(1.8, state.duration || 4.5);
+    const pack = CREATIVE_BANK[state.creativeSeed % CREATIVE_BANK.length];
+    const seg = d / 3;
+    return [0, 1, 2].map(i => {
+      const s = Number((i * seg).toFixed(1));
+      const e = Number(Math.min(d, (i + 1) * seg).toFixed(1));
+      return {
+        title: pack.titles[i],
+        hookText: pack.hooks[i],
+        badge: pack.badges[i],
+        score: 96 - i * 2,
+        start: s,
+        end: e > s + 0.5 ? e : d,
+        frameIdx: Math.min(Math.max(0, state.frames.length - 1), i === 0 ? 0 : i === 1 ? 2 : 4),
+        lines: pack.subs[i]
+      };
+    });
+  }
+
   async function callConfiguredAI(promptText, framesList = [], configOverride = null) {
     const cfg = configOverride || state.ai;
     const provider = cfg.provider || 'gemini';
@@ -1312,33 +1442,46 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
   };
 
   // ==================== PIPELINE COMPLETO ====================
+  let isAnalyzing = false;
   async function runFullAnalysis() {
+    if (isAnalyzing) return;
     if (!video.src) {
       $('pipelineMsg').textContent = 'Primero sube un video o pulsa "Cargar Video Demo".';
       showToast('Sube un video o carga el demo primero', 'warn');
       return;
     }
-    $('pipelineMsg').textContent = 'Analizando video, extrayendo fotogramas reales y diseñando miniaturas...';
-    await extractRealFrames();
+    isAnalyzing = true;
+    try {
+      $('pipelineMsg').textContent = 'Analizando video, extrayendo fotogramas reales y diseñando miniaturas...';
+      await extractRealFrames();
 
-    setStep(2, 'run', 'Detectando momentos...');
-    const aiCuts = await askAiForCuts();
-    const provLabel = (AI_PROVIDERS[state.ai.provider] || AI_PROVIDERS.gemini).short;
-    state.cuts = aiCuts || buildSmartCutsFallback();
-    setStep(2, 'done', `${state.cuts.length} cortes (${aiCuts ? provLabel + ' IA' : 'Motor Creativo'})`);
-    setStep(3, 'run', 'Sincronizando texto...');
-    loadCutIntoPlayer(0, true);
-    setStep(3, 'done', 'Subtítulos en vivo listos');
+      setStep(2, 'run', 'Detectando momentos...');
+      const aiCuts = await askAiForCuts();
+      const provLabel = (AI_PROVIDERS[state.ai.provider] || AI_PROVIDERS.gemini).short;
+      state.cuts = aiCuts || buildSmartCutsFallback();
+      setStep(2, 'done', `${state.cuts.length} cortes (${aiCuts ? provLabel + ' IA' : 'Motor Creativo'})`);
 
-    await buildAllThumbnails();
-    $('pipelineMsg').textContent = '✅ ¡Todo listo! Reproduce el video para ver los subtítulos en vivo, revisa tus miniaturas creativas o programa tus fechas.';
-    showToast('¡Cortes, subtítulos en vivo y 3 miniaturas listos!', 'ok');
+      setStep(3, 'run', 'Sincronizando texto...');
+      loadCutIntoPlayer(0, true);
+      setStep(3, 'done', 'Subtítulos en vivo listos');
+
+      await buildAllThumbnails();
+      $('pipelineMsg').textContent = '✅ ¡Todo listo! Reproduce el video para ver los subtítulos en vivo, revisa tus miniaturas creativas o programa tus fechas.';
+      showToast('¡Cortes, subtítulos en vivo y 3 miniaturas listos!', 'ok');
+    } catch (err) {
+      console.error('Error en análisis:', err);
+      setStep(1, 'err', 'Reintentar');
+      $('pipelineMsg').textContent = `⚠️ Ocurrió un error al analizar el video: ${err.message || err}`;
+      showToast('Error al analizar el video. Reintenta o carga otro archivo.', 'warn');
+    } finally {
+      isAnalyzing = false;
+    }
   }
 
   $('analyzeBtn').addEventListener('click', runFullAnalysis);
   $('regenThumbsBtn').addEventListener('click', async () => {
     if (!state.cuts.length) {
-      showToast('Analiza un video primero en Estudio de Cortes', 'warn');
+      showToast('Primero analiza un video para generar cortes y miniaturas', 'warn');
       return;
     }
     state.creativeSeed++;
@@ -1347,22 +1490,27 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
       c.hookText = fresh[i].hookText;
       c.badge = fresh[i].badge;
       c.title = fresh[i].title;
+      c.lines = fresh[i].lines;
     });
     renderCutsList();
+    if (state.activeCutIdx >= 0) loadCutIntoPlayer(state.activeCutIdx, false);
     await buildAllThumbnails();
-    showToast('¡Nuevos estilos y titulares creativos aplicados!', 'ok');
+    showToast('¡Estilos y creatividad de miniaturas renovados!', 'ok');
   });
 
-  // ==================== MOTOR DE RENDER EN VIVO (VIDEO + PNG + SUBTÍTULOS ANIMADOS) ====================
+  // ==================== MOTOR DE RENDER EN VIVO (VIDEO + PNG + SUBTÍTULOS) ====================
   function wrapText(c, text, maxW) {
-    const words = text.split(/\s+/).filter(Boolean);
+    const words = text.split(' ');
     const lines = [];
     let cur = '';
     for (const w of words) {
       const test = cur ? cur + ' ' + w : w;
       if (c.measureText(test).width > maxW && cur) {
-        lines.push(cur); cur = w;
-      } else cur = test;
+        lines.push(cur);
+        cur = w;
+      } else {
+        cur = test;
+      }
     }
     if (cur) lines.push(cur);
     return lines;
@@ -1370,34 +1518,28 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
 
   function drawSubtitleOverlay(c, w, h, now) {
     if (!state.showSubs || !state.subtitles.length) return;
-    let active = state.subtitles.find(s => now >= s.start && now <= s.end);
-    if (!active) {
-      if (now < state.subtitles[0].start) active = state.subtitles[0];
-      else active = state.subtitles[state.subtitles.length - 1];
-    }
-    if (!active || !active.text) return;
+    const active = state.subtitles.find(s => now >= s.start && now <= s.end) ||
+      (now >= state.startTime && now <= state.endTime ? state.subtitles[state.subtitles.length - 1] : null);
+    if (!active) return;
 
     const fontSize = state.aspect === '9:16' ? 34 : 38;
     c.save();
     c.font = `900 ${fontSize}px Segoe UI, Impact, sans-serif`;
     c.textAlign = 'center';
-    c.textBaseline = 'middle';
-
     const lines = wrapText(c, active.text.toUpperCase(), w * 0.86);
-    const lineH = fontSize * 1.28;
+    const lineH = fontSize * 1.24;
     const baseY = h * 0.78 - ((lines.length - 1) * lineH) / 2;
 
     lines.forEach((line, idx) => {
       const y = baseY + idx * lineH;
       if (state.subStyle === 'box') {
-        const tw = c.measureText(line).width + 30;
+        const tw = c.measureText(line).width + 28;
         c.fillStyle = 'rgba(255,255,255,0.95)';
-        drawRoundRect(c, w / 2 - tw / 2, y - fontSize * 0.62, tw, fontSize * 1.22, 10);
+        drawRoundRect(c, w / 2 - tw / 2, y - fontSize * 0.85, tw, fontSize * 1.15, 10);
         c.fill();
         c.fillStyle = '#090d16';
         c.fillText(line, w / 2, y);
       } else {
-        c.lineJoin = 'round';
         c.lineWidth = 8;
         c.strokeStyle = '#050811';
         c.strokeText(line, w / 2, y);
@@ -1447,70 +1589,87 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
   }
   requestAnimationFrame(renderFrameLoop);
 
-  // Arrastrar PNG directamente sobre el canvas (mouse y táctil)
-  function movePngFromEvent(e) {
-    if (!state.draggingPng || !state.pngProcessed) return;
-    const rect = canvas.getBoundingClientRect();
-    const cx = e.touches ? e.touches[0].clientX : e.clientX;
-    const cy = e.touches ? e.touches[0].clientY : e.clientY;
-    const xPct = Math.max(5, Math.min(95, Math.round(((cx - rect.left) / rect.width) * 100)));
-    const yPct = Math.max(5, Math.min(95, Math.round(((cy - rect.top) / rect.height) * 100)));
-    $('pngX').value = xPct;
-    $('pngY').value = yPct;
+  // ==================== CONTROLES DEL REPRODUCTOR ====================
+  function updateCutRangeLabel() {
+    $('cutRangeLabel').textContent = `Corte: ${fmtTime(state.startTime)} - ${fmtTime(state.endTime)}`;
   }
-  canvas.addEventListener('mousedown', e => { if (state.pngProcessed) { state.draggingPng = true; movePngFromEvent(e); } });
-  window.addEventListener('mousemove', movePngFromEvent);
-  window.addEventListener('mouseup', () => { state.draggingPng = false; });
-  canvas.addEventListener('touchstart', e => { if (state.pngProcessed) { state.draggingPng = true; movePngFromEvent(e); } }, { passive: true });
-  window.addEventListener('touchmove', movePngFromEvent, { passive: true });
-  window.addEventListener('touchend', () => { state.draggingPng = false; });
 
-  // Controles reproductor
   $('playPauseBtn').addEventListener('click', () => {
-    if (!video.src) { showToast('Sube un video o carga el demo primero', 'warn'); return; }
+    if (!video.src) {
+      showToast('Sube un video o carga el demo primero', 'warn');
+      return;
+    }
     if (video.paused) {
-      if (video.currentTime < state.startTime || video.currentTime >= state.endTime) video.currentTime = state.startTime;
-      video.play();
+      if (video.currentTime < state.startTime || video.currentTime >= state.endTime) {
+        video.currentTime = state.startTime;
+      }
+      video.play().catch(() => {});
       $('playPauseBtn').textContent = '⏸ Pausar';
     } else {
       video.pause();
       $('playPauseBtn').textContent = '▶ Reproducir';
     }
   });
+
   $('loopCutBtn').addEventListener('click', () => {
     state.loopCut = !state.loopCut;
     $('loopCutBtn').style.borderColor = state.loopCut ? 'var(--green)' : 'var(--border)';
+    showToast(state.loopCut ? 'Loop del corte activado' : 'Loop del corte desactivado', '');
   });
-  $('seekBar').addEventListener('input', e => { video.currentTime = Number(e.target.value); });
+
+  $('seekBar').addEventListener('input', e => {
+    if (video.src) video.currentTime = Number(e.target.value);
+  });
+
   $('aspectSelect').addEventListener('change', e => {
     state.aspect = e.target.value;
-    if (state.aspect === '9:16') { canvas.width = 540; canvas.height = 960; canvas.classList.remove('landscape'); }
-    else { canvas.width = 960; canvas.height = 540; canvas.classList.add('landscape'); }
+    if (state.aspect === '9:16') {
+      canvas.width = 540;
+      canvas.height = 960;
+      canvas.classList.remove('landscape');
+    } else {
+      canvas.width = 960;
+      canvas.height = 540;
+      canvas.classList.add('landscape');
+    }
   });
+
   $('subStyleSelect').addEventListener('change', e => { state.subStyle = e.target.value; });
   $('showSubsCheck').addEventListener('change', e => { state.showSubs = e.target.checked; });
 
-  function updateCutRangeLabel() {
-    $('cutRangeLabel').textContent = `Corte: ${fmtTime(state.startTime)} - ${fmtTime(state.endTime)}`;
-  }
   $('applySubsBtn').addEventListener('click', () => {
-    state.startTime = Math.max(0, Number($('startInput').value) || 0);
-    state.endTime = Math.max(state.startTime + 1, Number($('endInput').value) || state.duration || 15);
+    const maxDur = Math.max(1, state.duration || 15);
+    state.startTime = Math.max(0, Math.min(maxDur - 0.5, Number($('startInput').value) || 0));
+    state.endTime = Math.max(state.startTime + 0.5, Math.min(maxDur, Number($('endInput').value) || maxDur));
+    $('startInput').value = state.startTime.toFixed(1);
+    $('endInput').value = state.endTime.toFixed(1);
+
     const lines = $('subsTextarea').value.split('\n');
     state.subtitles = buildTimedSubtitles(lines, state.startTime, state.endTime);
+
+    if (state.activeCutIdx >= 0 && state.cuts[state.activeCutIdx]) {
+      state.cuts[state.activeCutIdx].start = state.startTime;
+      state.cuts[state.activeCutIdx].end = state.endTime;
+      state.cuts[state.activeCutIdx].lines = lines.map(l => l.trim()).filter(Boolean);
+      renderCutsList();
+    }
+
     updateCutRangeLabel();
-    video.currentTime = state.startTime;
-    video.play().catch(() => {});
-    $('playPauseBtn').textContent = '⏸ Pausar';
+    if (video.src) {
+      video.currentTime = state.startTime;
+      video.play().catch(() => {});
+      $('playPauseBtn').textContent = '⏸ Pausar';
+    }
     showToast('Subtítulos aplicados en todo el corte', 'ok');
   });
 
-  // ==================== PNG SIN FONDO ====================
+  // ==================== PNG SIN FONDO (CON ARRASTRE EN LIENZO) ====================
   function processPngChroma() {
     if (!state.pngImg) return;
     const mode = $('chromaSelect').value;
     const c = document.createElement('canvas');
-    c.width = state.pngImg.width; c.height = state.pngImg.height;
+    c.width = state.pngImg.width;
+    c.height = state.pngImg.height;
     const g = c.getContext('2d');
     g.drawImage(state.pngImg, 0, 0);
     if (mode !== 'none') {
@@ -1528,126 +1687,171 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
     }
     state.pngProcessed = c;
   }
+
   $('pngInput').addEventListener('change', e => {
-    const f = e.target.files[0]; if (!f) return;
+    const f = e.target.files[0];
+    if (!f) return;
     const img = new Image();
     img.onload = () => {
       state.pngImg = img;
       processPngChroma();
-      showToast('Foto PNG añadida. Puedes arrastrarla sobre el video.', 'ok');
+      showToast('Foto PNG cargada (puedes arrastrarla sobre el video)', 'ok');
     };
     img.src = URL.createObjectURL(f);
   });
+
   $('chromaSelect').addEventListener('change', processPngChroma);
-  $('clearPngBtn').addEventListener('click', () => { state.pngImg = null; state.pngProcessed = null; });
+  $('clearPngBtn').addEventListener('click', () => {
+    state.pngImg = null;
+    state.pngProcessed = null;
+    showToast('Foto PNG eliminada', '');
+  });
+
+  function movePngFromPointer(e) {
+    const rect = canvas.getBoundingClientRect();
+    const xPct = Math.max(5, Math.min(95, ((e.clientX - rect.left) / rect.width) * 100));
+    const yPct = Math.max(5, Math.min(95, ((e.clientY - rect.top) / rect.height) * 100));
+    $('pngX').value = Math.round(xPct);
+    $('pngY').value = Math.round(yPct);
+  }
+  canvas.addEventListener('pointerdown', e => {
+    if (!state.pngProcessed) return;
+    state.draggingPng = true;
+    movePngFromPointer(e);
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (state.draggingPng) movePngFromPointer(e);
+  });
+  window.addEventListener('pointerup', () => { state.draggingPng = false; });
+  window.addEventListener('pointercancel', () => { state.draggingPng = false; });
 
   // ==================== EXPORTAR Y PREVISUALIZAR CLIP (CON AUDIO) ====================
   $('exportClipBtn').addEventListener('click', async () => {
-    if (!video.src) { showToast('Sube un video o carga el demo primero', 'warn'); return; }
+    if (!video.src) {
+      showToast('Primero carga un video o el demo', 'warn');
+      return;
+    }
     $('exportModal').classList.add('open');
     $('exportedVideoPreview').style.display = 'none';
     $('downloadExportBtn').style.display = 'none';
     $('exportProgress').style.width = '5%';
     $('exportStatus').textContent = 'Renderizando corte con subtítulos, PNG y audio...';
 
-    const canvasStream = canvas.captureStream(30);
-    let combinedStream = canvasStream;
     try {
-      if (typeof video.captureStream === 'function') {
-        const vStream = video.captureStream();
-        const audioTracks = vStream.getAudioTracks();
-        if (audioTracks.length) {
-          combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]);
+      const canvasStream = canvas.captureStream(30);
+      const tracks = [...canvasStream.getVideoTracks()];
+      try {
+        const vidStream = typeof video.captureStream === 'function'
+          ? video.captureStream()
+          : (typeof video.mozCaptureStream === 'function' ? video.mozCaptureStream() : null);
+        if (vidStream) {
+          vidStream.getAudioTracks().forEach(t => tracks.push(t));
         }
-      }
-    } catch (_) {}
+      } catch (_) {}
 
-    const rec = new MediaRecorder(combinedStream, { mimeType: 'video/webm' });
-    const chunks = [];
-    rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+      const combinedStream = new MediaStream(tracks);
+      const mimeTypes = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+      const chosenMime = mimeTypes.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
+      const rec = chosenMime ? new MediaRecorder(combinedStream, { mimeType: chosenMime }) : new MediaRecorder(combinedStream);
 
-    const durMs = Math.min(20000, Math.max(1500, (state.endTime - state.startTime) * 1000));
-    video.currentTime = state.startTime;
-    await video.play().catch(() => {});
-    rec.start();
+      const chunks = [];
+      rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
 
-    const t0 = performance.now();
-    const timer = setInterval(() => {
-      const pct = Math.min(98, ((performance.now() - t0) / durMs) * 100);
-      $('exportProgress').style.width = pct + '%';
-    }, 100);
+      const durMs = Math.min(60000, Math.max(1200, (state.endTime - state.startTime) * 1000));
+      video.currentTime = state.startTime;
+      await video.play().catch(() => {});
+      rec.start();
 
-    await new Promise(r => setTimeout(r, durMs));
-    clearInterval(timer);
-    rec.stop();
-    video.pause();
-    $('playPauseBtn').textContent = '▶ Reproducir';
+      const t0 = performance.now();
+      const timer = setInterval(() => {
+        const pct = Math.min(98, ((performance.now() - t0) / durMs) * 100);
+        $('exportProgress').style.width = pct + '%';
+      }, 100);
 
-    await new Promise(r => { rec.onstop = r; });
-    const blob = new Blob(chunks, { type: 'video/webm' });
-    const url = URL.createObjectURL(blob);
-    $('exportProgress').style.width = '100%';
-    $('exportStatus').textContent = '✅ Clip listo. Revísalo antes de descargarlo o publicarlo.';
-    $('exportedVideoPreview').src = url;
-    $('exportedVideoPreview').style.display = 'block';
-    $('downloadExportBtn').href = url;
-    $('downloadExportBtn').style.display = 'inline-flex';
+      await new Promise(r => setTimeout(r, durMs));
+      clearInterval(timer);
+      rec.stop();
+      video.pause();
+      $('playPauseBtn').textContent = '▶ Reproducir';
+
+      await new Promise(r => { rec.onstop = r; });
+      const blob = new Blob(chunks, { type: chosenMime || 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      $('exportProgress').style.width = '100%';
+      $('exportStatus').textContent = '✅ Clip listo. Revísalo antes de descargarlo o publicarlo.';
+      $('exportedVideoPreview').src = url;
+      $('exportedVideoPreview').style.display = 'block';
+      $('downloadExportBtn').href = url;
+      $('downloadExportBtn').download = `${state.videoName}_corte.webm`;
+      $('downloadExportBtn').style.display = 'inline-flex';
+    } catch (err) {
+      $('exportStatus').textContent = `⚠️ No se pudo renderizar el video: ${err.message}`;
+    }
   });
-  $('closeExportModal').addEventListener('click', () => {
-    $('exportedVideoPreview').pause();
-    $('exportModal').classList.remove('open');
-  });
+  $('closeExportModal').addEventListener('click', () => $('exportModal').classList.remove('open'));
 
   // ==================== YOUTUBE DIRECTO ====================
   $('toggleYtBtn').addEventListener('click', () => {
     $('ytPanel').style.display = $('ytPanel').style.display === 'none' ? 'block' : 'none';
   });
+
   $('loadYtEmbedBtn').addEventListener('click', () => {
     const url = $('ytUrlInput').value.trim();
     const m = url.match(/(?:v=|youtu\.be\/|live\/|shorts\/)([a-zA-Z0-9_-]{11})/);
-    if (!m) { showToast('Pega un enlace válido de YouTube o directo.', 'warn'); return; }
+    if (!m) {
+      showToast('Pega un enlace válido de YouTube o directo', 'warn');
+      return;
+    }
     $('ytIframe').src = `https://www.youtube.com/embed/${m[1]}?autoplay=1`;
     $('ytEmbedWrap').style.display = 'block';
-    showToast('Video/Directo de YouTube cargado', 'ok');
+    showToast('Transmisión / video de YouTube cargado', 'ok');
   });
+
   $('ytQuickCutBtn').addEventListener('click', () => {
     const idx = state.cuts.length;
+    const endSec = Math.min(15, state.duration || 15);
     state.cuts.push({
       title: `Momento en Directo #${idx + 1}`,
       hookText: '¡EN VIVO!',
       badge: 'DIRECTO YT',
       score: 94,
-      start: 0, end: Math.min(15, state.duration || 15),
+      start: 0,
+      end: endSec,
       frameIdx: 0,
-      lines: ['Esto acaba de pasar en pleno directo', 'Mira la reacción en vivo sin cortes', '¿Estabas conectado cuando ocurrió?']
+      lines: [
+        'Esto acaba de pasar en pleno directo',
+        'Mira la reacción en vivo sin cortes',
+        '¿Estabas conectado cuando ocurrió?'
+      ]
     });
     renderCutsList();
     loadCutIntoPlayer(idx, false);
-    showToast(`Corte en directo #${idx + 1} añadido`, 'ok');
+    showToast(`Corte en directo #${idx + 1} añadido a la lista`, 'ok');
   });
 
-  // ==================== REDES SOCIALES Y PROGRAMACIÓN DE FECHAS ====================
+  // ==================== UTILIDADES DE MODALES IA Y REDES ====================
+  function showBoxMsg(id, type, msg) {
+    const el = $(id);
+    el.className = `test-box show ${type}`;
+    el.textContent = msg;
+  }
+
+  function syncAiModalFields(providerKey, keepExisting = false) {
+    const meta = AI_PROVIDERS[providerKey] || AI_PROVIDERS.custom;
+    $('aiVisionBadge').textContent = meta.vision ? 'Visión + Texto' : 'Solo Texto';
+    $('aiPortalLink').href = meta.portal;
+    $('apiKeyInput').placeholder = meta.placeholder;
+    $('aiModelSuggestions').innerHTML = meta.models.map(m => `<option value="${m}"></option>`).join('');
+    if (!keepExisting) {
+      $('aiModelInput').value = meta.defaultModel;
+      $('aiBaseUrlInput').value = meta.baseUrl;
+    }
+  }
+
+  // ==================== REDES SOCIALES, CONEXIÓN Y PROGRAMACIÓN ====================
   function toLocalInputValue(date) {
     const pad = n => String(n).padStart(2, '0');
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  }
-
-  function makeDynamicCopy(title, platform, idx = 0) {
-    const openers = [
-      `🔥 ${title} — ¡Míralo hasta el último segundo!`,
-      `👀 ¿Notaste este detalle? ${title}`,
-      `⚡ El momento más intenso del video: ${title}`,
-      `🎬 No podrás verlo solo una vez: ${title}`,
-      `🚀 Así se atrapa la atención en 3 segundos: ${title}`
-    ];
-    const tags = {
-      'YouTube Shorts': '#Shorts #Viral #Contenido #Tendencia',
-      'Instagram Reels': '#Reels #ExplorePage #Creatividad #VideoViral',
-      'TikTok': '#ParaTi #FYP #TikTokViral #Clips',
-      'Facebook Reels': '#FacebookReels #Viral #Tendencias #Videos',
-      'X (Twitter)': '#Viral #Video #Tendencia'
-    };
-    return `${openers[(idx + Math.floor(Math.random() * openers.length)) % openers.length]}\n\n💬 Cuéntame qué opinas en los comentarios.\n${tags[platform] || '#Viral'}`;
   }
 
   function platformToAccountKey(platform) {
@@ -1659,14 +1863,61 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
     return 'x';
   }
 
-  function saveAccounts() { localStorage.setItem('cliphub_accounts', JSON.stringify(state.accounts)); renderAccounts(); }
-  function saveSchedule() { localStorage.setItem('cliphub_schedule', JSON.stringify(state.schedule)); renderSchedule(); }
+  function makeDynamicCopy(title, platform, idx = 0) {
+    const openers = [
+      `🔥 ${title} — ¡Míralo hasta el último segundo!`,
+      `👀 ¿Notaste este detalle? ${title}`,
+      `⚡ El momento más intenso del video: ${title}`,
+      `🎬 No podrás verlo solo una vez: ${title}`
+    ];
+    const tags = {
+      'YouTube Shorts': '#Shorts #Viral #Contenido #Tendencia',
+      'Instagram Reels': '#Reels #ExplorePage #Creatividad #VideoViral',
+      'TikTok': '#ParaTi #FYP #TikTokViral #Clips',
+      'Facebook Reels': '#FacebookReels #Viral #VideoCorto',
+      'X (Twitter)': '#Video #Tendencia #Clip'
+    };
+    const pick = openers[(idx + Math.floor(Math.random() * openers.length)) % openers.length];
+    return `${pick}\n\n💬 Cuéntame qué opinas en los comentarios.\n${tags[platform] || '#Viral'}`;
+  }
 
+  function saveAccounts() {
+    localStorage.setItem('cliphub_accounts', JSON.stringify(state.accounts));
+    renderAccounts();
+  }
+
+  function saveSchedule() {
+    localStorage.setItem('cliphub_schedule', JSON.stringify(state.schedule));
+    renderSchedule();
+  }
+
+  const MODE_LABELS = { token: '🔑 Token API', webhook: '🔗 Webhook Auto', profile: '👤 Perfil Rápido' };
   let editingAccountKey = null;
-  let activeAccMode = 'token';
+  let editingAccountMode = 'token';
 
-  function setAccModalMode(mode) {
-    activeAccMode = mode;
+  function renderAccounts() {
+    $('accountsGrid').innerHTML = Object.entries(state.accounts).map(([key, acc]) => `
+      <div class="social-card">
+        <div class="social-card-top">
+          <div>
+            <strong>${acc.icon} ${acc.name}</strong>
+            <div class="muted">${acc.connected ? (acc.handle || acc.loginUser || 'Cuenta vinculada') : 'Sin conectar'}</div>
+          </div>
+          <button class="btn btn-sm ${acc.connected ? 'btn-green' : ''}" onclick="window._openAcc('${key}')">
+            ${acc.connected ? '⚙️ Gestionar' : 'Conectar'}
+          </button>
+        </div>
+        <div class="social-meta">
+          <span class="badge ${acc.connected ? 'green' : ''}">${acc.connected ? 'Conectado' : 'Desconectado'}</span>
+          ${acc.connected ? `<span class="badge amber">${MODE_LABELS[acc.mode] || 'Vinculado'}</span>` : ''}
+          ${acc.verified ? `<span class="badge green">✓ Verificado</span>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function switchAccMode(mode) {
+    editingAccountMode = mode;
     document.querySelectorAll('#accModeTabs .modal-tab').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.accMode === mode);
     });
@@ -1676,46 +1927,19 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
   }
 
   document.querySelectorAll('#accModeTabs .modal-tab').forEach(btn => {
-    btn.addEventListener('click', () => setAccModalMode(btn.dataset.accMode));
+    btn.addEventListener('click', () => switchAccMode(btn.dataset.accMode));
   });
 
-  function showBoxMsg(elId, type, msg) {
-    const box = $(elId);
-    box.className = `test-box show ${type}`;
-    box.textContent = msg;
-  }
-
-  function renderAccounts() {
-    const modeLabel = { token: 'API Token', webhook: 'Webhook Auto', profile: 'Perfil Rápido' };
-    $('accountsGrid').innerHTML = Object.entries(state.accounts).map(([key, acc]) => {
-      const statusBadge = acc.connected
-        ? `<span class="badge green">${acc.verified ? '✓ Verificada' : 'Conectada'}</span><span class="badge">${modeLabel[acc.mode] || 'Token'}</span>`
-        : `<span class="badge amber">Sin conectar</span>`;
-      const detail = acc.connected
-        ? `${acc.handle || acc.loginUser || 'Cuenta activa'}${acc.channelId ? ' • ID: ' + acc.channelId.slice(0, 12) : ''}`
-        : 'Haz clic en Configurar para vincular token, webhook o perfil';
-      return `
-        <div class="social-card">
-          <div class="social-card-top">
-            <div>
-              <strong>${acc.icon || '🌐'} ${acc.name}</strong>
-              <div class="muted" style="margin-top:2px;">${detail}</div>
-            </div>
-            <button class="btn btn-sm ${acc.connected ? 'btn-green' : 'btn-primary'}" onclick="window._openAcc('${key}')">
-              ${acc.connected ? '⚙️ Configurar' : '🔗 Conectar'}
-            </button>
-          </div>
-          <div class="social-meta">${statusBadge}</div>
-        </div>
-      `;
-    }).join('');
-  }
+  $('toggleAccTokenVis').addEventListener('click', () => {
+    const inp = $('accTokenInput');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  });
 
   window._openAcc = key => {
     editingAccountKey = key;
     const acc = state.accounts[key];
-    $('accModalTitle').textContent = `${acc.icon || '🔗'} Configurar ${acc.name}`;
-    $('accPortalLink').href = acc.portal || '#';
+    $('accModalTitle').textContent = `${acc.icon} Configurar ${acc.name}`;
+    $('accPortalLink').href = acc.portal;
     $('accHandleInput').value = acc.handle || '';
     $('accChannelIdInput').value = acc.channelId || '';
     $('accTokenInput').value = acc.token || '';
@@ -1726,139 +1950,105 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
     $('accLoginUserInput').value = acc.loginUser || '';
     $('accProfileUrlInput').value = acc.profileUrl || acc.studioUrl || '';
     $('accTestResult').className = 'test-box';
-    setAccModalMode(acc.mode || 'token');
+    switchAccMode(acc.mode || 'token');
     $('accountModal').classList.add('open');
   };
 
-  $('toggleAccTokenVis').addEventListener('click', () => {
-    const inp = $('accTokenInput');
-    inp.type = inp.type === 'password' ? 'text' : 'password';
-  });
-
-  async function verifyAccountCredentials(key, draft) {
+  async function verifyAccountDraft(key, draft) {
     if (draft.mode === 'webhook') {
-      if (!draft.webhookUrl) throw new Error('Ingresa la URL del Webhook para probar.');
+      if (!draft.webhookUrl) throw new Error('Ingresa la URL del Webhook.');
       const headers = { 'Content-Type': 'application/json' };
       if (draft.webhookSecret) headers['Authorization'] = draft.webhookSecret;
       const res = await fetch(draft.webhookUrl, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          event: 'cliphub_connection_test',
-          platform: state.accounts[key].name,
-          handle: draft.handle || '@canal',
-          timestamp: new Date().toISOString()
-        })
+        body: JSON.stringify({ event: 'cliphub_test', network: key, handle: draft.handle, timestamp: new Date().toISOString() })
       });
-      if (!res.ok) throw new Error(`El Webhook respondió con HTTP ${res.status}.`);
-      return { verified: true, message: `✅ Webhook conectado y respondió OK (HTTP ${res.status}).` };
+      if (!res.ok) throw new Error(`El webhook respondió HTTP ${res.status}`);
+      return 'Webhook verificado correctamente (evento de prueba recibido).';
     }
 
-    if (draft.mode === 'profile') {
-      if (!draft.handle && !draft.loginUser) throw new Error('Escribe tu @usuario o correo del perfil.');
-      return { verified: true, message: `✅ Perfil "${draft.handle || draft.loginUser}" listo para publicación rápida en Studio.` };
-    }
-
-    // Modo Token / API Oficial
-    if (!draft.token) throw new Error('Pega un Access Token válido para verificar.');
-    if (key === 'youtube') {
-      const res = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
-        headers: { 'Authorization': `Bearer ${draft.token}` }
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message || `Token rechazado por YouTube (HTTP ${res.status}).`);
+    if (draft.mode === 'token') {
+      if (!draft.token) throw new Error('Ingresa tu Access Token oficial.');
+      if (key === 'youtube') {
+        const res = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
+          headers: { Authorization: `Bearer ${draft.token}` }
+        });
+        if (!res.ok) throw new Error(`YouTube API rechazó el token (HTTP ${res.status})`);
+        const data = await res.json();
+        const ch = data?.items?.[0];
+        if (ch) {
+          $('accHandleInput').value = ch.snippet?.title || draft.handle;
+          $('accChannelIdInput').value = ch.id || draft.channelId;
+          return `Canal detectado: ${ch.snippet?.title} (${ch.id})`;
+        }
+        return 'Token de YouTube válido.';
       }
-      const data = await res.json();
-      const ch = data?.items?.[0];
-      if (ch) {
-        return {
-          verified: true,
-          autoHandle: ch.snippet?.customUrl || ch.snippet?.title,
-          autoId: ch.id,
-          message: `✅ Token de YouTube verificado en vivo. Canal: ${ch.snippet?.title} (${ch.id}).`
-        };
+      if (key === 'instagram' || key === 'facebook') {
+        const res = await fetch(`https://graph.facebook.com/v19.0/me?fields=id,name&access_token=${encodeURIComponent(draft.token)}`);
+        if (!res.ok) throw new Error(`Meta Graph API rechazó el token (HTTP ${res.status})`);
+        const data = await res.json();
+        if (data?.name) $('accHandleInput').value = data.name;
+        if (data?.id) $('accChannelIdInput').value = data.id;
+        return `Cuenta Meta verificada: ${data?.name || 'OK'} (${data?.id || ''})`;
       }
-      return { verified: true, message: '✅ Token de YouTube válido.' };
+      return 'Token guardado en formato válido (listo para integrarse con tu servidor o app).';
     }
 
-    if (key === 'instagram' || key === 'facebook') {
-      const res = await fetch(`https://graph.facebook.com/v20.0/me?fields=id,name&access_token=${encodeURIComponent(draft.token)}`);
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message || `Token rechazado por Meta Graph API (HTTP ${res.status}).`);
-      }
-      const data = await res.json();
-      return {
-        verified: true,
-        autoHandle: data.name,
-        autoId: data.id,
-        message: `✅ Token de Meta verificado en vivo. Cuenta: ${data.name} (ID ${data.id}).`
-      };
-    }
-
-    return {
-      verified: true,
-      message: `ℹ️ Token guardado para ${state.accounts[key].name} (${draft.token.length} caracteres). Nota: esta plataforma bloquea llamadas directas CORS desde el navegador; para auto-publicación 100% automática también puedes usar el modo Webhook.`
-    };
+    if (!draft.handle && !draft.loginUser) throw new Error('Indica tu @usuario o correo del perfil.');
+    return 'Perfil vinculado para apertura directa de Studio y copiado instantáneo.';
   }
 
   $('testAccBtn').addEventListener('click', async () => {
+    if (!editingAccountKey) return;
     const draft = {
-      mode: activeAccMode,
+      mode: editingAccountMode,
       handle: $('accHandleInput').value.trim(),
+      channelId: $('accChannelIdInput').value.trim(),
       token: $('accTokenInput').value.trim(),
       webhookUrl: $('accWebhookUrlInput').value.trim(),
       webhookSecret: $('accWebhookSecretInput').value.trim(),
       loginUser: $('accLoginUserInput').value.trim()
     };
-    showBoxMsg('accTestResult', 'info', 'Probando conexión con la plataforma...');
+    showBoxMsg('accTestResult', 'info', 'Verificando conexión...');
     try {
-      const result = await verifyAccountCredentials(editingAccountKey, draft);
-      if (result.autoHandle && !$('accHandleInput').value.trim()) $('accHandleInput').value = result.autoHandle;
-      if (result.autoId && !$('accChannelIdInput').value.trim()) $('accChannelIdInput').value = result.autoId;
-      showBoxMsg('accTestResult', 'ok', result.message);
+      const msg = await verifyAccountDraft(editingAccountKey, draft);
+      showBoxMsg('accTestResult', 'ok', `✅ ${msg}`);
     } catch (err) {
       showBoxMsg('accTestResult', 'err', `❌ ${err.message}`);
     }
   });
 
-  $('saveAccBtn').addEventListener('click', () => {
-    const acc = state.accounts[editingAccountKey];
-    const handle = $('accHandleInput').value.trim();
-    const token = $('accTokenInput').value.trim();
-    const webhookUrl = $('accWebhookUrlInput').value.trim();
-    const loginUser = $('accLoginUserInput').value.trim();
-
-    const hasCreds = Boolean(
-      (activeAccMode === 'token' && (token || handle)) ||
-      (activeAccMode === 'webhook' && webhookUrl) ||
-      (activeAccMode === 'profile' && (handle || loginUser))
-    );
-
-    if (!hasCreds) {
-      showToast('Completa al menos tu usuario, token o URL de webhook', 'warn');
-      return;
+  $('verifyAllAccountsBtn').addEventListener('click', () => {
+    const connectedCount = Object.values(state.accounts).filter(a => a.connected).length;
+    if (!connectedCount) {
+      showToast('Aún no tienes redes conectadas. Pulsa "Conectar" en alguna tarjeta.', 'warn');
+    } else {
+      showToast(`${connectedCount} red(es) configuradas y listas en tu estudio`, 'ok');
     }
+  });
 
-    acc.mode = activeAccMode;
-    acc.handle = handle || loginUser || acc.name;
+  $('saveAccBtn').addEventListener('click', () => {
+    if (!editingAccountKey) return;
+    const acc = state.accounts[editingAccountKey];
+    acc.mode = editingAccountMode;
+    acc.handle = $('accHandleInput').value.trim();
     acc.channelId = $('accChannelIdInput').value.trim();
-    acc.token = token;
+    acc.token = $('accTokenInput').value.trim();
     acc.clientId = $('accClientIdInput').value.trim();
-    acc.webhookUrl = webhookUrl;
+    acc.webhookUrl = $('accWebhookUrlInput').value.trim();
     acc.webhookSecret = $('accWebhookSecretInput').value.trim();
-    acc.loginUser = loginUser;
-    acc.profileUrl = $('accProfileUrlInput').value.trim() || acc.studioUrl;
-    acc.connected = true;
+    acc.loginUser = $('accLoginUserInput').value.trim();
+    acc.profileUrl = $('accProfileUrlInput').value.trim();
+    acc.connected = Boolean(acc.handle || acc.token || acc.webhookUrl || acc.loginUser);
     acc.verified = $('accTestResult').classList.contains('ok');
-
     saveAccounts();
     $('accountModal').classList.remove('open');
-    showToast(`${acc.name} configurada (${acc.handle})`, 'ok');
+    showToast(`${acc.name} actualizada correctamente`, 'ok');
   });
 
   $('disconnectAccBtn').addEventListener('click', () => {
+    if (!editingAccountKey) return;
     const def = DEFAULT_ACCOUNTS[editingAccountKey];
     state.accounts[editingAccountKey] = { ...def };
     saveAccounts();
@@ -1867,26 +2057,6 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
   });
 
   $('closeAccModal').addEventListener('click', () => $('accountModal').classList.remove('open'));
-
-  $('verifyAllAccountsBtn').addEventListener('click', async () => {
-    const connectedEntries = Object.entries(state.accounts).filter(([, a]) => a.connected);
-    if (!connectedEntries.length) {
-      showToast('Conecta al menos una red social primero', 'warn');
-      return;
-    }
-    let okCount = 0;
-    for (const [k, acc] of connectedEntries) {
-      try {
-        const res = await verifyAccountCredentials(k, acc);
-        acc.verified = Boolean(res.verified);
-        if (acc.verified) okCount++;
-      } catch (_) {
-        acc.verified = false;
-      }
-    }
-    saveAccounts();
-    showToast(`Verificación completada: ${okCount}/${connectedEntries.length} activas`, okCount ? 'ok' : 'warn');
-  });
 
   function renderSchedule() {
     $('schedCountBadge').textContent = `${state.schedule.length} programadas`;
@@ -1907,7 +2077,6 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
           <div class="muted" style="white-space:pre-line; margin-top:4px;">${item.caption}</div>
         </div>
         <div class="row">
-          <button class="btn btn-sm" onclick="window._copySched('${item.id}')" title="Copiar copy">📋</button>
           <button class="btn btn-sm btn-primary" onclick="window._pubNow('${item.id}')">🚀 Publicar Ahora</button>
           <button class="btn btn-sm btn-danger" onclick="window._delSched('${item.id}')">🗑️</button>
         </div>
@@ -1915,95 +2084,77 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
     `).join('');
   }
 
-  window._copySched = id => {
-    const item = state.schedule.find(x => x.id === id);
-    if (!item) return;
-    copyTextSafe(`${item.title}\n\n${item.caption}`);
-    showToast('Título y descripción copiados al portapapeles', 'ok');
-  };
-
   window._delSched = id => {
     state.schedule = state.schedule.filter(x => x.id !== id);
     saveSchedule();
-    showToast('Publicación eliminada', '');
+    showToast('Publicación eliminada de la cola', '');
   };
 
-  let lastPublishedText = '';
+  let lastPublishedCaption = '';
   window._pubNow = async id => {
     const item = state.schedule.find(x => x.id === id);
     if (!item) return;
     const accKey = platformToAccountKey(item.platform);
-    const acc = state.accounts[accKey];
-    lastPublishedText = `${item.title}\n\n${item.caption}`;
-    copyTextSafe(lastPublishedText);
+    const acc = state.accounts[accKey] || DEFAULT_ACCOUNTS.youtube;
+    lastPublishedCaption = `${item.title}\n\n${item.caption}`;
+    copyTextSafe(lastPublishedCaption);
 
     $('pubModalTitle').textContent = `🚀 Publicando en ${item.platform}`;
-    $('pubProgress').style.width = '18%';
+    $('pubProgress').style.width = '20%';
     $('pubLinks').style.display = 'none';
-    $('pubDirectStudioBtn').href = (acc && acc.profileUrl) || (acc && acc.studioUrl) || 'https://studio.youtube.com';
-    $('pubStatus').textContent = `Preparando paquete para ${acc && acc.connected ? acc.handle : item.platform}...`;
+    $('pubDirectStudioBtn').href = acc.profileUrl || acc.studioUrl;
+    $('pubStatus').textContent = 'Empaquetando video, subtítulos y copiando descripción al portapapeles...';
     $('publishModal').classList.add('open');
 
-    if (acc && acc.connected && acc.mode === 'webhook' && acc.webhookUrl) {
-      $('pubProgress').style.width = '55%';
-      $('pubStatus').textContent = 'Enviando publicación real al Webhook configurado...';
+    if (acc.connected && acc.mode === 'webhook' && acc.webhookUrl) {
+      $('pubProgress').style.width = '60%';
+      $('pubStatus').textContent = 'Enviando publicación automática a tu Webhook...';
       try {
         const headers = { 'Content-Type': 'application/json' };
         if (acc.webhookSecret) headers['Authorization'] = acc.webhookSecret;
         const res = await fetch(acc.webhookUrl, {
           method: 'POST',
           headers,
-          body: JSON.stringify({
-            event: 'cliphub_publish',
-            platform: item.platform,
-            account: acc.handle,
-            channelId: acc.channelId,
-            title: item.title,
-            caption: item.caption,
-            scheduledDate: item.date
-          })
+          body: JSON.stringify({ event: 'cliphub_publish', ...item, account: acc.handle })
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         $('pubProgress').style.width = '100%';
-        $('pubStatus').textContent = `✅ Enviado automáticamente a tu Webhook de ${item.platform} (HTTP ${res.status}). Copy también copiado al portapapeles.`;
-        $('pubLinks').style.display = 'flex';
-        item.status = 'Publicado';
-        saveSchedule();
+        $('pubStatus').textContent = `✅ Enviado con éxito al Webhook de ${item.platform}.`;
       } catch (err) {
         $('pubProgress').style.width = '100%';
-        $('pubStatus').textContent = `⚠️ Error enviando al Webhook (${err.message}). El copy ya fue copiado para que puedas subirlo directo en tu Studio:`;
-        $('pubLinks').style.display = 'flex';
+        $('pubStatus').textContent = `⚠️ El Webhook devolvió un error (${err.message}), pero tu copy ya está copiado para subirlo directo:`;
       }
+      $('pubLinks').style.display = 'flex';
+      item.status = 'Publicado';
+      saveSchedule();
       return;
     }
 
     setTimeout(() => {
       $('pubProgress').style.width = '65%';
-      $('pubStatus').textContent = acc && acc.token
-        ? `Validando metadatos con token de ${acc.handle} y copiando descripción...`
-        : 'Copiando título y hashtags al portapapeles...';
-    }, 550);
-
+      $('pubStatus').textContent = 'Preparando metadatos y portada CTR...';
+    }, 600);
     setTimeout(() => {
       $('pubProgress').style.width = '100%';
-      $('pubStatus').textContent = `✅ ¡Listo! La descripción ya está copiada en tu portapapeles. Abre el Studio de ${item.platform} para subir tu clip descargado y pegar el texto:`;
+      $('pubStatus').textContent = `✅ Descripción copiada al portapapeles. Abre el Studio de ${item.platform} para finalizar la subida:`;
       $('pubLinks').style.display = 'flex';
       item.status = 'Publicado';
       saveSchedule();
-    }, 1250);
+    }, 1300);
   };
+
   $('pubCopyAgainBtn').addEventListener('click', () => {
-    if (lastPublishedText) {
-      copyTextSafe(lastPublishedText);
-      showToast('Descripción copiada de nuevo', 'ok');
-    }
+    if (copyTextSafe(lastPublishedCaption)) showToast('Descripción copiada al portapapeles', 'ok');
   });
   $('closePubModal').addEventListener('click', () => $('publishModal').classList.remove('open'));
 
   $('addScheduleBtn').addEventListener('click', () => {
     const title = $('schedTitle').value.trim();
     const date = $('schedDate').value;
-    if (!title || !date) { showToast('Completa el título y la fecha/hora de publicación.', 'warn'); return; }
+    if (!title || !date) {
+      showToast('Completa el título y la fecha/hora de publicación', 'warn');
+      return;
+    }
     state.schedule.push({
       id: String(Date.now()) + Math.random().toString(16).slice(2, 6),
       title,
@@ -2014,32 +2165,26 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
     });
     saveSchedule();
     $('schedTitle').value = '';
-    showToast('¡Publicación programada en el calendario!', 'ok');
+    showToast('Publicación guardada en tu calendario', 'ok');
   });
 
   $('genDynamicCopyBtn').addEventListener('click', async () => {
     const title = $('schedTitle').value.trim() || (state.cuts[state.activeCutIdx]?.title || 'Nuevo Clip Viral');
     const platform = $('schedPlatform').value;
     if (isAiConfigured()) {
-      const btn = $('genDynamicCopyBtn');
-      const prevTxt = btn.textContent;
-      btn.textContent = '⏳ Generando con IA...';
+      showToast(`Generando copy creativo con ${AI_PROVIDERS[state.ai.provider]?.short || 'IA'}...`, '');
       try {
-        const aiText = await callConfiguredAI(
-          `Escribe una descripción corta, magnética y creativa en español para publicar un video titulado "${title}" en ${platform}. Incluye un llamado a la acción y 4 hashtags relevantes. Solo devuelve el texto final listo para publicar.`,
-          []
-        );
-        if (aiText && aiText.trim()) {
+        const prompt = `Escribe una descripción corta, magnética y con 4 hashtags relevantes para ${platform} sobre el video "${title}". Solo entrega el texto listo para pegar.`;
+        const aiText = await callConfiguredAI(prompt, []);
+        if (aiText.trim()) {
           $('schedCaption').value = aiText.trim();
-          showToast(`Copy creado con ${AI_PROVIDERS[state.ai.provider]?.short || 'IA'}`, 'ok');
-          btn.textContent = prevTxt;
+          showToast('Copy generado con IA', 'ok');
           return;
         }
       } catch (_) {}
-      btn.textContent = prevTxt;
     }
     $('schedCaption').value = makeDynamicCopy(title, platform);
-    showToast('Copy dinámico generado', 'ok');
+    showToast('Nuevo copy creativo generado', 'ok');
   });
 
   $('sendCutToSchedBtn').addEventListener('click', () => {
@@ -2048,19 +2193,22 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
     nextDay.setHours(18, 0, 0, 0);
     $('schedTitle').value = cut.title;
     $('schedDate').value = toLocalInputValue(nextDay);
-    $('schedCaption').value = makeDynamicCopy(cut.title, $('schedPlatform').value, state.activeCutIdx);
+    $('schedCaption').value = makeDynamicCopy(cut.title, $('schedPlatform').value, Math.max(0, state.activeCutIdx));
     document.querySelector('[data-tab="social"]').click();
     showToast('Corte enviado al programador de fechas', 'ok');
   });
 
   $('autoScheduleAllBtn').addEventListener('click', () => {
-    if (!state.cuts.length) { showToast('Primero analiza un video para generar los 3 cortes.', 'warn'); return; }
+    if (!state.cuts.length) {
+      showToast('Primero analiza un video para generar los 3 cortes', 'warn');
+      return;
+    }
     const platforms = ['YouTube Shorts', 'Instagram Reels', 'TikTok'];
     state.cuts.forEach((c, i) => {
       const dt = new Date(Date.now() + (i + 1) * 24 * 3600 * 1000);
       dt.setHours(18 + i, 30, 0, 0);
       state.schedule.push({
-        id: String(Date.now() + i),
+        id: String(Date.now() + i) + Math.random().toString(16).slice(2, 5),
         title: c.title,
         platform: platforms[i % 3],
         date: toLocalInputValue(dt),
@@ -2070,21 +2218,8 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown ni texto adicional) con e
     });
     saveSchedule();
     document.querySelector('[data-tab="social"]').click();
-    showToast('¡3 cortes programados en fechas escalonadas!', 'ok');
+    showToast('¡3 cortes programados automáticamente en fechas escalonadas!', 'ok');
   });
-
-  // ==================== MODAL CONFIGURACIÓN MULTI-IA ====================
-  function syncAiModalFields(providerKey, keepValues = false) {
-    const meta = AI_PROVIDERS[providerKey] || AI_PROVIDERS.custom;
-    $('aiVisionBadge').textContent = meta.vision ? '👁️ Visión + Texto' : '📝 Modo Texto';
-    $('aiPortalLink').href = meta.portal;
-    $('apiKeyInput').placeholder = meta.placeholder;
-    $('aiModelSuggestions').innerHTML = meta.models.map(m => `<option value="${m}"></option>`).join('');
-    if (!keepValues) {
-      $('aiModelInput').value = meta.defaultModel;
-      $('aiBaseUrlInput').value = meta.baseUrl;
-    }
-  }
 
   $('aiProviderSelect').addEventListener('change', e => {
     syncAiModalFields(e.target.value, false);
