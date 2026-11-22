@@ -189,7 +189,7 @@
       background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
       padding: 20px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto;
     }
-    .modal-lg { max-width: 600px; }
+    .modal-lg { max-width: 640px; }
     .progress-bar { width: 100%; height: 10px; background: #09101f; border-radius: 999px; overflow: hidden; margin: 12px 0; }
     .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width .25s; }
     .muted { color: var(--muted); font-size: 0.84rem; }
@@ -224,7 +224,7 @@
     @media (max-width: 560px) { .form-grid-2 { grid-template-columns: 1fr; } }
     .test-box {
       margin-top: 10px; padding: 10px 12px; border-radius: 10px; font-size: 0.82rem;
-      background: #0a1224; border: 1px solid var(--border); display: none; line-height: 1.4;
+      background: #0a1224; border: 1px solid var(--border); display: none; line-height: 1.45;
     }
     .test-box.show { display: block; }
     .test-box.ok { border-color: var(--green); background: rgba(16,185,129,.12); color: #a7f3d0; }
@@ -235,6 +235,15 @@
       border: 1px solid rgba(245,158,11,.35); border-radius: 10px; padding: 9px 11px;
       margin-top: 8px; line-height: 1.45;
     }
+    .stack-card {
+      background: #0b1222; border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px; margin-bottom: 10px;
+    }
+    .stack-card-head {
+      display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .stack-card-head strong { font-size: 0.88rem; }
+    .stack-link { font-size: 0.76rem; color: var(--accent); text-decoration: none; font-weight: 600; }
 
     /* Selector de segundos para cortes */
     .dur-bar {
@@ -290,6 +299,23 @@
     .range-head { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); margin-bottom: 3px; }
     .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 
+    /* Barra visible de estado y conexión manual de APIs IA */
+    .api-bar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+      margin-top: 12px; padding: 10px 12px; border-radius: 12px;
+      background: #0b1224; border: 1px solid var(--border);
+    }
+    .api-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+      background: rgba(148,163,184,.12); color: var(--muted); border: 1px solid var(--border);
+      cursor: pointer; transition: .18s;
+    }
+    .api-pill:hover { border-color: var(--accent); color: #fff; }
+    .api-pill.ok {
+      background: rgba(16,185,129,.16); color: #6ee7b7; border-color: rgba(16,185,129,.45);
+    }
+
     /* Video fuente oculto visualmente pero decodificado por GPU (evita fotogramas negros) */
     #sourceVideo {
       position: fixed; bottom: 0; right: 0; width: 320px; height: 180px;
@@ -299,16 +325,17 @@
 </head>
 <body>
 
+<!-- ==================== CABECERA ==================== -->
 <header>
   <div class="brand">
     <span>🎬 ClipHub Studio</span>
-    <span class="brand-badge">PRO IA</span>
+    <span class="brand-badge">PRO IA • OPTIMIZADO</span>
   </div>
   <nav>
     <button type="button" class="tab-btn active" data-tab="studio">✂️ Estudio de Cortes</button>
     <button type="button" class="tab-btn" data-tab="editor">🎬 Editor de Video</button>
     <button type="button" class="tab-btn" data-tab="thumbs">🖼️ Miniaturas IA</button>
-    <button type="button" class="tab-btn" data-tab="social">📅 Redes & Calendario</button>
+    <button type="button" class="tab-btn" data-tab="social">📅 Redes &amp; Calendario</button>
   </nav>
   <button type="button" class="ai-btn" id="openAiModal">
     <span class="dot" id="aiDot"></span>
@@ -365,14 +392,25 @@
         </div>
       </div>
 
-      <!-- Pipeline 4 pasos -->
+      <!-- Barra visible de conexión manual de APIs IA -->
+      <div class="api-bar" id="manualApiBar">
+        <div class="row" style="gap:8px;">
+          <span style="font-size:0.82rem; font-weight:700; color:#e2e8f0;">🔑 Conexión Manual de IAs:</span>
+          <button type="button" class="api-pill" id="pillGroq">🎙️ Groq Whisper: Sin conectar</button>
+          <button type="button" class="api-pill" id="pillLlm">✂️ Gemini / LLM: Sin conectar</button>
+          <button type="button" class="api-pill ok" id="pillThumb">🖼️ Miniaturas: Canvas ($0)</button>
+        </div>
+        <button type="button" class="btn btn-sm btn-primary" id="openManualApiBtn">⚙️ Conectar Tokens IA</button>
+      </div>
+
+      <!-- Pipeline 4 pasos optimizados -->
       <div class="pipeline">
         <div class="pipe-step" id="pStep1"><div class="pipe-ico">1</div><div><strong>Fotogramas</strong><div class="muted" id="pSub1">Esperando video</div></div></div>
-        <div class="pipe-step" id="pStep2"><div class="pipe-ico">2</div><div><strong>Mejores Cortes</strong><div class="muted" id="pSub2">En cola</div></div></div>
-        <div class="pipe-step" id="pStep3"><div class="pipe-ico">3</div><div><strong>Subtítulos Auto</strong><div class="muted" id="pSub3">En cola</div></div></div>
-        <div class="pipe-step" id="pStep4"><div class="pipe-ico">4</div><div><strong>Miniaturas IA</strong><div class="muted" id="pSub4">En cola</div></div></div>
+        <div class="pipe-step" id="pStep3"><div class="pipe-ico">2</div><div><strong>Audio + Whisper</strong><div class="muted" id="pSub3">En cola</div></div></div>
+        <div class="pipe-step" id="pStep2"><div class="pipe-ico">3</div><div><strong>Cortes (Flash-Lite)</strong><div class="muted" id="pSub2">En cola</div></div></div>
+        <div class="pipe-step" id="pStep4"><div class="pipe-ico">4</div><div><strong>Miniaturas Pro</strong><div class="muted" id="pSub4">En cola</div></div></div>
       </div>
-      <div class="muted" id="pipelineMsg">Sube un video o pulsa "✨ Cargar Video Demo" para extraer fotogramas reales, cortes, subtítulos en vivo y miniaturas generadas por IA.</div>
+      <div class="muted" id="pipelineMsg">Sube un video o pulsa "✨ Cargar Video Demo" para extraer fotogramas, transcribir audio, detectar cortes virales y crear miniaturas.</div>
 
       <div class="frames-strip" id="framesStrip">
         <div class="frame-box"></div><div class="frame-box"></div><div class="frame-box"></div><div class="frame-box"></div><div class="frame-box"></div>
@@ -419,7 +457,10 @@
         </div>
 
         <div class="card">
-          <h2>💬 Subtítulos en Vivo del Corte Actual</h2>
+          <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+            <h2 style="margin:0;">💬 Subtítulos en Vivo del Corte Actual</h2>
+            <span class="badge" id="subsSourceBadge">Modo Local</span>
+          </div>
           <div class="row" style="margin-bottom:10px;">
             <div style="flex:1; min-width:110px;">
               <label>Inicio (seg)</label>
@@ -439,7 +480,7 @@
               </select>
             </div>
           </div>
-          <label>Texto de subtítulos (una línea por bloque — se muestran automáticamente durante todo el corte)</label>
+          <label>Texto de subtítulos (una línea por bloque — si usas Groq Whisper se sincronizan automáticamente con la voz real)</label>
           <textarea id="subsTextarea" rows="4" placeholder="Escribe o edita las frases del corte..."></textarea>
           <div class="row" style="margin-top:8px;">
             <button type="button" class="btn btn-sm btn-primary" id="applySubsBtn">✅ Aplicar y Cubrir Todo el Corte</button>
@@ -480,7 +521,7 @@
     <div class="card">
       <div class="row" style="justify-content:space-between;">
         <div>
-          <h2 style="margin-bottom:4px;">🎬 Editor de Video Profesional</h2>
+          <h2 style="margin-bottom:4px;">🎬 Editor de Video Profesional (Exportación Local $0 Tokens)</h2>
           <div class="muted">Recorta, divide, cambia la velocidad, aplica filtros de color, zoom, gancho superior y marca de agua en vivo. Todos los cambios se incluyen al exportar.</div>
         </div>
         <div class="row">
@@ -659,33 +700,41 @@
     <div class="card">
       <div class="row" style="justify-content:space-between; margin-bottom:12px;">
         <div>
-          <h2 style="margin-bottom:4px;">🎨 Miniaturas Generadas por IA (Estilos Únicos y Variados)</h2>
-          <div class="muted">Cada miniatura se genera con IA a partir de los fotogramas de tu video usando direcciones de arte, colores y ganchos diferentes cada vez.</div>
+          <h2 id="thumbTabTitle" style="margin-bottom:4px;">🎨 Miniaturas Económicas (Canvas $0 o FLUX.1 [schnell] $0.003)</h2>
+          <div id="thumbTabSubtitle" class="muted">Usa tu motor local de 6 estilos a costo cero o genera miniaturas IA con <strong>FLUX.1 [schnell]</strong> aprovechando el prompt ya creado por Gemini Flash-Lite.</div>
         </div>
-        <button type="button" class="btn btn-purple" id="regenThumbsBtn">✨ Generar 3 Miniaturas Nuevas con IA</button>
+        <button type="button" class="btn btn-purple" id="regenThumbsBtn">✨ Generar 3 Miniaturas Nuevas</button>
       </div>
       <div class="row">
-        <div style="flex:1; min-width:210px;">
-          <label>Dirección de Arte IA</label>
+        <div style="flex:1; min-width:200px;">
+          <label>Motor de Miniaturas</label>
+          <select id="thumbEngineQuickSelect">
+            <option value="canvas">🎨 Canvas Dinámico Local ($0.00 / Gratis)</option>
+            <option value="fal">⚡ FLUX.1 [schnell] vía fal.ai ($0.003 / img)</option>
+            <option value="provider">🤖 Proveedor Avanzado (Gemini / OpenAI)</option>
+          </select>
+        </div>
+        <div style="flex:1; min-width:200px;">
+          <label>Dirección de Arte</label>
           <select id="thumbMoodSelect">
             <option value="random">🎲 Aleatorio (3 estilos completamente distintos)</option>
             <option value="viral">⚡ Ultra Viral Alto Contraste (Estilo YouTube Pro)</option>
             <option value="cinema">🎬 Póster Cinematográfico Dramático</option>
-            <option value="cyber">🌃 Neón Cyberpunk & Energía</option>
+            <option value="cyber">🌃 Neón Cyberpunk &amp; Energía</option>
             <option value="mystery">🕵️ Misterio / Documental Suspenso</option>
             <option value="comic">💥 Cómic Pop-Art Dinámico</option>
             <option value="luxury">✨ Editorial Lujo Dorado</option>
           </select>
         </div>
-        <div style="flex:2; min-width:240px;">
-          <label>Idea o toque visual extra para la IA (Opcional)</label>
-          <input type="text" id="thumbCustomIdea" placeholder="Ej: expresión épica, rayos de luz, flecha roja apuntando al centro, fondo explosivo..." />
+        <div style="flex:1.5; min-width:220px;">
+          <label>Idea o toque visual extra (Opcional)</label>
+          <input type="text" id="thumbCustomIdea" placeholder="Ej: expresión épica, rayos de luz, fondo explosivo..." />
         </div>
       </div>
       <div class="test-box" id="thumbDiagBox"></div>
     </div>
     <div class="grid-3" id="thumbsGrid">
-      <div class="card muted">Analiza un video en el Estudio de Cortes para generar automáticamente 3 miniaturas únicas con IA.</div>
+      <div class="card muted">Analiza un video en el Estudio de Cortes para generar automáticamente 3 miniaturas únicas.</div>
     </div>
   </section>
 
@@ -703,7 +752,17 @@
     </div>
 
     <div class="card">
-      <h2>📅 Programar Nueva Publicación</h2>
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <h2 style="margin:0;">📅 Programar Nueva Publicación</h2>
+        <span class="badge amber" id="schedGateBadge">🔒 Conecta una red para programar</span>
+      </div>
+      <!-- Aviso obligatorio cuando la plataforma elegida no está conectada -->
+      <div class="test-box show err" id="schedConnBanner" style="margin-top:0; margin-bottom:12px;">
+        <div class="row" style="justify-content:space-between;">
+          <span id="schedConnBannerText">⚠️ Debes conectar <strong>YouTube Shorts</strong> antes de programar una publicación en esta red.</span>
+          <button type="button" class="btn btn-sm btn-amber" id="schedQuickConnectBtn">🔗 Conectar esta red</button>
+        </div>
+      </div>
       <div class="row" style="margin-bottom:10px;">
         <div style="flex:1; min-width:180px;">
           <label>Título / Corte</label>
@@ -745,61 +804,159 @@
 <!-- Toast de mensajes -->
 <div id="toastBox"></div>
 
-<!-- Modal Configuración Universal de IA -->
+<!-- Modal Configuración de IA (Stack Optimizado + Multi-IA + Modo Cloud) -->
 <div class="modal-bg" id="aiModal">
   <div class="modal modal-lg">
-    <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-      <h2 style="margin:0;">🤖 Configurar Proveedor de IA (Multi-IA)</h2>
-      <span class="badge" id="aiVisionBadge">Visión + Texto + Imagen</span>
+    <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+      <h2 id="aiModalTitle" style="margin:0;">⚡ Configurar APIs de IA Optimizadas</h2>
+      <span class="badge" id="aiVisionBadge">-92% Costo en Tokens</span>
     </div>
-    <p class="muted" style="margin-bottom:14px;">Conecta cualquier motor de IA usando su API Key / Token. Todo se guarda localmente en tu navegador. Con <strong>Google Gemini</strong> u <strong>OpenAI</strong> también generas miniaturas reales con IA.</p>
 
-    <div class="form-grid-2 field-block">
-      <div>
-        <label>Proveedor de IA</label>
-        <select id="aiProviderSelect">
-          <option value="gemini">Google Gemini (Recomendado + Miniaturas IA)</option>
-          <option value="openai">OpenAI (ChatGPT / GPT-4o / DALL-E 3)</option>
-          <option value="openrouter">OpenRouter (Claude, Llama, DeepSeek...)</option>
-          <option value="anthropic">Anthropic (Claude)</option>
-          <option value="groq">Groq (Ultra Rápido)</option>
-          <option value="deepseek">DeepSeek</option>
-          <option value="xai">xAI (Grok)</option>
-          <option value="custom">Personalizada (OpenAI Compatible / Ollama)</option>
+    <!-- Panel SaaS Público (oculto en modo manual) -->
+    <div id="aiPanePublic" style="display:none;">
+      <p class="muted" style="margin-bottom:12px;">Tus funciones de IA operan de forma segura a través del servidor proxy configurado.</p>
+      <div class="stack-card">
+        <div class="stack-card-head">
+          <strong>☁️ Estado de los Servicios Cloud</strong>
+          <button type="button" class="btn btn-sm btn-primary" id="recheckPublicAiBtn">🔄 Verificar</button>
+        </div>
+        <div id="publicStatusList" class="muted">Comprobando estado del servidor...</div>
+      </div>
+      <div class="field-block">
+        <label>Motor de Miniaturas preferido</label>
+        <select id="publicThumbEngineSelect">
+          <option value="canvas">🎨 Diseño Rápido Local (Instantáneo)</option>
+          <option value="fal">⚡ Generación Creativa con IA (FLUX.1)</option>
         </select>
       </div>
-      <div>
-        <label>Modelo</label>
-        <input type="text" id="aiModelInput" list="aiModelSuggestions" placeholder="Ej: gemini-3-flash-preview" />
-        <datalist id="aiModelSuggestions"></datalist>
+    </div>
+
+    <div class="modal-tabs" id="aiModalTabs">
+      <button type="button" class="modal-tab active" data-ai-tab="stack">🚀 Stack Optimizado (Recomendado)</button>
+      <button type="button" class="modal-tab" data-ai-tab="advanced">🔧 Proveedor Avanzado / Otro LLM</button>
+    </div>
+
+    <!-- PESTAÑA 1: STACK OPTIMIZADO (Groq Whisper + Gemini 2.5 Flash-Lite + FLUX.1 Schnell + Proxy) -->
+    <div id="aiPaneStack">
+      <p class="muted" style="margin-bottom:12px;">Combina APIs especializadas para pagar menos de <strong>$0.02 USD por video</strong>. Todo se guarda localmente en tu navegador (modo BYOK) o mediante tu <strong>Proxy URL</strong>.</p>
+
+      <!-- 1. Groq Whisper -->
+      <div class="stack-card">
+        <div class="stack-card-head">
+          <strong>🎙️ 1. Subtítulos Reales — Groq Whisper Turbo ($0.04 / hora)</strong>
+          <a class="stack-link" href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">Obtener clave Groq ↗</a>
+        </div>
+        <div class="input-group">
+          <input type="password" id="groqKeyInput" placeholder="gsk_... (Extrae audio WAV 16kHz y transcribe con marcas de tiempo)" autocomplete="off" />
+          <button type="button" class="btn btn-sm" data-toggle-vis="groqKeyInput" title="Mostrar u ocultar">👁️</button>
+        </div>
+      </div>
+
+      <!-- 2. Gemini 2.5 Flash-Lite -->
+      <div class="stack-card">
+        <div class="stack-card-head">
+          <strong>✂️ 2. Cortes Emocionantes — Gemini 2.5 Flash-Lite ($0.10 / 1M tokens)</strong>
+          <a class="stack-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Obtener clave Gemini ↗</a>
+        </div>
+        <div class="input-group">
+          <input type="password" id="stackGeminiKeyInput" placeholder="AIzaSy... (Analiza solo el texto transcrito, nunca video crudo)" autocomplete="off" />
+          <button type="button" class="btn btn-sm" data-toggle-vis="stackGeminiKeyInput" title="Mostrar u ocultar">👁️</button>
+        </div>
+      </div>
+
+      <!-- 3. Miniaturas: Canvas $0 o FLUX.1 Schnell -->
+      <div class="stack-card">
+        <div class="stack-card-head">
+          <strong>🖼️ 3. Miniaturas — Canvas ($0) o FLUX.1 [schnell] ($0.003 / img)</strong>
+          <a class="stack-link" href="https://fal.ai/dashboard/keys" target="_blank" rel="noopener noreferrer">Obtener clave fal.ai ↗</a>
+        </div>
+        <div class="form-grid-2">
+          <div>
+            <label>Motor por defecto</label>
+            <select id="thumbEngineSelect">
+              <option value="canvas">🎨 Canvas Dinámico Local ($0.00)</option>
+              <option value="fal">⚡ FLUX.1 [schnell] vía fal.ai ($0.003)</option>
+              <option value="provider">🤖 Proveedor Avanzado (Pestaña 2)</option>
+            </select>
+          </div>
+          <div>
+            <label>fal.ai API Key (solo si usas FLUX)</label>
+            <div class="input-group">
+              <input type="password" id="falKeyInput" placeholder="key_id:key_secret" autocomplete="off" />
+              <button type="button" class="btn btn-sm" data-toggle-vis="falKeyInput" title="Mostrar u ocultar">👁️</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Proxy propio para producción comercial -->
+      <div class="stack-card">
+        <div class="stack-card-head">
+          <strong>🛡️ 4. Proxy URL para Producción Comercial (Opcional)</strong>
+          <span class="badge">Cloudflare Worker</span>
+        </div>
+        <input type="url" id="proxyUrlInput" placeholder="https://tu-worker.tu-usuario.workers.dev (enruta /api/transcribe, /api/analyze-cuts, /api/thumbnail)" />
+        <div class="security-note">
+          🔒 <strong>Seguridad:</strong> En uso personal o GitHub Pages (BYOK), tus claves quedan en tu navegador. Si vendes suscripciones a clientes, usa un <strong>Proxy URL</strong> para guardar tus claves en servidor y nunca exponerlas en el HTML.
+        </div>
+      </div>
+
+      <div class="row" style="justify-content:flex-end; margin-top:8px;">
+        <button type="button" class="btn btn-sm btn-primary" id="testStackBtn">⚡ Probar Stack Optimizado</button>
       </div>
     </div>
 
-    <div class="field-block">
-      <label>API Key / Bearer Token</label>
-      <div class="input-group">
-        <input type="password" id="apiKeyInput" placeholder="Pega tu token o clave API aquí..." autocomplete="off" />
-        <button type="button" class="btn btn-sm" id="toggleAiKeyVis" title="Mostrar u ocultar token">👁️</button>
+    <!-- PESTAÑA 2: PROVEEDOR AVANZADO / OTRO LLM -->
+    <div id="aiPaneAdvanced" style="display:none;">
+      <p class="muted" style="margin-bottom:12px;">Si prefieres usar otro proveedor de texto para detectar cortes o redactar copies (OpenAI, OpenRouter, Claude, DeepSeek, Grok u Ollama local), configúralo aquí.</p>
+
+      <div class="form-grid-2 field-block">
+        <div>
+          <label>Proveedor de IA (Cortes / Copy)</label>
+          <select id="aiProviderSelect">
+            <option value="gemini">Google Gemini (Recomendado: 2.5 Flash-Lite)</option>
+            <option value="openai">OpenAI (GPT-4o-mini / DALL-E 3)</option>
+            <option value="openrouter">OpenRouter (Claude, Llama, DeepSeek...)</option>
+            <option value="anthropic">Anthropic (Claude)</option>
+            <option value="groq">Groq (Llama 3.3)</option>
+            <option value="deepseek">DeepSeek</option>
+            <option value="xai">xAI (Grok)</option>
+            <option value="custom">Personalizada (OpenAI Compatible / Ollama)</option>
+          </select>
+        </div>
+        <div>
+          <label>Modelo</label>
+          <input type="text" id="aiModelInput" list="aiModelSuggestions" placeholder="Ej: gemini-2.5-flash-lite" />
+          <datalist id="aiModelSuggestions"></datalist>
+        </div>
       </div>
-    </div>
 
-    <div class="field-block">
-      <label>URL del Endpoint (Automática o Personalizada)</label>
-      <input type="url" id="aiBaseUrlInput" placeholder="https://..." />
-    </div>
+      <div class="field-block">
+        <label>API Key / Bearer Token del Proveedor</label>
+        <div class="input-group">
+          <input type="password" id="apiKeyInput" placeholder="Pega tu token o clave API aquí..." autocomplete="off" />
+          <button type="button" class="btn btn-sm" id="toggleAiKeyVis" title="Mostrar u ocultar token">👁️</button>
+        </div>
+      </div>
 
-    <div class="row" style="justify-content:space-between;">
-      <a id="aiPortalLink" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="muted" style="color:var(--accent); text-decoration:none; font-weight:600;">🔑 Obtener API Key de este proveedor ↗</a>
-      <div class="row">
-        <button type="button" class="btn btn-sm" id="detectModelsBtn">🔍 Detectar Modelos</button>
-        <button type="button" class="btn btn-sm btn-primary" id="testAiBtn">⚡ Probar Conexión</button>
+      <div class="field-block">
+        <label>URL del Endpoint (Automática o Personalizada)</label>
+        <input type="url" id="aiBaseUrlInput" placeholder="https://..." />
+      </div>
+
+      <div class="row" style="justify-content:space-between;">
+        <a id="aiPortalLink" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="muted" style="color:var(--accent); text-decoration:none; font-weight:600;">🔑 Obtener API Key de este proveedor ↗</a>
+        <div class="row">
+          <button type="button" class="btn btn-sm" id="detectModelsBtn">🔍 Detectar Modelos</button>
+          <button type="button" class="btn btn-sm btn-primary" id="testAiBtn">⚡ Probar Conexión</button>
+        </div>
       </div>
     </div>
 
     <div class="test-box" id="aiTestResult"></div>
 
     <div class="row" style="margin-top:16px; justify-content:space-between;">
-      <button type="button" class="btn btn-sm btn-danger" id="clearAiKeyBtn">🗑️ Desconectar IA</button>
+      <button type="button" class="btn btn-sm btn-danger" id="clearAiKeyBtn">🗑️ Limpiar Claves</button>
       <div class="row">
         <button type="button" class="btn" id="closeAiModal">Cerrar</button>
         <button type="button" class="btn btn-green" id="saveAiKeyBtn">💾 Guardar Configuración</button>
@@ -928,6 +1085,41 @@
   'use strict';
   const $ = id => document.getElementById(id);
 
+  // ==================== CONFIGURACIÓN PÚBLICA DE PRODUCCIÓN ====================
+  // 1. Pega aquí la URL real de tu Cloudflare Worker (cloudflare-worker-proxy.js)
+  //    Ejemplo: 'https://cliphub-api-proxy.tu-cuenta.workers.dev'
+  // ==================== CONFIGURACIÓN DE MODO MANUAL (TOKENS PROPIOS) ====================
+  // PUBLIC_SAAS_MODE en false mantiene siempre visible la sección para conectar
+  // manualmente los tokens de cada IA (Groq, Gemini, fal.ai, OpenAI, Claude, etc.).
+  const PUBLIC_APP_CONFIG = {
+    DEFAULT_PROXY_URL: '',
+    PUBLIC_SAAS_MODE: false,
+    DEFAULT_THUMB_ENGINE: 'canvas', // 'canvas' (instantáneo $0) o 'fal' (FLUX.1 Schnell)
+    APP_ACCESS_TOKEN: ''
+  };
+
+  const IS_ADMIN_OVERRIDE = /(?:^|[?&])admin=1(?:&|$)/i.test(window.location.search || '');
+
+  function isPublicSaasMode() {
+    return Boolean(PUBLIC_APP_CONFIG.PUBLIC_SAAS_MODE) && !IS_ADMIN_OVERRIDE;
+  }
+
+  function isPlaceholderProxy(url) {
+    const clean = String(url || '').trim();
+    return !clean || /TU-WORKER\.TU-CUENTA/i.test(clean);
+  }
+
+  function getActiveProxy(customUrl = null) {
+    const candidate = customUrl !== null ? customUrl : state?.ai?.proxyUrl;
+    const raw = String(candidate || '').trim().replace(/\/+$/, '');
+    return isPlaceholderProxy(raw) ? '' : raw;
+  }
+
+  function getProxyHeaders() {
+    const token = String(PUBLIC_APP_CONFIG.APP_ACCESS_TOKEN || '').trim();
+    return token ? { 'X-App-Token': token } : {};
+  }
+
   // ==================== ALMACENAMIENTO SEGURO ====================
   function safeGet(key, fallback = null) {
     try {
@@ -957,14 +1149,14 @@
     throw new Error('Error de red al conectar con el servidor');
   }
 
-  // ==================== PRESETS MULTI-IA ====================
+  // ==================== PRESETS MULTI-IA + STACK OPTIMIZADO ====================
   const AI_PROVIDERS = {
     gemini: {
-      name: 'Google Gemini',
+      name: 'Google Gemini (Flash-Lite Optimizado)',
       short: 'Gemini',
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      defaultModel: 'gemini-3-flash-preview',
-      models: ['gemini-3-flash-preview', 'gemini-3.0-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
+      defaultModel: 'gemini-2.5-flash-lite',
+      models: ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-pro'],
       vision: true,
       portal: 'https://aistudio.google.com/apikey',
       placeholder: 'AIzaSy... (clave de Google AI Studio)'
@@ -983,8 +1175,8 @@
       name: 'OpenRouter',
       short: 'OpenRouter',
       baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
-      defaultModel: 'google/gemini-2.0-flash-001',
-      models: ['google/gemini-2.0-flash-001', 'openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-chat'],
+      defaultModel: 'google/gemini-2.5-flash-lite',
+      models: ['google/gemini-2.5-flash-lite', 'openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-chat'],
       vision: true,
       portal: 'https://openrouter.ai/keys',
       placeholder: 'sk-or-v1-...'
@@ -993,8 +1185,8 @@
       name: 'Anthropic Claude',
       short: 'Claude',
       baseUrl: 'https://api.anthropic.com/v1/messages',
-      defaultModel: 'claude-3-5-sonnet-latest',
-      models: ['claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest'],
+      defaultModel: 'claude-3-5-haiku-latest',
+      models: ['claude-3-5-haiku-latest', 'claude-3-5-sonnet-latest'],
       vision: true,
       portal: 'https://console.anthropic.com/settings/keys',
       placeholder: 'sk-ant-...'
@@ -1004,7 +1196,7 @@
       short: 'Groq',
       baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
       defaultModel: 'llama-3.3-70b-versatile',
-      models: ['llama-3.3-70b-versatile', 'llama-3.2-11b-vision-preview', 'mixtral-8x7b-32768'],
+      models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
       vision: false,
       portal: 'https://console.groq.com/keys',
       placeholder: 'gsk_...'
@@ -1023,8 +1215,8 @@
       name: 'xAI (Grok)',
       short: 'Grok',
       baseUrl: 'https://api.x.ai/v1/chat/completions',
-      defaultModel: 'grok-2-vision-1212',
-      models: ['grok-2-vision-1212', 'grok-2-latest'],
+      defaultModel: 'grok-2-latest',
+      models: ['grok-2-latest', 'grok-2-vision-1212'],
       vision: true,
       portal: 'https://console.x.ai/',
       placeholder: 'xai-...'
@@ -1045,25 +1237,51 @@
     return /^models\/gemini-(1\.0|1\.5|2\.0)|^gemini-(1\.0|1\.5|2\.0)/i.test(String(name || '').trim());
   }
 
+  /**
+   * Carga la configuración persistida del Stack Optimizado (Groq + Gemini 2.5 Flash-Lite + fal.ai + Proxy)
+   * manteniendo retrocompatibilidad con configuraciones previas.
+   */
   function loadAiConfig() {
+    const defaultProxy = isPlaceholderProxy(PUBLIC_APP_CONFIG.DEFAULT_PROXY_URL)
+      ? ''
+      : PUBLIC_APP_CONFIG.DEFAULT_PROXY_URL.trim().replace(/\/+$/, '');
+
+    const defaults = {
+      provider: 'gemini',
+      apiKey: isPublicSaasMode() ? '' : safeGet('cliphub_gemini_key', ''),
+      model: 'gemini-2.5-flash-lite',
+      baseUrl: AI_PROVIDERS.gemini.baseUrl,
+      groqKey: '',
+      falKey: '',
+      thumbEngine: PUBLIC_APP_CONFIG.DEFAULT_THUMB_ENGINE || 'canvas',
+      proxyUrl: defaultProxy
+    };
     try {
       const saved = JSON.parse(safeGet('cliphub_ai_config', 'null'));
-      if (saved && saved.provider && AI_PROVIDERS[saved.provider]) {
-        // Migrar automáticamente modelos retirados (ej. gemini-2.0-flash) al modelo vigente
-        if (saved.provider === 'gemini' && (!saved.model || isRetiredGeminiModel(saved.model))) {
-          saved.model = AI_PROVIDERS.gemini.defaultModel;
-          safeSet('cliphub_ai_config', JSON.stringify(saved));
+      if (saved && typeof saved === 'object') {
+        const merged = { ...defaults, ...saved };
+        if (!AI_PROVIDERS[merged.provider]) merged.provider = 'gemini';
+        if (merged.provider === 'gemini' && (!merged.model || isRetiredGeminiModel(merged.model))) {
+          merged.model = 'gemini-2.5-flash-lite';
         }
-        return saved;
+        // En modo SaaS público forzamos el uso exclusivo del Proxy del servidor y nunca claves cliente
+        if (isPublicSaasMode()) {
+          merged.provider = 'gemini';
+          merged.model = 'gemini-2.5-flash-lite';
+          merged.apiKey = '';
+          merged.groqKey = '';
+          merged.falKey = '';
+          merged.proxyUrl = defaultProxy;
+          if (merged.thumbEngine === 'provider') {
+            merged.thumbEngine = PUBLIC_APP_CONFIG.DEFAULT_THUMB_ENGINE || 'canvas';
+          }
+        } else if (!merged.proxyUrl && defaultProxy) {
+          merged.proxyUrl = defaultProxy;
+        }
+        return merged;
       }
     } catch (_) {}
-    const legacyKey = safeGet('cliphub_gemini_key', '');
-    return {
-      provider: 'gemini',
-      apiKey: legacyKey,
-      model: AI_PROVIDERS.gemini.defaultModel,
-      baseUrl: AI_PROVIDERS.gemini.baseUrl
-    };
+    return defaults;
   }
 
   const DEFAULT_ACCOUNTS = {
@@ -1096,6 +1314,9 @@
     isAnalyzing: false,
     isExporting: false,
     videoName: 'video_demo',
+    videoBlob: null,        // Archivo/Blob real para decodificar pista de audio
+    transcript: null,       // { text, segments: [{start, end, text}], words: [] }
+    proxyHealth: null,      // Estado devuelto por GET /health del Cloudflare Worker
     duration: 0,
     cutDuration: 15,
     frames: [],
@@ -1153,7 +1374,7 @@
     box.textContent = msg;
     box.className = 'show' + (type ? ' ' + type : '');
     if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { box.className = ''; }, 3400);
+    toastTimer = setTimeout(() => { box.className = ''; }, 3600);
   }
 
   function showBoxMsg(elId, type, msg) {
@@ -1179,8 +1400,19 @@
     }
   }
 
+  function hasProxy() {
+    return Boolean(getActiveProxy());
+  }
+
   function isAiConfigured() {
-    return Boolean(state.ai.apiKey || (state.ai.provider === 'custom' && state.ai.baseUrl));
+    if (isPublicSaasMode()) return hasProxy();
+    return Boolean(
+      (state.ai.apiKey || '').trim() ||
+      (state.ai.groqKey || '').trim() ||
+      (state.ai.falKey || '').trim() ||
+      hasProxy() ||
+      (state.ai.provider === 'custom' && state.ai.baseUrl)
+    );
   }
 
   function escapeHtml(str) {
@@ -1217,16 +1449,78 @@
   function setStep(num, status, text) {
     const el = $('pStep' + num);
     if (!el) return;
+    const orderNum = num === 3 ? 2 : num === 2 ? 3 : num;
     el.className = 'pipe-step' + (status ? ' ' + status : '');
     $('pSub' + num).textContent = text;
-    el.querySelector('.pipe-ico').textContent = status === 'done' ? '✓' : status === 'err' ? '!' : num;
+    el.querySelector('.pipe-ico').textContent = status === 'done' ? '✓' : status === 'err' ? '!' : orderNum;
   }
 
   function refreshAiBadge() {
+    if (isPublicSaasMode()) {
+      const proxyReady = hasProxy();
+      const online = proxyReady && (!state.proxyHealth || state.proxyHealth.status === 'ok');
+      $('aiDot').className = 'dot' + (online ? ' ok' : '');
+      if (!proxyReady) {
+        $('aiStatusText').textContent = 'IA en Modo Local';
+      } else if (state.proxyHealth?.status === 'ok') {
+        $('aiStatusText').textContent = 'IA Cloud Activa';
+      } else if (state.proxyHealth?.status === 'error') {
+        $('aiStatusText').textContent = 'IA Sin Conexión';
+      } else {
+        $('aiStatusText').textContent = 'IA Cloud Lista';
+      }
+      return;
+    }
+
     const ok = isAiConfigured();
-    const prov = AI_PROVIDERS[state.ai.provider] || AI_PROVIDERS.gemini;
     $('aiDot').className = 'dot' + (ok ? ' ok' : '');
-    $('aiStatusText').textContent = ok ? `${prov.short} Conectada` : 'Configurar IA';
+    if (hasProxy()) {
+      $('aiStatusText').textContent = 'Proxy Pro Activo';
+      return;
+    }
+    const activeParts = [];
+    if ((state.ai.groqKey || '').trim()) activeParts.push('Whisper');
+    if ((state.ai.apiKey || '').trim()) activeParts.push((AI_PROVIDERS[state.ai.provider] || AI_PROVIDERS.gemini).short);
+    if ((state.ai.falKey || '').trim() && state.ai.thumbEngine === 'fal') activeParts.push('FLUX');
+    $('aiStatusText').textContent = activeParts.length ? activeParts.join(' + ') : (ok ? 'IA Conectada' : 'Configurar IA');
+    updateManualApiPills();
+  }
+
+  /**
+   * Actualiza los indicadores visibles de la barra de conexión manual en el Estudio.
+   */
+  function updateManualApiPills() {
+    const groqEl = $('pillGroq');
+    const llmEl = $('pillLlm');
+    const thumbEl = $('pillThumb');
+    if (!groqEl || !llmEl || !thumbEl) return;
+
+    const proxyActive = hasProxy();
+    const hasGroq = Boolean((state.ai.groqKey || '').trim()) || proxyActive;
+    const hasLlm = Boolean((state.ai.apiKey || '').trim()) || proxyActive || (state.ai.provider === 'custom' && Boolean((state.ai.baseUrl || '').trim()));
+    const provShort = (AI_PROVIDERS[state.ai.provider] || AI_PROVIDERS.gemini).short;
+
+    groqEl.textContent = hasGroq
+      ? (proxyActive ? '🎙️ Groq Whisper: Vía Proxy' : '🎙️ Groq Whisper: Conectado')
+      : '🎙️ Groq Whisper: Sin conectar';
+    groqEl.className = 'api-pill' + (hasGroq ? ' ok' : '');
+
+    llmEl.textContent = hasLlm
+      ? (proxyActive ? '✂️ Gemini Flash-Lite: Vía Proxy' : `✂️ ${provShort}: Conectado`)
+      : `✂️ ${provShort}: Sin conectar`;
+    llmEl.className = 'api-pill' + (hasLlm ? ' ok' : '');
+
+    if (state.ai.thumbEngine === 'fal') {
+      const hasFal = Boolean((state.ai.falKey || '').trim()) || proxyActive;
+      thumbEl.textContent = hasFal ? '🖼️ Miniaturas: FLUX.1 Conectado' : '🖼️ Miniaturas: FLUX (Falta Token)';
+      thumbEl.className = 'api-pill' + (hasFal ? ' ok' : '');
+    } else if (state.ai.thumbEngine === 'provider') {
+      thumbEl.textContent = hasLlm ? `🖼️ Miniaturas: ${provShort}` : '🖼️ Miniaturas: Proveedor (Falta Token)';
+      thumbEl.className = 'api-pill' + (hasLlm ? ' ok' : '');
+    } else {
+      thumbEl.textContent = '🖼️ Miniaturas: Canvas ($0)';
+      thumbEl.className = 'api-pill ok';
+    }
   }
 
   function updateCutRangeLabel() {
@@ -1288,7 +1582,7 @@
     document.querySelector('[data-tab="editor"]').click();
   });
 
-  // ==================== BANCO CREATIVO DINÁMICO (CERO REPETICIONES) ====================
+  // ==================== BANCO CREATIVO DINÁMICO (RESPALDO LOCAL) ====================
   const CREATIVE_PACKS = [
     {
       title: 'El giro inesperado que cambia toda la historia',
@@ -1378,7 +1672,6 @@
       Number((maxStart * 0.5).toFixed(1)),
       Number(maxStart.toFixed(1))
     ];
-    // Si el video es corto y maxStart es 0, repartirlo en 3 segmentos reales
     const shortMode = maxStart < 0.8;
     const seg = d / 3;
 
@@ -1388,16 +1681,26 @@
       const e = shortMode
         ? Number(Math.min(d, (i + 1) * seg).toFixed(1))
         : Number(Math.min(d, s + desiredLen).toFixed(1));
+      const realEnd = e > s + 0.5 ? e : d;
       const frameIdx = Math.min(Math.max(0, state.frames.length - 1), i === 0 ? 0 : i === 1 ? 2 : 4);
+      const realSubs = state.transcript?.segments?.length
+        ? state.transcript.segments.filter(item => item.end >= s && item.start <= realEnd)
+        : [];
       return {
         title: pack.title,
         hookText: pack.hook,
         badge: pack.badge,
         score: 97 - i * 2,
         start: s,
-        end: e > s + 0.5 ? e : d,
+        end: realEnd,
         frameIdx,
-        lines: pack.lines
+        lines: realSubs.length ? realSubs.map(x => x.text.trim()).filter(Boolean) : pack.lines,
+        timedSegments: realSubs.map(x => ({
+          start: Math.max(s, Number(x.start)),
+          end: Math.min(realEnd, Number(x.end)),
+          text: x.text.trim()
+        })),
+        thumbnailPrompt: ''
       };
     });
   }
@@ -1444,21 +1747,32 @@
     }
     const start = Number(Math.max(0, Math.min(Math.max(0, state.duration - 1), video.currentTime || 0)).toFixed(1));
     const end = Number(Math.min(state.duration || state.cutDuration, start + state.cutDuration).toFixed(1));
+    const realEnd = end > start + 0.5 ? end : state.duration;
     const idx = state.cuts.length;
     const fresh = getUniqueCreativePack(idx + Date.now());
+    const realSubs = state.transcript?.segments?.length
+      ? state.transcript.segments.filter(seg => seg.end >= start && seg.start <= realEnd)
+      : [];
+
     state.cuts.push({
       title: `Corte Manual #${idx + 1} (${fmtTime(start)})`,
       hookText: fresh.hook,
       badge: fresh.badge,
       score: 91 + (idx % 8),
       start,
-      end: end > start + 0.5 ? end : state.duration,
+      end: realEnd,
       frameIdx: Math.min(Math.max(0, state.frames.length - 1), Math.floor((start / Math.max(1, state.duration)) * Math.max(1, state.frames.length))),
-      lines: fresh.lines
+      lines: realSubs.length ? realSubs.map(x => x.text.trim()).filter(Boolean) : fresh.lines,
+      timedSegments: realSubs.map(x => ({
+        start: Math.max(start, Number(x.start)),
+        end: Math.min(realEnd, Number(x.end)),
+        text: x.text.trim()
+      })),
+      thumbnailPrompt: ''
     });
     renderCutsList();
     loadCutIntoPlayer(idx, true);
-    showToast(`Corte manual creado (${fmtTime(start)} → ${fmtTime(end)})`, 'ok');
+    showToast(`Corte manual creado (${fmtTime(start)} → ${fmtTime(realEnd)})`, 'ok');
   });
 
   // ==================== VIDEO DEMO REAL (3 ESCENAS COLORIDAS + AUDIO) ====================
@@ -1574,6 +1888,7 @@
     }
     activeVideoUrl = url;
     state.videoName = (name || 'mi_video').replace(/\.[^.]+$/, '') || 'mi_video';
+    state.transcript = null;
     $('pipelineMsg').textContent = `Cargando video "${state.videoName}"...`;
     setStep(1, 'run', 'Cargando archivo...');
 
@@ -1642,6 +1957,7 @@
   $('videoInput').addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
+    state.videoBlob = file; // Guardar archivo original para extracción de audio WAV
     loadVideoSrc(URL.createObjectURL(file), file.name, 15);
     e.target.value = '';
   });
@@ -1653,6 +1969,7 @@
     try {
       $('pipelineMsg').textContent = 'Generando video demo de 3 escenas coloridas en tu navegador...';
       const blob = await generateDemoVideoBlob();
+      state.videoBlob = blob; // Guardar blob demo
       loadVideoSrc(URL.createObjectURL(blob), 'historia_viral_demo', 4.2);
     } catch (err) {
       $('pipelineMsg').textContent = `⚠️ No se pudo crear el video demo: ${err.message}`;
@@ -1753,7 +2070,161 @@
     setStep(1, 'done', `${results.length} fotogramas reales`);
   }
 
-  // ==================== MOTOR MULTI-IA (TEXTO + VISIÓN) ====================
+  // ==================== MÓDULO 1: EXTRACCIÓN DE AUDIO WAV 16kHz + GROQ WHISPER ====================
+
+  /**
+   * Codifica un arreglo Float32Array PCM mono en un Blob WAV de 16 bits.
+   */
+  function encodeWav16Bit(samples, sampleRate) {
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+    const writeStr = (off, s) => {
+      for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+    };
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, 'data');
+    view.setUint32(40, samples.length * 2, true);
+
+    let offset = 44;
+    for (let i = 0; i < samples.length; i++, offset += 2) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    }
+    return new Blob([buffer], { type: 'audio/wav' });
+  }
+
+  /**
+   * Extrae la pista de audio del video en el navegador, la convierte a mono 16 kHz
+   * y la divide automáticamente en bloques seguros (< 20 MB, 10 min) si el video es muy largo.
+   */
+  async function extractMonoAudioChunks(videoBlob) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) throw new Error('Web Audio API no soportada en este navegador.');
+    const ctxAudio = new AudioCtx();
+    try {
+      const arrayBuf = await videoBlob.arrayBuffer();
+      const decoded = await ctxAudio.decodeAudioData(arrayBuf);
+      const targetRate = 16000;
+      const frameCount = Math.max(1, Math.ceil(decoded.duration * targetRate));
+      const offline = new OfflineAudioContext(1, frameCount, targetRate);
+      const src = offline.createBufferSource();
+      src.buffer = decoded;
+      src.connect(offline.destination);
+      src.start(0);
+      const rendered = await offline.startRendering();
+      const channelData = rendered.getChannelData(0);
+
+      // Cada 10 minutos a 16 kHz 16-bit mono ≈ 19.2 MB (bajo el límite de 25 MB de Groq)
+      const chunkSec = 600;
+      const samplesPerChunk = chunkSec * targetRate;
+      const chunks = [];
+      for (let startSample = 0; startSample < channelData.length; startSample += samplesPerChunk) {
+        const slice = channelData.subarray(startSample, Math.min(channelData.length, startSample + samplesPerChunk));
+        chunks.push({
+          offsetSec: startSample / targetRate,
+          wavBlob: encodeWav16Bit(slice, targetRate)
+        });
+      }
+      return chunks;
+    } finally {
+      await ctxAudio.close().catch(() => {});
+    }
+  }
+
+  /**
+   * Envía un bloque WAV ligero a Groq Whisper (`whisper-large-v3-turbo`, $0.04 USD/h)
+   * o al Proxy URL configurado, devolviendo transcripción con marcas de tiempo exactas.
+   */
+  async function transcribeWavChunkWithGroq(wavBlob) {
+    const groqKey = (state.ai.groqKey || '').trim();
+    const proxy = getActiveProxy();
+    if (!groqKey && !proxy) return null;
+
+    if (wavBlob.size > 24 * 1024 * 1024) {
+      throw new Error('El bloque de audio excede 24 MB.');
+    }
+
+    const form = new FormData();
+    form.append('file', wavBlob, 'audio.wav');
+    form.append('model', 'whisper-large-v3-turbo');
+    form.append('response_format', 'verbose_json');
+    form.append('timestamp_granularities[]', 'segment');
+    form.append('timestamp_granularities[]', 'word');
+
+    const endpoint = proxy
+      ? `${proxy}/api/transcribe`
+      : 'https://api.groq.com/openai/v1/audio/transcriptions';
+    const headers = proxy ? getProxyHeaders() : { Authorization: `Bearer ${groqKey}` };
+
+    const res = await fetchWithBackoff(endpoint, {
+      method: 'POST',
+      headers,
+      body: form
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data?.error?.message || `Groq HTTP ${res.status}`);
+    }
+    return {
+      text: data.text || '',
+      segments: Array.isArray(data.segments) ? data.segments : [],
+      words: Array.isArray(data.words) ? data.words : []
+    };
+  }
+
+  /**
+   * Transcribe todos los bloques de audio y unifica los timestamps con el desplazamiento real.
+   */
+  async function transcribeVideoWithGroqWhisper(videoBlob) {
+    const chunks = await extractMonoAudioChunks(videoBlob);
+    const fullTextParts = [];
+    const allSegments = [];
+    const allWords = [];
+
+    for (let i = 0; i < chunks.length; i++) {
+      if (chunks.length > 1) {
+        setStep(3, 'run', `Transcribiendo parte ${i + 1}/${chunks.length}...`);
+      }
+      const part = await transcribeWavChunkWithGroq(chunks[i].wavBlob);
+      if (!part) continue;
+      if (part.text) fullTextParts.push(part.text.trim());
+      const off = chunks[i].offsetSec;
+      part.segments.forEach(seg => {
+        const cleanText = String(seg.text || '').trim();
+        if (!cleanText) return;
+        allSegments.push({
+          start: Number(seg.start || 0) + off,
+          end: Number(seg.end || 0) + off,
+          text: cleanText
+        });
+      });
+      part.words.forEach(w => {
+        allWords.push({
+          start: Number(w.start || 0) + off,
+          end: Number(w.end || 0) + off,
+          word: String(w.word || '')
+        });
+      });
+    }
+
+    return {
+      text: fullTextParts.join(' '),
+      segments: allSegments,
+      words: allWords
+    };
+  }
+
+  // ==================== MOTOR MULTI-IA (SOLO TEXTO / RESPALDO) ====================
   async function discoverGeminiModels(apiKey, baseUrl = 'https://generativelanguage.googleapis.com/v1beta') {
     const cleanBase = (baseUrl || 'https://generativelanguage.googleapis.com/v1beta').replace(/\/+$/, '');
     const res = await fetch(`${cleanBase}/models?key=${encodeURIComponent(apiKey || '')}`);
@@ -1766,45 +2237,70 @@
 
     const imageModels = all.filter(n => /image/i.test(n));
     const textModels = all.filter(n => /gemini/i.test(n) && !/image|tts|audio|embedding|live/i.test(n));
-    // Priorizar los modelos Flash más recientes
     textModels.sort((a, b) => {
-      const score = x => (/flash/i.test(x) ? 10 : 0) + (/gemini-3/i.test(x) ? 20 : /gemini-2\.5/i.test(x) ? 15 : 0);
+      const score = x => (/flash-lite/i.test(x) ? 30 : /flash/i.test(x) ? 15 : 0) + (/gemini-2\.5/i.test(x) ? 20 : /gemini-3/i.test(x) ? 10 : 0);
       return score(b) - score(a);
     });
     return { textModels, imageModels, all };
   }
 
-  async function callConfiguredAI(prompt, frameBase64List = [], cfgOverride = null) {
+  async function callConfiguredAI(prompt, frameBase64List = [], cfgOverride = null, forceJson = false) {
     const cfg = cfgOverride || state.ai;
     const provider = cfg.provider || 'gemini';
     const meta = AI_PROVIDERS[provider] || AI_PROVIDERS.custom;
     let model = (cfg.model || meta.defaultModel).trim().replace(/^models\//, '');
     const apiKey = (cfg.apiKey || '').trim();
     const baseUrl = (cfg.baseUrl || meta.baseUrl).trim();
+    const proxy = getActiveProxy(cfg.proxyUrl !== undefined ? cfg.proxyUrl : state.ai.proxyUrl);
+
+    // Si hay Proxy configurado y usamos Gemini, enrutar por /api/analyze-cuts
+    if (proxy && provider === 'gemini') {
+      const res = await fetchWithBackoff(`${proxy}/api/analyze-cuts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getProxyHeaders() },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: forceJson
+            ? { responseMimeType: 'application/json', temperature: 0.4 }
+            : { temperature: 0.7 }
+        })
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error?.message || `Proxy HTTP ${res.status}`);
+      return json?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || json?.text || '';
+    }
 
     if (provider === 'gemini') {
       const cleanBase = baseUrl.replace(/\/+$/, '');
-      if (isRetiredGeminiModel(model)) {
-        model = 'gemini-3-flash-preview';
-      }
+      if (isRetiredGeminiModel(model)) model = 'gemini-2.5-flash-lite';
       const parts = [{ text: prompt }];
       frameBase64List.forEach(b64 => {
         parts.push({ inlineData: { mimeType: 'image/jpeg', data: b64 } });
       });
 
-      const candidateModels = [...new Set([model, 'gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-3.0-flash'])];
+      const candidateModels = [...new Set([model, 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-3-flash-preview'])];
       let lastErr = 'Error desconocido en Gemini';
 
       const tryGeminiModel = async (mName) => {
         const url = `${cleanBase}/models/${encodeURIComponent(mName)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const payload = {
+          contents: [{ parts }],
+          generationConfig: forceJson
+            ? { responseMimeType: 'application/json', temperature: 0.4 }
+            : { temperature: 0.7 }
+        };
         const res = await fetchWithBackoff(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts }] })
+          body: JSON.stringify(payload)
         });
         const json = await res.json().catch(() => ({}));
         if (res.ok) {
-          return { ok: true, text: json?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '', modelUsed: mName };
+          return {
+            ok: true,
+            text: json?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '',
+            modelUsed: mName
+          };
         }
         return { ok: false, status: res.status, message: json?.error?.message || `HTTP ${res.status}` };
       };
@@ -1816,11 +2312,9 @@
           return attempt.text;
         }
         lastErr = attempt.message;
-        // Si es error de clave inválida o sin permisos, detener cascada
         if (attempt.status === 401 || /API key not valid/i.test(lastErr)) break;
       }
 
-      // Auto-descubrir los modelos realmente activos en la clave del usuario
       if (apiKey && /not found|no longer available|not supported|404/i.test(lastErr)) {
         try {
           const found = await discoverGeminiModels(apiKey, cleanBase);
@@ -1839,7 +2333,7 @@
       }
 
       if (!apiKey && /API key|403|401|unregistered/i.test(lastErr)) {
-        throw new Error('Pega tu API Key de Google AI Studio en "Configurar IA" (obligatorio en GitHub Pages).');
+        throw new Error('Pega tu API Key de Google AI Studio en "Configurar IA".');
       }
       throw new Error(lastErr);
     }
@@ -1847,12 +2341,6 @@
     if (provider === 'anthropic') {
       if (!apiKey) throw new Error('Falta API Key de Anthropic');
       const content = [{ type: 'text', text: prompt }];
-      frameBase64List.forEach(b64 => {
-        content.push({
-          type: 'image',
-          source: { type: 'base64', media_type: 'image/jpeg', data: b64 }
-        });
-      });
       const res = await fetchWithBackoff(baseUrl, {
         method: 'POST',
         headers: {
@@ -1868,7 +2356,7 @@
       return json?.content?.map(c => c.text || '').join('') || '';
     }
 
-    // Proveedores compatibles con OpenAI (OpenAI, OpenRouter, Groq, DeepSeek, xAI, Custom/Ollama)
+    // Proveedores compatibles con OpenAI (solo texto para máximo ahorro)
     const headers = { 'Content-Type': 'application/json' };
     if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
     if (provider === 'openrouter') {
@@ -1876,63 +2364,110 @@
       headers['X-Title'] = 'ClipHub Studio Pro';
     }
 
-    let userContent = prompt;
-    if (meta.vision && frameBase64List.length) {
-      userContent = [{ type: 'text', text: prompt }];
-      frameBase64List.forEach(b64 => {
-        userContent.push({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${b64}` } });
-      });
+    const bodyObj = {
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: forceJson ? 0.4 : 0.75
+    };
+    if (forceJson && (provider === 'openai' || provider === 'groq')) {
+      bodyObj.response_format = { type: 'json_object' };
     }
 
     const res = await fetchWithBackoff(baseUrl, {
       method: 'POST',
       headers,
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: userContent }],
-        temperature: 0.8
-      })
+      body: JSON.stringify(bodyObj)
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(json?.error?.message || json?.message || `HTTP ${res.status}`);
     return json?.choices?.[0]?.message?.content || '';
   }
 
+  // ==================== MÓDULO 2: CORTES EMOCIONANTES (SOLO TEXTO -> GEMINI 2.5 FLASH-LITE) ====================
   async function askAIForCuts() {
-    if (!isAiConfigured() && state.ai.provider !== 'gemini') return null;
-    try {
-      const prompt = `Eres un director creativo de videos virales (Shorts/Reels/TikTok).
-Analiza el video "${state.videoName}" (duración ${state.duration.toFixed(1)}s). Cada corte debe durar aprox. ${state.cutDuration}s (o menos si el video es corto).
-Crea 3 cortes DISTINTOS, creativos y NO repetitivos.
-Responde ÚNICAMENTE con un JSON válido sin texto extra ni bloques markdown, con esta estructura exacta:
-{"cuts":[{"title":"título creativo","hookText":"2-3 PALABRAS IMPACTO","badge":"ETIQUETA CORTA","score":95,"start":0,"end":15,"frameIdx":0,"lines":["frase 1","frase 2","frase 3","frase 4"]}]}`;
+    const canCall = Boolean((state.ai.apiKey || '').trim() || hasProxy() || (state.ai.provider === 'custom' && state.ai.baseUrl));
+    if (!canCall) return null;
 
-      const frameB64 = state.frames.slice(0, 3).map(f => f.dataUrl.split(',')[1]).filter(Boolean);
-      const raw = await callConfiguredAI(prompt, frameB64);
+    try {
+      const hasTranscript = Boolean(state.transcript?.segments?.length);
+      const transcriptLines = hasTranscript
+        ? state.transcript.segments
+            .map(s => `[${Number(s.start).toFixed(1)}s-${Number(s.end).toFixed(1)}s] ${s.text.trim()}`)
+            .join('\n')
+        : `Video sin transcripción de audio: "${state.videoName}" (duración ${state.duration.toFixed(1)}s).`;
+
+      const prompt = `Eres editor experto en retención para YouTube Shorts, Instagram Reels y TikTok.
+Analiza la siguiente información y elige los 3 momentos más emocionantes, virales o con mayor gancho (aprox. ${state.cutDuration}s cada uno, dentro del rango 0s a ${state.duration.toFixed(1)}s).
+
+TRANSCRIPCIÓN CON MARCAS DE TIEMPO:
+${transcriptLines.slice(0, 28000)}
+
+Responde ÚNICAMENTE con un JSON válido (sin texto adicional ni bloques markdown) con esta estructura exacta:
+{
+  "cuts": [
+    {
+      "title": "Título viral en español",
+      "hookText": "2 A 4 PALABRAS IMPACTO",
+      "badge": "ETIQUETA CORTA",
+      "score": 95,
+      "start": 0.0,
+      "end": 15.0,
+      "reason": "Por qué este momento atrapa a la audiencia",
+      "thumbnailPrompt": "Concise English visual prompt describing a dramatic 16:9 YouTube thumbnail scene for this clip"
+    }
+  ]
+}`;
+
+      // IMPORTANTE: Se envía [] (cero imágenes base64, cero video crudo) para ahorrar >90% en tokens
+      const raw = await callConfiguredAI(prompt, [], null, true);
       const cleaned = raw.replace(/`{3}json|`{3}/gi, '').trim();
       const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
       const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
 
-      if (Array.isArray(parsed.cuts) && parsed.cuts.length >= 1) {
-        return parsed.cuts.slice(0, 3).map((c, i) => {
-          const fallbackPack = getUniqueCreativePack(state.creativeSeed + i);
-          const s = Math.max(0, Math.min(Math.max(0, state.duration - 0.8), Number(c.start) || 0));
-          const rawEnd = Number(c.end) || (s + state.cutDuration);
-          const e = Math.max(s + 0.8, Math.min(state.duration || 15, rawEnd));
-          return {
-            title: c.title || fallbackPack.title,
-            hookText: (c.hookText || fallbackPack.hook).toUpperCase().slice(0, 28),
-            badge: (c.badge || fallbackPack.badge).toUpperCase().slice(0, 18),
-            score: Math.min(99, Math.max(80, Number(c.score) || (96 - i * 2))),
-            start: Number(s.toFixed(1)),
-            end: Number(e.toFixed(1)),
-            frameIdx: Math.min(Math.max(0, state.frames.length - 1), Number(c.frameIdx) || i),
-            lines: Array.isArray(c.lines) && c.lines.length ? c.lines.map(String) : fallbackPack.lines
-          };
-        });
-      }
-    } catch (_) {}
-    return null;
+      if (!Array.isArray(parsed.cuts) || !parsed.cuts.length) return null;
+
+      return parsed.cuts.slice(0, 3).map((c, i) => {
+        const fallbackPack = getUniqueCreativePack(state.creativeSeed + i);
+        const maxStart = Math.max(0, (state.duration || 15) - 0.8);
+        const s = Math.max(0, Math.min(maxStart, Number(c.start) || 0));
+        const rawEnd = Number(c.end) || (s + state.cutDuration);
+        const e = Math.max(s + 0.8, Math.min(state.duration || 15, rawEnd));
+
+        // Sincronizar las frases reales transcritas por Groq Whisper que caen dentro del corte
+        const realSubs = hasTranscript
+          ? state.transcript.segments.filter(seg => seg.end >= s && seg.start <= e)
+          : [];
+        const lines = realSubs.length
+          ? realSubs.map(seg => seg.text.trim()).filter(Boolean)
+          : (Array.isArray(c.lines) && c.lines.length ? c.lines.map(String) : fallbackPack.lines);
+
+        const frameIdx = Math.min(
+          Math.max(0, state.frames.length - 1),
+          Math.floor((s / Math.max(1, state.duration)) * Math.max(1, state.frames.length))
+        );
+
+        return {
+          title: String(c.title || fallbackPack.title),
+          hookText: String(c.hookText || fallbackPack.hook).toUpperCase().slice(0, 28),
+          badge: String(c.badge || fallbackPack.badge).toUpperCase().slice(0, 18),
+          score: Math.min(99, Math.max(80, Number(c.score) || (96 - i * 2))),
+          reason: String(c.reason || ''),
+          start: Number(s.toFixed(1)),
+          end: Number(e.toFixed(1)),
+          frameIdx,
+          lines,
+          timedSegments: realSubs.map(seg => ({
+            start: Math.max(s, Number(seg.start)),
+            end: Math.min(e, Number(seg.end)),
+            text: seg.text.trim()
+          })),
+          thumbnailPrompt: String(c.thumbnailPrompt || '')
+        };
+      });
+    } catch (err) {
+      console.warn('askAIForCuts fallback:', err);
+      return null;
+    }
   }
 
   // ==================== SUBTÍTULOS EN TODO EL CORTE ====================
@@ -1956,8 +2491,19 @@ Responde ÚNICAMENTE con un JSON válido sin texto extra ni bloques markdown, co
     state.endTime = cut.end > cut.start + 0.4 ? cut.end : (state.duration || 15);
     $('startInput').value = state.startTime.toFixed(1);
     $('endInput').value = state.endTime.toFixed(1);
-    $('subsTextarea').value = cut.lines.join('\n');
-    state.subtitles = buildTimedSubtitles(cut.lines, state.startTime, state.endTime);
+    $('subsTextarea').value = (cut.lines || []).join('\n');
+
+    // Priorizar marcas de tiempo exactas de Groq Whisper cuando existan
+    const hasWhisperTiming = Array.isArray(cut.timedSegments) && cut.timedSegments.length > 0;
+    state.subtitles = hasWhisperTiming
+      ? cut.timedSegments
+      : buildTimedSubtitles(cut.lines, state.startTime, state.endTime);
+
+    const badge = $('subsSourceBadge');
+    if (badge) {
+      badge.textContent = hasWhisperTiming ? '🎙️ Whisper Real' : '✍️ Sincronizado Local';
+      badge.className = hasWhisperTiming ? 'badge green' : 'badge';
+    }
 
     if (!state.edit.hookText) {
       $('edHookInput').value = cut.hookText;
@@ -1986,7 +2532,11 @@ Responde ÚNICAMENTE con un JSON válido sin texto extra ni bloques markdown, co
           <strong>#${i + 1} ${escapeHtml(c.title)}</strong>
           <span class="badge green">CTR ${c.score}%</span>
         </div>
-        <div class="muted">${fmtTime(c.start)} → ${fmtTime(c.end)} (${Math.max(0.5, c.end - c.start).toFixed(1)}s) • Gancho: <strong>${escapeHtml(c.hookText)}</strong> • ${c.lines.length} bloques de subtítulos</div>
+        <div class="muted">
+          ${fmtTime(c.start)} → ${fmtTime(c.end)} (${Math.max(0.5, c.end - c.start).toFixed(1)}s) • Gancho: <strong>${escapeHtml(c.hookText)}</strong> • ${c.lines.length} bloques
+          ${c.timedSegments && c.timedSegments.length ? ' • <span style="color:var(--green); font-weight:700;">Whisper</span>' : ''}
+        </div>
+        ${c.reason ? `<div class="muted" style="font-size:0.77rem; margin-top:4px; color:#cbd5e1;">💡 ${escapeHtml(c.reason)}</div>` : ''}
       </div>
     `).join('');
     document.querySelectorAll('.cut-item').forEach(el => {
@@ -1994,7 +2544,7 @@ Responde ÚNICAMENTE con un JSON válido sin texto extra ni bloques markdown, co
     });
   }
 
-  // ==================== MINIATURAS GENERADAS POR IA + MOTOR CREATIVO VARIADO ====================
+  // ==================== MÓDULO 3: MINIATURAS (CANVAS $0 + FLUX.1 [SCHNELL] $0.003) ====================
   const THUMB_ART_STYLES = [
     { key: 'viral', name: 'Ultra Viral Alto Contraste', desc: 'Vibrant YouTube creator thumbnail, dramatic rim lighting, high saturation, punchy yellow and dark shadows, dynamic diagonal framing', accent: '#facc15', secondary: '#ef4444', bgTint: 'rgba(15,23,42,0.78)', layout: 0 },
     { key: 'cinema', name: 'Póster Cinematográfico', desc: 'Epic Hollywood movie poster lighting, teal and orange color grade, moody lens flare, dramatic depth of field', accent: '#fb923c', secondary: '#0ea5e9', bgTint: 'rgba(6,10,22,0.82)', layout: 1 },
@@ -2023,117 +2573,110 @@ Responde ÚNICAMENTE con un JSON válido sin texto extra ni bloques markdown, co
     return THUMB_ART_STYLES[offset];
   }
 
+  /**
+   * Genera miniatura económica con FLUX.1 [schnell] vía fal.ai ($0.003/imagen) o Proxy URL.
+   * Reutiliza `cut.thumbnailPrompt` generado en la misma llamada de Gemini Flash-Lite.
+   */
+  async function callFluxSchnellThumbnail(cut, styleObj, customIdea) {
+    const falKey = (state.ai.falKey || '').trim();
+    const proxy = getActiveProxy();
+    if (!falKey && !proxy) {
+      throw new Error(isPublicSaasMode()
+        ? 'El servidor de miniaturas IA no está disponible en este momento.'
+        : 'Falta tu fal.ai API Key o Proxy URL (Configurar IA).');
+    }
+
+    const twist = EXTRA_VISUAL_TWISTS[Math.floor(Math.random() * EXTRA_VISUAL_TWISTS.length)];
+    const baseIdea = (cut.thumbnailPrompt || '').trim() || `Dramatic high-CTR YouTube thumbnail scene representing "${cut.title}"`;
+    const prompt = `${baseIdea}. Art direction: ${styleObj.desc}. Lighting & mood: ${twist}. ${customIdea ? `Extra detail: ${customIdea}.` : ''} Sharp foreground focal point, vivid colors, 16:9 composition, clean visual background without garbled text or watermarks.`;
+
+    const endpoint = proxy
+      ? `${proxy}/api/thumbnail`
+      : 'https://fal.run/fal-ai/flux/schnell';
+    const headers = { 'Content-Type': 'application/json', ...(proxy ? getProxyHeaders() : {}) };
+    if (!proxy) headers['Authorization'] = `Key ${falKey}`;
+
+    const res = await fetchWithBackoff(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        prompt,
+        image_size: 'landscape_16_9',
+        num_inference_steps: 4,
+        num_images: 1,
+        enable_safety_checker: true
+      })
+    }, 1);
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json?.detail || json?.error?.message || `fal.ai HTTP ${res.status}`);
+    const imgUrl = json?.images?.[0]?.url || json?.url;
+    if (!imgUrl) throw new Error('FLUX.1 [schnell] no devolvió URL de imagen.');
+    return imgUrl;
+  }
+
+  /**
+   * Proveedor avanzado opcional (Gemini Image / OpenAI DALL-E 3) solo si el usuario elige 'provider'.
+   */
   async function callGeminiImageThumbnail(frameDataUrl, cut, styleObj, customIdea) {
     const apiKey = state.ai.provider === 'gemini' ? (state.ai.apiKey || '').trim() : '';
+    if (!apiKey) throw new Error('Falta API Key de Gemini.');
     const twist = EXTRA_VISUAL_TWISTS[Math.floor(Math.random() * EXTRA_VISUAL_TWISTS.length)];
-    const uniqueId = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
-
-    const promptText = `Transform and creatively reimagine this video scene into an eye-catching, click-worthy 16:9 YouTube thumbnail (Unique variation #${uniqueId}).
-Art Direction Style: ${styleObj.name} — ${styleObj.desc}.
-Creative Composition Twist: ${twist}.
-${customIdea ? `User Special Creative Request: ${customIdea}.` : ''}
-Include bold, ultra-legible, correctly spelled Spanish headline text reading "${cut.hookText}" and a small crisp accent badge reading "${cut.badge}".
-Make the image look completely professional, vivid, high-CTR, and visually distinct from a plain screenshot. No tiny unreadable text, no watermarks.`;
+    const promptText = `Transform this video scene into an eye-catching 16:9 YouTube thumbnail.
+Style: ${styleObj.name} — ${styleObj.desc}. Twist: ${twist}. ${customIdea || ''}
+Include bold Spanish headline text reading "${cut.hookText}" and a small badge "${cut.badge}".`;
 
     const parts = [{ text: promptText }];
     if (frameDataUrl && frameDataUrl.includes(',')) {
-      parts.push({
-        inlineData: {
-          mimeType: 'image/jpeg',
-          data: frameDataUrl.split(',')[1]
-        }
-      });
+      parts.push({ inlineData: { mimeType: 'image/jpeg', data: frameDataUrl.split(',')[1] } });
     }
 
     const attempts = [
-      {
-        model: 'gemini-3.1-flash-image',
-        generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '16:9' } }
-      },
-      {
-        model: 'gemini-3.1-flash-lite-image',
-        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
-      },
-      {
-        model: 'gemini-2.5-flash-image',
-        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
-      }
+      { model: 'gemini-2.5-flash-image', generationConfig: { responseModalities: ['TEXT', 'IMAGE'] } },
+      { model: 'gemini-3.1-flash-image', generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '16:9' } } }
     ];
 
-    const tryImageAttempt = async (att) => {
+    let lastErr = 'Sin respuesta de imagen';
+    for (const att of attempts) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(att.model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
       const res = await fetchWithBackoff(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts }],
-          generationConfig: att.generationConfig
-        })
+        body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: att.generationConfig })
       }, 1);
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
         const imgPart = json?.candidates?.[0]?.content?.parts?.find(p => p.inlineData?.data);
         if (imgPart) {
           const mime = imgPart.inlineData.mimeType || 'image/png';
-          return { ok: true, dataUrl: `data:${mime};base64,${imgPart.inlineData.data}`, modelUsed: att.model };
+          return `data:${mime};base64,${imgPart.inlineData.data}`;
         }
-        return { ok: false, status: 200, message: `${att.model} respondió sin imagen` };
+      } else {
+        lastErr = json?.error?.message || `HTTP ${res.status}`;
       }
-      return { ok: false, status: res.status, message: `${att.model}: ${json?.error?.message || `HTTP ${res.status}`}` };
-    };
-
-    let lastErrorMsg = 'Sin respuesta de imagen';
-    for (const att of attempts) {
-      const r = await tryImageAttempt(att);
-      if (r.ok) return { dataUrl: r.dataUrl, modelUsed: r.modelUsed };
-      lastErrorMsg = r.message;
-      if (/API key not valid/i.test(lastErrorMsg) || r.status === 401) break;
     }
-
-    // Si los modelos por defecto no están disponibles en la cuenta, detectar los modelos de imagen activos
-    if (apiKey && /not found|no longer available|not supported|404/i.test(lastErrorMsg)) {
-      try {
-        const found = await discoverGeminiModels(apiKey);
-        for (const imgModel of found.imageModels.slice(0, 2)) {
-          if (attempts.some(a => a.model === imgModel)) continue;
-          const r = await tryImageAttempt({
-            model: imgModel,
-            generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
-          });
-          if (r.ok) return { dataUrl: r.dataUrl, modelUsed: r.modelUsed };
-          lastErrorMsg = r.message;
-        }
-      } catch (_) {}
-    }
-
-    throw new Error(lastErrorMsg);
+    throw new Error(lastErr);
   }
 
   async function callOpenAIImageThumbnail(cut, styleObj, customIdea) {
     const apiKey = (state.ai.apiKey || '').trim();
-    if (!apiKey) throw new Error('Falta API Key de OpenAI');
-    const prompt = `High-CTR 16:9 YouTube thumbnail about "${cut.title}". Style: ${styleObj.name}, ${styleObj.desc}. ${customIdea || ''}. Dramatic lighting, bold vivid visual focal point, ultra sharp professional photography, no cluttered tiny text.`;
+    if (!apiKey) throw new Error('Falta API Key de OpenAI.');
+    const prompt = `High-CTR 16:9 YouTube thumbnail about "${cut.title}". Style: ${styleObj.name}, ${styleObj.desc}. ${customIdea || ''}. Dramatic lighting, no cluttered text.`;
     const res = await fetchWithBackoff('https://api.openai.com/v1/images/generations', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt,
-        n: 1,
-        size: '1792x1024',
-        response_format: 'b64_json'
-      })
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ model: 'dall-e-3', prompt, n: 1, size: '1792x1024', response_format: 'b64_json' })
     }, 1);
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(json?.error?.message || `HTTP ${res.status}`);
     const b64 = json?.data?.[0]?.b64_json;
-    if (!b64) throw new Error('OpenAI no devolvió imagen');
+    if (!b64) throw new Error('OpenAI no devolvió imagen.');
     return `data:image/png;base64,${b64}`;
   }
 
+  /**
+   * Composición de miniaturas en Canvas local ($0.00 en tokens) con 6 direcciones de arte.
+   */
   async function createCanvasFallbackThumbnail(cut, styleObj) {
     const c = document.createElement('canvas');
     c.width = 1280; c.height = 720;
@@ -2172,7 +2715,6 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     const variant = styleObj.layout % 6;
 
     if (variant === 0) {
-      // Viral Alto Contraste: degradado diagonal + franja superior izquierda + texto gigante con doble borde
       const grad = g.createLinearGradient(0, 0, 1280, 720);
       grad.addColorStop(0, 'rgba(6,10,22,0.88)');
       grad.addColorStop(0.55, 'rgba(6,10,22,0.20)');
@@ -2193,7 +2735,6 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       g.lineWidth = 10; g.strokeText(cut.title.slice(0, 42), 54, 634);
       g.fillStyle = styleObj.accent; g.fillText(cut.title.slice(0, 42), 54, 634);
     } else if (variant === 1) {
-      // Póster Cinematográfico: barras de cine + iluminación teal/orange + texto centrado abajo
       const grad = g.createLinearGradient(0, 260, 0, 720);
       grad.addColorStop(0, 'rgba(0,0,0,0)');
       grad.addColorStop(1, 'rgba(4,9,24,0.94)');
@@ -2218,7 +2759,6 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       g.fillStyle = '#f8fafc'; g.fillText(cut.title.slice(0, 46), 640, 635);
       g.textAlign = 'left';
     } else if (variant === 2) {
-      // Cyberpunk Neón: marco luminoso + tarjeta inclinada
       const rad = g.createRadialGradient(640, 340, 130, 640, 360, 780);
       rad.addColorStop(0, 'rgba(0,0,0,0.06)');
       rad.addColorStop(1, 'rgba(15,6,36,0.9)');
@@ -2241,7 +2781,6 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       g.fillText(`⚡ ${cut.badge}`, 1050, 90);
       g.textAlign = 'left';
     } else if (variant === 3) {
-      // Misterio Documental: viñeta intensa + banda lateral roja
       const rad = g.createRadialGradient(780, 320, 90, 640, 360, 740);
       rad.addColorStop(0, 'rgba(0,0,0,0.04)');
       rad.addColorStop(1, 'rgba(4,4,10,0.92)');
@@ -2263,7 +2802,6 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       g.font = '700 38px Segoe UI';
       g.fillStyle = styleObj.secondary; g.fillText(cut.title.slice(0, 42), 82, 635);
     } else if (variant === 4) {
-      // Cómic Pop-Art: sticker girado + banda inferior púrpura vibrante
       const bGrad = g.createLinearGradient(0, 330, 0, 720);
       bGrad.addColorStop(0, 'rgba(0,0,0,0)');
       bGrad.addColorStop(1, 'rgba(88,28,135,0.94)');
@@ -2288,7 +2826,6 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       g.fillStyle = '#ffffff'; g.fillText(cut.title.slice(0, 44), 640, 655);
       g.textAlign = 'left';
     } else {
-      // Editorial Lujo Dorado: líneas finas doradas + tipografía elegante
       const grad = g.createLinearGradient(0, 0, 1280, 720);
       grad.addColorStop(0, 'rgba(10,8,4,0.88)');
       grad.addColorStop(0.55, 'rgba(10,8,4,0.35)');
@@ -2321,13 +2858,14 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       const freshPack = getUniqueCreativePack(state.creativeSeed + idx * 3 + Math.floor(Math.random() * 50));
       cut.hookText = freshPack.hook;
       cut.badge = freshPack.badge;
-      cut.title = freshPack.title;
+      if (!cut.thumbnailPrompt) cut.title = freshPack.title;
       renderCutsList();
     }
 
     const styleObj = pickStyleForCard(idx, freshTwist);
     const customIdea = $('thumbCustomIdea').value.trim();
     const frameObj = state.frames[cut.frameIdx] || state.frames[0];
+    const engine = state.ai.thumbEngine || 'canvas';
 
     state.thumbnails[idx] = {
       cutIdx: idx,
@@ -2341,21 +2879,29 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     renderThumbnailsGrid();
 
     let dataUrl = '';
-    let sourceLabel = '🎨 Diseño Dinámico';
+    let sourceLabel = '🎨 Canvas ($0)';
     let lastAiError = '';
+
     try {
-      if (state.ai.provider === 'openai' && state.ai.apiKey) {
-        dataUrl = await callOpenAIImageThumbnail(cut, styleObj, customIdea);
-        sourceLabel = '✨ IA OpenAI';
-      } else {
-        const resImg = await callGeminiImageThumbnail(frameObj?.dataUrl, cut, styleObj, customIdea);
-        dataUrl = resImg.dataUrl;
-        sourceLabel = '✨ IA Gemini';
+      if (engine === 'canvas') {
+        dataUrl = await createCanvasFallbackThumbnail(cut, styleObj);
+        sourceLabel = '🎨 Canvas ($0)';
+      } else if (engine === 'fal') {
+        dataUrl = await callFluxSchnellThumbnail(cut, styleObj, customIdea);
+        sourceLabel = '⚡ FLUX.1 Schnell';
+      } else if (engine === 'provider') {
+        if (state.ai.provider === 'openai' && state.ai.apiKey) {
+          dataUrl = await callOpenAIImageThumbnail(cut, styleObj, customIdea);
+          sourceLabel = '✨ IA OpenAI';
+        } else {
+          dataUrl = await callGeminiImageThumbnail(frameObj?.dataUrl, cut, styleObj, customIdea);
+          sourceLabel = '✨ IA Gemini';
+        }
       }
     } catch (err) {
       lastAiError = err?.message || 'Error de conexión';
       dataUrl = await createCanvasFallbackThumbnail(cut, styleObj);
-      sourceLabel = '🎨 Diseño Dinámico';
+      sourceLabel = '🎨 Canvas ($0 Respaldo)';
     }
 
     state.thumbnails[idx] = {
@@ -2369,7 +2915,7 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       dataUrl
     };
     renderThumbnailsGrid();
-    return { isAI: sourceLabel.includes('IA'), error: lastAiError };
+    return { isAI: sourceLabel.includes('FLUX') || sourceLabel.includes('IA'), error: lastAiError };
   }
 
   async function buildAllThumbnails(freshTwist = false) {
@@ -2377,9 +2923,9 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       showToast('Primero carga y analiza un video para generar miniaturas', 'warn');
       return;
     }
-    setStep(4, 'run', 'Creando miniaturas con IA...');
+    setStep(4, 'run', state.ai.thumbEngine === 'fal' ? 'Generando con FLUX...' : 'Componiendo Canvas $0...');
     $('regenThumbsBtn').disabled = true;
-    $('regenThumbsBtn').textContent = '⏳ Generando Miniaturas IA...';
+    $('regenThumbsBtn').textContent = '⏳ Generando Miniaturas...';
     $('thumbDiagBox').className = 'test-box';
 
     const count = Math.min(3, state.cuts.length);
@@ -2392,28 +2938,34 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     const aiCount = outcomes.filter(o => o && o.isAI).length;
     const firstErr = outcomes.find(o => o && o.error)?.error || '';
 
-    if (aiCount === 0 && firstErr) {
-      const noKeyHint = (!state.ai.apiKey && state.ai.provider === 'gemini')
-        ? ' En GitHub Pages necesitas pegar tu API Key de Google AI Studio en "Configurar IA".'
-        : ' Verifica en Google AI Studio o OpenAI que tu API Key tenga generación de imágenes habilitada o cuota disponible.';
-      showBoxMsg('thumbDiagBox', 'err', `ℹ️ Se usó el Diseño Dinámico local porque la API de imágenes devolvió: ${firstErr}.${noKeyHint}`);
+    if (state.ai.thumbEngine === 'canvas') {
+      showBoxMsg('thumbDiagBox', 'ok', isPublicSaasMode()
+        ? `🎨 ${count} miniaturas generadas instantáneamente. Puedes activar la Generación Creativa con IA en el selector superior.`
+        : `🎨 ${count} miniaturas creadas localmente en Canvas a costo $0.00. Puedes cambiar a FLUX.1 [schnell] ($0.003/img) en el selector superior.`);
+    } else if (aiCount === 0 && firstErr) {
+      showBoxMsg('thumbDiagBox', 'err', isPublicSaasMode()
+        ? `ℹ️ Se aplicó el diseño rápido local porque el generador IA devolvió un aviso: ${firstErr}.`
+        : `ℹ️ Se usó Canvas local ($0) como respaldo porque la API devolvió: ${firstErr}. (Si fal.ai bloquea CORS desde el navegador, usa el Proxy URL en Configurar IA).`);
     } else if (aiCount > 0) {
-      showBoxMsg('thumbDiagBox', 'ok', `✨ ${aiCount} miniatura(s) generada(s) directamente por IA.`);
+      showBoxMsg('thumbDiagBox', 'ok', isPublicSaasMode()
+        ? `⚡ ${aiCount} miniatura(s) generada(s) con Inteligencia Artificial.`
+        : `⚡ ${aiCount} miniatura(s) generada(s) con IA económica (~$${(aiCount * 0.003).toFixed(3)} USD total).`);
     }
 
-    setStep(4, 'done', aiCount > 0 ? `${aiCount} miniaturas IA listas` : `${count} miniaturas variadas listas`);
+    setStep(4, 'done', aiCount > 0 ? `${aiCount} miniaturas FLUX/IA` : `${count} miniaturas Canvas $0`);
     $('regenThumbsBtn').disabled = false;
-    $('regenThumbsBtn').textContent = '✨ Generar 3 Miniaturas Nuevas con IA';
+    $('regenThumbsBtn').textContent = '✨ Generar 3 Miniaturas Nuevas';
   }
 
   function renderThumbnailsGrid() {
     const valid = state.thumbnails.filter(Boolean);
     if (!valid.length) {
-      $('thumbsGrid').innerHTML = '<div class="card muted">Analiza un video en el Estudio de Cortes para generar automáticamente 3 miniaturas únicas con IA.</div>';
+      $('thumbsGrid').innerHTML = '<div class="card muted">Analiza un video en el Estudio de Cortes para generar automáticamente 3 miniaturas únicas.</div>';
       return;
     }
     $('thumbsGrid').innerHTML = state.thumbnails.map((t, i) => {
       if (!t) return '';
+      const isExternalUrl = /^https?:\/\//i.test(t.dataUrl || '');
       return `
         <div class="thumb-card">
           <div class="thumb-img-wrap">
@@ -2423,14 +2975,14 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
           <div class="thumb-body">
             <div class="row" style="justify-content:space-between;">
               <strong>Corte #${i + 1}: ${escapeHtml(t.hook)}</strong>
-              <span class="badge ${t.source.includes('IA') ? 'purple' : 'amber'}">${escapeHtml(t.source)}</span>
+              <span class="badge ${t.source.includes('FLUX') || t.source.includes('IA') ? 'purple' : 'green'}">${escapeHtml(t.source)}</span>
             </div>
             <div class="muted" style="font-size:0.78rem;">Estilo: <strong>${escapeHtml(t.styleName)}</strong></div>
             <p class="muted">${escapeHtml(t.title)}</p>
             <div class="row" style="margin-top:auto;">
-              ${!t.loading && t.dataUrl ? `<a class="btn btn-sm btn-green" href="${t.dataUrl}" download="miniatura_corte_${i + 1}.png" style="text-decoration:none;">⬇️ Descargar</a>` : ''}
+              ${!t.loading && t.dataUrl ? `<a class="btn btn-sm btn-green" href="${t.dataUrl}" ${isExternalUrl ? 'target="_blank" rel="noopener noreferrer"' : `download="miniatura_corte_${i + 1}.png"`} style="text-decoration:none;">⬇️ ${isExternalUrl ? 'Abrir / Guardar' : 'Descargar'}</a>` : ''}
               <button type="button" class="btn btn-sm btn-primary" data-open-cut="${i}">✂️ Corte</button>
-              <button type="button" class="btn btn-sm btn-purple" data-regen-one="${i}" ${t.loading ? 'disabled' : ''}>🎲 Otra con IA</button>
+              <button type="button" class="btn btn-sm btn-purple" data-regen-one="${i}" ${t.loading ? 'disabled' : ''}>🎲 Variar</button>
             </div>
           </div>
         </div>
@@ -2451,7 +3003,16 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     });
   }
 
-  // ==================== PIPELINE COMPLETO ====================
+  // Selector rápido de motor de miniaturas dentro de la pestaña Miniaturas
+  $('thumbEngineQuickSelect').addEventListener('change', e => {
+    state.ai.thumbEngine = e.target.value;
+    $('thumbEngineSelect').value = e.target.value;
+    safeSet('cliphub_ai_config', JSON.stringify(state.ai));
+    refreshAiBadge();
+    showToast(`Motor de miniaturas cambiado a: ${e.target.options[e.target.selectedIndex].text}`, 'ok');
+  });
+
+  // ==================== PIPELINE COMPLETO OPTIMIZADO ====================
   async function runFullAnalysis() {
     if (state.isAnalyzing) return;
     if (!video.src) {
@@ -2462,23 +3023,64 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
 
     state.isAnalyzing = true;
     $('analyzeBtn').disabled = true;
-    $('pipelineMsg').textContent = 'Analizando video, extrayendo fotogramas reales, cortes y miniaturas IA...';
+    $('pipelineMsg').textContent = 'Ejecutando pipeline optimizado: Fotogramas → Audio Whisper → Cortes Flash-Lite → Miniaturas...';
+
+    let usedWhisper = false;
+    let usedLLM = false;
+
     try {
+      // PASO 1: Fotogramas reales del video
       await extractRealFrames();
 
-      setStep(2, 'run', 'Detectando momentos...');
+      // PASO 2: Extracción de audio WAV 16 kHz + Transcripción Groq Whisper
+      state.transcript = null;
+      const canWhisper = Boolean(state.videoBlob && ((state.ai.groqKey || '').trim() || hasProxy()));
+      if (canWhisper) {
+        setStep(3, 'run', 'Extrayendo audio + Whisper...');
+        try {
+          state.transcript = await transcribeVideoWithGroqWhisper(state.videoBlob);
+          if (state.transcript?.segments?.length) {
+            usedWhisper = true;
+            setStep(3, 'done', `${state.transcript.segments.length} frases (Whisper)`);
+          } else {
+            setStep(3, 'done', 'Sin voz detectada (respaldo)');
+          }
+        } catch (err) {
+          console.warn('Groq Whisper fallback:', err);
+          setStep(3, 'err', 'Audio sin API; usando respaldo');
+          showToast(`Whisper no disponible (${err.message}). Continuando con respaldo local.`, 'warn');
+        }
+      } else {
+        setStep(3, 'done', 'Modo local (sin clave Groq)');
+      }
+
+      // PASO 3: Detección de cortes emocionantes enviando SOLO TEXTO a Gemini 2.5 Flash-Lite
+      setStep(2, 'run', 'Analizando texto (Flash-Lite)...');
       state.creativeSeed += 1;
       const aiCuts = await askAIForCuts();
+      usedLLM = Boolean(aiCuts);
       state.cuts = aiCuts || buildSmartCutsFallback();
-      const provName = (AI_PROVIDERS[state.ai.provider] || AI_PROVIDERS.gemini).short;
-      setStep(2, 'done', `${state.cuts.length} cortes (${aiCuts ? provName : 'Motor Pro'})`);
+      const modelTag = usedLLM
+        ? (state.ai.provider === 'gemini' ? (state.ai.model || 'Flash-Lite') : (AI_PROVIDERS[state.ai.provider]?.short || 'IA'))
+        : 'Motor Local';
+      setStep(2, 'done', `${state.cuts.length} cortes (${modelTag})`);
 
-      setStep(3, 'run', 'Sincronizando texto...');
+      // Cargar primer corte con subtítulos sincronizados
       loadCutIntoPlayer(0, true);
-      setStep(3, 'done', 'Subtítulos en vivo listos');
 
+      // PASO 4: Miniaturas (Canvas $0 o FLUX.1 Schnell $0.003)
       await buildAllThumbnails(false);
-      $('pipelineMsg').textContent = '✅ ¡Todo listo! Reproduce el video para ver subtítulos en vivo, edítalo o revisa tus miniaturas creativas.';
+
+      // Estimación transparente del costo real de esta ejecución (solo visible en modo admin/dev)
+      const estWhisper = usedWhisper ? (state.duration / 3600) * 0.04 : 0;
+      const estLLM = usedLLM ? 0.0008 : 0;
+      const estThumbs = (state.ai.thumbEngine === 'fal' && ((state.ai.falKey || '').trim() || hasProxy()))
+        ? Math.min(3, state.cuts.length) * 0.003 : 0;
+      const totalEst = estWhisper + estLLM + estThumbs;
+
+      $('pipelineMsg').textContent = isPublicSaasMode()
+        ? `✅ ¡Análisis completado! Subtítulos: ${usedWhisper ? 'Audio transcrito con IA' : 'Sincronizado local'} • ${state.cuts.length} cortes y miniaturas listos para editar o exportar.`
+        : `✅ ¡Análisis listo! Subtítulos: ${usedWhisper ? 'Groq Whisper real' : 'Local'} • Cortes: ${modelTag} • Costo estimado de este video: ~$${totalEst.toFixed(4)} USD.`;
       showToast('Análisis completo: cortes, subtítulos y miniaturas listos', 'ok');
     } catch (err) {
       setStep(2, 'err', 'Error en análisis');
@@ -2707,8 +3309,11 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       state.cuts[state.activeCutIdx].start = state.startTime;
       state.cuts[state.activeCutIdx].end = state.endTime;
       state.cuts[state.activeCutIdx].lines = lines.map(l => l.trim()).filter(Boolean);
+      state.cuts[state.activeCutIdx].timedSegments = []; // Usuario editó manualmente
       renderCutsList();
     }
+    const badge = $('subsSourceBadge');
+    if (badge) { badge.textContent = '✍️ Editado Manual'; badge.className = 'badge'; }
     updateCutRangeLabel();
     if (video.src) {
       video.currentTime = state.startTime;
@@ -2786,7 +3391,9 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       start: mid,
       end: oldEnd,
       frameIdx: 0,
-      lines: fresh.lines
+      lines: fresh.lines,
+      timedSegments: [],
+      thumbnailPrompt: ''
     });
     renderCutsList();
     updateCutRangeLabel();
@@ -2805,7 +3412,9 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       start: state.startTime,
       end: state.endTime,
       frameIdx: 0,
-      lines: lines.length ? lines : fresh.lines
+      lines: lines.length ? lines : fresh.lines,
+      timedSegments: [],
+      thumbnailPrompt: ''
     };
     state.cuts.push(newCut);
     state.activeCutIdx = state.cuts.length - 1;
@@ -3005,7 +3614,7 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
   bindPngDrag(canvas);
   bindPngDrag(editorCanvas);
 
-  // ==================== EXPORTAR Y PREVISUALIZAR CLIP (CON AUDIO) ====================
+  // ==================== EXPORTAR Y PREVISUALIZAR CLIP LOCAL ($0 TOKENS) ====================
   async function exportCurrentClip() {
     if (!video.src) {
       showToast('Primero carga un video para exportar', 'warn');
@@ -3018,7 +3627,7 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     $('exportedVideoPreview').style.display = 'none';
     $('downloadExportBtn').style.display = 'none';
     $('exportProgress').style.width = '5%';
-    $('exportStatus').textContent = 'Renderizando corte con subtítulos, filtros, PNG y audio...';
+    $('exportStatus').textContent = 'Renderizando corte localmente con subtítulos, filtros, PNG y audio...';
 
     try {
       const videoStream = canvas.captureStream(30);
@@ -3110,14 +3719,35 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
         'Mira la reacción en tiempo real sin ningún corte',
         '¿Estabas conectado cuando pasó este momento?',
         'Comenta y guarda este clip antes de que se pierda'
-      ]
+      ],
+      timedSegments: [],
+      thumbnailPrompt: ''
     });
     renderCutsList();
     loadCutIntoPlayer(idx, false);
     showToast(`Corte en directo #${idx + 1} añadido (${fresh.badge})`, 'ok');
   });
 
-  // ==================== CONFIGURACIÓN MULTI-IA ====================
+  // ==================== CONFIGURACIÓN DEL MODAL DE IA (STACK OPTIMIZADO + MULTI-IA) ====================
+  function setAiModalTab(tabKey) {
+    document.querySelectorAll('#aiModalTabs .modal-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.aiTab === tabKey);
+    });
+    $('aiPaneStack').style.display = tabKey === 'stack' ? 'block' : 'none';
+    $('aiPaneAdvanced').style.display = tabKey === 'advanced' ? 'block' : 'none';
+  }
+
+  document.querySelectorAll('#aiModalTabs .modal-tab').forEach(tab => {
+    tab.addEventListener('click', () => setAiModalTab(tab.dataset.aiTab));
+  });
+
+  document.querySelectorAll('[data-toggle-vis]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const inp = $(btn.dataset.toggleVis);
+      if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+    });
+  });
+
   function syncAiModalFields(providerKey, keepKey = true) {
     const p = AI_PROVIDERS[providerKey] || AI_PROVIDERS.gemini;
     $('aiProviderSelect').value = providerKey;
@@ -3126,17 +3756,120 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     if (!keepKey) $('apiKeyInput').value = '';
     $('apiKeyInput').placeholder = p.placeholder;
     $('aiPortalLink').href = p.portal;
-    $('aiVisionBadge').textContent = providerKey === 'gemini' || providerKey === 'openai'
-      ? 'Visión + Texto + Miniaturas IA'
-      : (p.vision ? 'Visión + Texto' : 'Solo Texto');
     $('aiModelSuggestions').innerHTML = p.models.map(m => `<option value="${m}"></option>`).join('');
   }
 
-  $('openAiModal').addEventListener('click', () => {
+  // Sincronizar bidireccionalmente la clave Gemini entre Pestaña 1 (Stack) y Pestaña 2 (Avanzado)
+  $('stackGeminiKeyInput').addEventListener('input', e => {
+    if ($('aiProviderSelect').value !== 'gemini' && e.target.value.trim()) {
+      syncAiModalFields('gemini', true);
+    }
+    if ($('aiProviderSelect').value === 'gemini') {
+      $('apiKeyInput').value = e.target.value;
+    }
+  });
+  $('apiKeyInput').addEventListener('input', e => {
+    if ($('aiProviderSelect').value === 'gemini') {
+      $('stackGeminiKeyInput').value = e.target.value;
+    }
+  });
+
+  /**
+   * Consulta GET /health en el Cloudflare Worker Proxy (si está configurado)
+   * y actualiza los indicadores de estado de los servicios IA.
+   */
+  async function checkProxyHealth() {
+    const proxy = getActiveProxy();
+    if (!proxy) {
+      state.proxyHealth = null;
+      refreshAiBadge();
+      return null;
+    }
+    try {
+      const res = await fetch(`${proxy}/health`, { headers: getProxyHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
+      state.proxyHealth = { status: 'ok', configured: data.configured || {} };
+      const list = $('publicStatusList');
+      if (list) {
+        const cfg = state.proxyHealth.configured;
+        list.innerHTML = [
+          `🎙️ Subtítulos (Groq Whisper): <strong>${cfg.groqWhisper ? 'Activo' : 'Pendiente'}</strong>`,
+          `✂️ Cortes (Gemini Flash-Lite): <strong>${cfg.geminiFlashLite ? 'Activo' : 'Pendiente'}</strong>`,
+          `🖼️ Miniaturas (FLUX.1 Schnell): <strong>${cfg.falFluxSchnell ? 'Activo' : 'Solo Canvas $0'}</strong>`
+        ].join('<br>');
+      }
+    } catch (err) {
+      state.proxyHealth = { status: 'error', message: err.message };
+      const list = $('publicStatusList');
+      if (list) {
+        list.textContent = `⚠️ No se pudo conectar con el proxy: ${err.message}`;
+      }
+    }
+    refreshAiBadge();
+    return state.proxyHealth;
+  }
+
+  /**
+   * Sincroniza la visibilidad de la barra de conexión manual de APIs.
+   */
+  function applyPublicSaasUI() {
+    const publicMode = isPublicSaasMode();
+    const apiBar = $('manualApiBar');
+    if (apiBar) {
+      apiBar.style.display = publicMode ? 'none' : 'flex';
+    }
+    if (!publicMode) {
+      updateManualApiPills();
+    }
+  }
+
+  function openManualAiModal(defaultTab = 'stack') {
+    $('aiTestResult').className = 'test-box';
+    if (isPublicSaasMode()) {
+      $('aiModalTitle').textContent = '☁️ Estado de la IA en la Nube';
+      $('aiVisionBadge').textContent = 'Servicio Gestionado';
+      $('aiPanePublic').style.display = 'block';
+      $('aiModalTabs').style.display = 'none';
+      $('aiPaneStack').style.display = 'none';
+      $('aiPaneAdvanced').style.display = 'none';
+      $('clearAiKeyBtn').style.display = 'none';
+      $('saveAiKeyBtn').textContent = '💾 Guardar Preferencia';
+      $('publicThumbEngineSelect').value = state.ai.thumbEngine === 'fal' ? 'fal' : 'canvas';
+      $('aiModal').classList.add('open');
+      if (hasProxy()) checkProxyHealth();
+      return;
+    }
+
+    $('aiModalTitle').textContent = '⚡ Configurar APIs de IA Optimizadas';
+    $('aiVisionBadge').textContent = '-92% Costo en Tokens';
+    $('aiPanePublic').style.display = 'none';
+    $('aiModalTabs').style.display = 'flex';
+    $('clearAiKeyBtn').style.display = 'inline-flex';
+    $('saveAiKeyBtn').textContent = '💾 Guardar Configuración';
+
     syncAiModalFields(state.ai.provider, true);
     $('apiKeyInput').value = state.ai.apiKey || '';
-    $('aiTestResult').className = 'test-box';
+    $('stackGeminiKeyInput').value = state.ai.provider === 'gemini' ? (state.ai.apiKey || '') : '';
+    $('groqKeyInput').value = state.ai.groqKey || '';
+    $('falKeyInput').value = state.ai.falKey || '';
+    $('thumbEngineSelect').value = state.ai.thumbEngine || 'canvas';
+    $('proxyUrlInput').value = state.ai.proxyUrl || '';
+    setAiModalTab(defaultTab);
     $('aiModal').classList.add('open');
+  }
+
+  $('openAiModal').addEventListener('click', () => openManualAiModal('stack'));
+  $('openManualApiBtn').addEventListener('click', () => openManualAiModal('stack'));
+  $('pillGroq').addEventListener('click', () => openManualAiModal('stack'));
+  $('pillLlm').addEventListener('click', () => openManualAiModal(state.ai.provider === 'gemini' ? 'stack' : 'advanced'));
+  $('pillThumb').addEventListener('click', () => openManualAiModal('stack'));
+
+  $('recheckPublicAiBtn').addEventListener('click', async () => {
+    $('recheckPublicAiBtn').disabled = true;
+    await checkProxyHealth();
+    $('recheckPublicAiBtn').disabled = false;
+    showToast(state.proxyHealth?.status === 'ok' ? 'Servicios IA en línea' : 'Verificación completada', state.proxyHealth?.status === 'ok' ? 'ok' : 'warn');
   });
   $('closeAiModal').addEventListener('click', () => $('aiModal').classList.remove('open'));
   $('aiProviderSelect').addEventListener('change', e => syncAiModalFields(e.target.value, true));
@@ -3155,20 +3888,67 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       return;
     }
     if (!apiKey) {
-      showBoxMsg('aiTestResult', 'err', 'Pega primero tu API Key de Google AI Studio para detectar los modelos activos de tu cuenta.');
+      showBoxMsg('aiTestResult', 'err', 'Pega primero tu API Key de Google AI Studio para detectar los modelos activos.');
       return;
     }
     showBoxMsg('aiTestResult', 'info', '🔍 Consultando los modelos disponibles en tu cuenta de Google AI Studio...');
     try {
-      const { textModels, imageModels } = await discoverGeminiModels(apiKey, baseUrl);
-      if (!textModels.length) throw new Error('No se encontraron modelos de texto activos para esta clave.');
+      const { textModels } = await discoverGeminiModels(apiKey, baseUrl);
+      if (!textModels.length) throw new Error('No se encontraron modelos de texto activos.');
       $('aiModelSuggestions').innerHTML = textModels.map(m => `<option value="${m}"></option>`).join('');
       $('aiModelInput').value = textModels[0];
-      const imgInfo = imageModels.length ? ` | Imágenes detectadas: ${imageModels.slice(0, 3).join(', ')}` : ' | Sin modelos de imagen en esta clave (se usará Diseño Dinámico).';
-      showBoxMsg('aiTestResult', 'ok', `✅ Modelo recomendado seleccionado: ${textModels[0]} (${textModels.length} modelos de texto activos)${imgInfo}`);
+      showBoxMsg('aiTestResult', 'ok', `✅ Modelo económico recomendado seleccionado: ${textModels[0]} (${textModels.length} modelos activos).`);
     } catch (err) {
       showBoxMsg('aiTestResult', 'err', `❌ No se pudieron listar modelos: ${err.message}`);
     }
+  });
+
+  // Prueba rápida del Stack Optimizado (Gemini Flash-Lite + Groq)
+  $('testStackBtn').addEventListener('click', async () => {
+    const geminiKey = $('stackGeminiKeyInput').value.trim();
+    const groqKey = $('groqKeyInput').value.trim();
+    const proxyUrl = $('proxyUrlInput').value.trim();
+    const results = [];
+
+    if (!geminiKey && !groqKey && !proxyUrl) {
+      showBoxMsg('aiTestResult', 'err', 'Ingresa al menos una clave (Groq o Gemini) o tu Proxy URL para probar.');
+      return;
+    }
+
+    showBoxMsg('aiTestResult', 'info', '⏳ Verificando conexiones del Stack Optimizado...');
+
+    // Probar Gemini Flash-Lite o Proxy
+    if (geminiKey || proxyUrl) {
+      try {
+        const tempCfg = {
+          provider: 'gemini',
+          apiKey: geminiKey,
+          model: 'gemini-2.5-flash-lite',
+          baseUrl: AI_PROVIDERS.gemini.baseUrl,
+          proxyUrl
+        };
+        const reply = await callConfiguredAI('Responde solo: OK', [], tempCfg, false);
+        results.push(`✅ Gemini (${tempCfg.model}): "${reply.trim().slice(0, 20)}"`);
+      } catch (err) {
+        results.push(`❌ Gemini: ${err.message}`);
+      }
+    }
+
+    // Probar clave Groq consultando modelos disponibles (sin gastar audio)
+    if (groqKey) {
+      try {
+        const res = await fetch('https://api.groq.com/openai/v1/models', {
+          headers: { Authorization: `Bearer ${groqKey}` }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        results.push('✅ Groq Whisper: Clave válida y lista ($0.04/h)');
+      } catch (err) {
+        results.push(`❌ Groq: ${err.message}`);
+      }
+    }
+
+    const hasErr = results.some(r => r.startsWith('❌'));
+    showBoxMsg('aiTestResult', hasErr ? 'err' : 'ok', results.join('  |  '));
   });
 
   $('testAiBtn').addEventListener('click', async () => {
@@ -3176,11 +3956,12 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       provider: $('aiProviderSelect').value,
       apiKey: $('apiKeyInput').value.trim(),
       model: $('aiModelInput').value.trim(),
-      baseUrl: $('aiBaseUrlInput').value.trim()
+      baseUrl: $('aiBaseUrlInput').value.trim(),
+      proxyUrl: $('proxyUrlInput').value.trim()
     };
-    showBoxMsg('aiTestResult', 'info', '⏳ Probando conexión con el proveedor de IA...');
+    showBoxMsg('aiTestResult', 'info', '⏳ Probando conexión con el proveedor...');
     try {
-      const reply = await callConfiguredAI('Responde únicamente con la palabra: CONECTADO', [], tempCfg);
+      const reply = await callConfiguredAI('Responde únicamente con la palabra: CONECTADO', [], tempCfg, false);
       if (tempCfg.model && tempCfg.model !== $('aiModelInput').value.trim()) {
         $('aiModelInput').value = tempCfg.model;
       }
@@ -3191,27 +3972,59 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
   });
 
   $('saveAiKeyBtn').addEventListener('click', () => {
+    if (isPublicSaasMode()) {
+      const chosenEngine = $('publicThumbEngineSelect').value === 'fal' ? 'fal' : 'canvas';
+      state.ai.thumbEngine = chosenEngine;
+      safeSet('cliphub_ai_config', JSON.stringify({ thumbEngine: chosenEngine }));
+      $('thumbEngineQuickSelect').value = chosenEngine;
+      refreshAiBadge();
+      $('aiModal').classList.remove('open');
+      showToast('Preferencias guardadas', 'ok');
+      return;
+    }
+
+    const provider = $('aiProviderSelect').value;
+    const stackGemini = $('stackGeminiKeyInput').value.trim();
+    const advKey = $('apiKeyInput').value.trim();
+    const finalApiKey = provider === 'gemini' ? (stackGemini || advKey) : advKey;
+
     state.ai = {
-      provider: $('aiProviderSelect').value,
-      apiKey: $('apiKeyInput').value.trim(),
-      model: $('aiModelInput').value.trim() || AI_PROVIDERS[$('aiProviderSelect').value].defaultModel,
-      baseUrl: $('aiBaseUrlInput').value.trim() || AI_PROVIDERS[$('aiProviderSelect').value].baseUrl
+      provider,
+      apiKey: finalApiKey,
+      model: $('aiModelInput').value.trim() || AI_PROVIDERS[provider].defaultModel,
+      baseUrl: $('aiBaseUrlInput').value.trim() || AI_PROVIDERS[provider].baseUrl,
+      groqKey: $('groqKeyInput').value.trim(),
+      falKey: $('falKeyInput').value.trim(),
+      thumbEngine: $('thumbEngineSelect').value || 'canvas',
+      proxyUrl: $('proxyUrlInput').value.trim()
     };
+
     safeSet('cliphub_ai_config', JSON.stringify(state.ai));
-    if (state.ai.provider === 'gemini') safeSet('cliphub_gemini_key', state.ai.apiKey);
+    if (provider === 'gemini') safeSet('cliphub_gemini_key', state.ai.apiKey);
+    $('thumbEngineQuickSelect').value = state.ai.thumbEngine;
     refreshAiBadge();
     $('aiModal').classList.remove('open');
-    showToast(`Configuración de ${AI_PROVIDERS[state.ai.provider].name} guardada`, 'ok');
+    showToast('Configuración del Stack Optimizado guardada', 'ok');
   });
 
   $('clearAiKeyBtn').addEventListener('click', () => {
     state.ai.apiKey = '';
+    state.ai.groqKey = '';
+    state.ai.falKey = '';
+    state.ai.proxyUrl = '';
+    state.ai.thumbEngine = 'canvas';
     safeSet('cliphub_ai_config', JSON.stringify(state.ai));
     safeSet('cliphub_gemini_key', '');
     $('apiKeyInput').value = '';
+    $('stackGeminiKeyInput').value = '';
+    $('groqKeyInput').value = '';
+    $('falKeyInput').value = '';
+    $('proxyUrlInput').value = '';
+    $('thumbEngineSelect').value = 'canvas';
+    $('thumbEngineQuickSelect').value = 'canvas';
     refreshAiBadge();
-    showBoxMsg('aiTestResult', 'info', 'IA desconectada. Se usará el motor creativo local.');
-    showToast('Clave de IA eliminada', '');
+    showBoxMsg('aiTestResult', 'info', 'Claves eliminadas. Se usará el motor local gratuito ($0).');
+    showToast('Claves de IA eliminadas', '');
   });
 
   // ==================== REDES SOCIALES Y CALENDARIO ====================
@@ -3293,6 +4106,9 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     document.querySelectorAll('[data-open-acc]').forEach(btn => {
       btn.addEventListener('click', () => openAccountModal(btn.dataset.openAcc));
     });
+
+    // Sincronizar el bloqueo obligatorio del programador cada vez que cambia una conexión
+    updateScheduleGateUI();
   }
 
   function openAccountModal(key) {
@@ -3370,20 +4186,40 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
   $('saveAccBtn').addEventListener('click', () => {
     const acc = state.accounts[editingAccountKey];
     if (!acc) return;
+
+    const handle = $('accHandleInput').value.trim();
+    const token = $('accTokenInput').value.trim();
+    const webhookUrl = $('accWebhookUrlInput').value.trim();
+    const loginUser = $('accLoginUserInput').value.trim();
+
+    // Validar que el usuario completó los datos mínimos del método de conexión elegido
+    if (activeAccMode === 'token' && !token) {
+      showBoxMsg('accTestResult', 'err', '❌ Ingresa un Access Token válido para conectar esta red.');
+      return;
+    }
+    if (activeAccMode === 'webhook' && !/^https?:\/\//i.test(webhookUrl)) {
+      showBoxMsg('accTestResult', 'err', '❌ Ingresa una URL de Webhook válida (https://...) para conectar esta red.');
+      return;
+    }
+    if (activeAccMode === 'profile' && !loginUser && !handle) {
+      showBoxMsg('accTestResult', 'err', '❌ Escribe tu @usuario o correo de la cuenta para vincular este perfil.');
+      return;
+    }
+
     acc.mode = activeAccMode;
-    acc.handle = $('accHandleInput').value.trim();
+    acc.handle = handle;
     acc.channelId = $('accChannelIdInput').value.trim();
-    acc.token = $('accTokenInput').value.trim();
+    acc.token = token;
     acc.clientId = $('accClientIdInput').value.trim();
-    acc.webhookUrl = $('accWebhookUrlInput').value.trim();
+    acc.webhookUrl = webhookUrl;
     acc.webhookSecret = $('accWebhookSecretInput').value.trim();
-    acc.loginUser = $('accLoginUserInput').value.trim();
+    acc.loginUser = loginUser;
     acc.profileUrl = $('accProfileUrlInput').value.trim() || acc.studioUrl;
-    acc.connected = Boolean(acc.handle || acc.token || acc.webhookUrl || acc.loginUser);
+    acc.connected = true;
     acc.verified = $('accTestResult').classList.contains('ok');
     saveAccounts();
     $('accountModal').classList.remove('open');
-    showToast(`Conexión de ${acc.name} guardada`, 'ok');
+    showToast(`✅ ${acc.name} conectada. Ya puedes programar publicaciones en esta red.`, 'ok');
   });
 
   $('disconnectAccBtn').addEventListener('click', () => {
@@ -3411,6 +4247,14 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     }
   });
 
+  const ACCOUNT_TO_PLATFORM = {
+    youtube: 'YouTube Shorts',
+    instagram: 'Instagram Reels',
+    tiktok: 'TikTok',
+    facebook: 'Facebook Reels',
+    x: 'X (Twitter)'
+  };
+
   function platformToAccountKey(platform) {
     const p = String(platform || '').toLowerCase();
     if (p.includes('youtube')) return 'youtube';
@@ -3419,6 +4263,81 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     if (p.includes('facebook')) return 'facebook';
     return 'x';
   }
+
+  /**
+   * Comprueba si la plataforma seleccionada tiene su cuenta social conectada.
+   */
+  function isPlatformConnected(platform) {
+    const accKey = platformToAccountKey(platform);
+    return Boolean(state.accounts[accKey]?.connected);
+  }
+
+  /**
+   * Devuelve la lista de plataformas que actualmente están conectadas.
+   */
+  function getConnectedPlatforms() {
+    return Object.entries(state.accounts)
+      .filter(([, acc]) => Boolean(acc?.connected))
+      .map(([key]) => ACCOUNT_TO_PLATFORM[key])
+      .filter(Boolean);
+  }
+
+  /**
+   * Bloquea o habilita el formulario de programación según el estado de conexión
+   * de la red social elegida.
+   */
+  function updateScheduleGateUI() {
+    const select = $('schedPlatform');
+    const addBtn = $('addScheduleBtn');
+    const banner = $('schedConnBanner');
+    const bannerText = $('schedConnBannerText');
+    const badge = $('schedGateBadge');
+    const quickBtn = $('schedQuickConnectBtn');
+    if (!select || !addBtn) return;
+
+    // Mostrar indicador visual de estado en cada opción del selector
+    Array.from(select.options).forEach(opt => {
+      const connected = isPlatformConnected(opt.value);
+      opt.textContent = connected
+        ? `${opt.value} (✓ Conectada)`
+        : `${opt.value} (🔒 Sin conectar)`;
+    });
+
+    const selectedPlatform = select.value;
+    const accKey = platformToAccountKey(selectedPlatform);
+    const acc = state.accounts[accKey];
+    const isConnected = Boolean(acc?.connected);
+
+    if (isConnected) {
+      addBtn.disabled = false;
+      addBtn.textContent = '📌 Guardar en Calendario';
+      if (badge) {
+        badge.textContent = `✓ ${acc.name} conectada`;
+        badge.className = 'badge green';
+      }
+      if (banner) banner.style.display = 'none';
+    } else {
+      addBtn.disabled = true;
+      addBtn.textContent = `🔒 Conecta ${acc?.name || selectedPlatform} para programar`;
+      if (badge) {
+        badge.textContent = `🔒 ${acc?.name || selectedPlatform} sin conectar`;
+        badge.className = 'badge amber';
+      }
+      if (banner) banner.style.display = 'block';
+      if (bannerText) {
+        bannerText.innerHTML = `⚠️ <strong>Conexión obligatoria:</strong> debes conectar <strong>${escapeHtml(acc?.name || selectedPlatform)}</strong> antes de poder programar publicaciones en esta red.`;
+      }
+      if (quickBtn) {
+        quickBtn.textContent = `🔗 Conectar ${acc?.name || selectedPlatform}`;
+      }
+    }
+  }
+
+  $('schedPlatform').addEventListener('change', updateScheduleGateUI);
+  $('schedQuickConnectBtn').addEventListener('click', () => {
+    const accKey = platformToAccountKey($('schedPlatform').value);
+    openAccountModal(accKey);
+  });
 
   let currentPublishCaption = '';
 
@@ -3465,6 +4384,14 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     if (!item) return;
     const accKey = platformToAccountKey(item.platform);
     const acc = state.accounts[accKey] || DEFAULT_ACCOUNTS.youtube;
+
+    // Exigir red conectada también al momento de publicar
+    if (!acc.connected) {
+      showToast(`Debes conectar ${acc.name} antes de publicar este corte`, 'warn');
+      openAccountModal(accKey);
+      return;
+    }
+
     currentPublishCaption = `${item.title}\n\n${item.caption}`;
     copyTextSafe(currentPublishCaption);
 
@@ -3528,6 +4455,17 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
   $('closePubModal').addEventListener('click', () => $('publishModal').classList.remove('open'));
 
   $('addScheduleBtn').addEventListener('click', () => {
+    const platform = $('schedPlatform').value;
+    const accKey = platformToAccountKey(platform);
+    const acc = state.accounts[accKey];
+
+    // Validación obligatoria: no permitir programar si la red no está conectada
+    if (!acc || !acc.connected) {
+      showToast(`Debes conectar ${acc?.name || platform} antes de programar una publicación`, 'warn');
+      openAccountModal(accKey);
+      return;
+    }
+
     const title = $('schedTitle').value.trim();
     const date = $('schedDate').value;
     if (!title || !date) {
@@ -3537,27 +4475,27 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     state.schedule.push({
       id: `${Date.now()}_${Math.random().toString(16).slice(2, 6)}`,
       title,
-      platform: $('schedPlatform').value,
+      platform,
       date,
-      caption: $('schedCaption').value.trim() || makeDynamicCopy(title, $('schedPlatform').value),
+      caption: $('schedCaption').value.trim() || makeDynamicCopy(title, platform),
       status: 'Programado'
     });
     saveSchedule();
     $('schedTitle').value = '';
-    showToast('Publicación guardada en el calendario', 'ok');
+    showToast(`Publicación programada en ${platform}`, 'ok');
   });
 
   $('genDynamicCopyBtn').addEventListener('click', async () => {
     const title = $('schedTitle').value.trim() || (state.cuts[state.activeCutIdx]?.title || 'Nuevo Clip Viral');
     const platform = $('schedPlatform').value;
-    if (isAiConfigured()) {
+    if ((state.ai.apiKey || '').trim() || hasProxy()) {
       $('genDynamicCopyBtn').disabled = true;
       $('genDynamicCopyBtn').textContent = '⏳ Generando...';
       try {
-        const aiCopy = await callConfiguredAI(`Escribe una descripción corta, creativa y viral en español con 4 hashtags para ${platform} sobre el video titulado "${title}". Solo responde con el texto final.`);
+        const aiCopy = await callConfiguredAI(`Escribe una descripción corta, creativa y viral en español con 4 hashtags para ${platform} sobre el video titulado "${title}". Solo responde con el texto final.`, [], null, false);
         if (aiCopy.trim()) {
           $('schedCaption').value = aiCopy.trim();
-          showToast('Copy creativo generado por IA', 'ok');
+          showToast('Copy creativo generado por IA económica', 'ok');
           return;
         }
       } catch (_) {}
@@ -3574,11 +4512,24 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
     const cut = state.cuts[state.activeCutIdx] || { title: 'Mi Nuevo Corte Viral' };
     const nextDay = new Date(Date.now() + 24 * 3600 * 1000);
     nextDay.setHours(18, 0, 0, 0);
+
+    // Si la plataforma actual no está conectada, preseleccionar la primera red conectada
+    const connectedPlatforms = getConnectedPlatforms();
+    if (connectedPlatforms.length && !isPlatformConnected($('schedPlatform').value)) {
+      $('schedPlatform').value = connectedPlatforms[0];
+    }
+    updateScheduleGateUI();
+
     $('schedTitle').value = cut.title;
     $('schedDate').value = toLocalInputValue(nextDay);
     $('schedCaption').value = makeDynamicCopy(cut.title, $('schedPlatform').value, Math.max(0, state.activeCutIdx));
     document.querySelector('[data-tab="social"]').click();
-    showToast('Corte enviado al programador de fechas', 'ok');
+
+    if (!connectedPlatforms.length) {
+      showToast('Corte cargado. Conecta al menos una red social para poder guardarlo en el calendario.', 'warn');
+    } else {
+      showToast('Corte enviado al programador de fechas', 'ok');
+    }
   });
 
   $('autoScheduleAllBtn').addEventListener('click', () => {
@@ -3586,31 +4537,45 @@ Make the image look completely professional, vivid, high-CTR, and visually disti
       showToast('Primero analiza un video para generar los cortes', 'warn');
       return;
     }
-    const platforms = ['YouTube Shorts', 'Instagram Reels', 'TikTok'];
+
+    // Exigir al menos una red conectada antes de auto-programar
+    const connectedPlatforms = getConnectedPlatforms();
+    if (!connectedPlatforms.length) {
+      document.querySelector('[data-tab="social"]').click();
+      showToast('Conecta al menos una red social antes de auto-programar los cortes', 'warn');
+      return;
+    }
+
     state.cuts.forEach((c, i) => {
+      const targetPlatform = connectedPlatforms[i % connectedPlatforms.length];
       const dt = new Date(Date.now() + (i + 1) * 24 * 3600 * 1000);
       dt.setHours(18 + (i % 3), 30, 0, 0);
       state.schedule.push({
         id: `${Date.now()}_${i}_${Math.random().toString(16).slice(2, 5)}`,
         title: c.title,
-        platform: platforms[i % platforms.length],
+        platform: targetPlatform,
         date: toLocalInputValue(dt),
-        caption: makeDynamicCopy(c.title, platforms[i % platforms.length], i),
+        caption: makeDynamicCopy(c.title, targetPlatform, i),
         status: 'Programado'
       });
     });
     saveSchedule();
     document.querySelector('[data-tab="social"]').click();
-    showToast(`${state.cuts.length} cortes auto-programados en fechas escalonadas`, 'ok');
+    showToast(`${state.cuts.length} cortes auto-programados en tus redes conectadas (${connectedPlatforms.join(', ')})`, 'ok');
   });
 
   // ==================== INICIALIZACIÓN ====================
   const initDate = new Date(Date.now() + 3600 * 1000);
   $('schedDate').value = toLocalInputValue(initDate);
+  $('thumbEngineQuickSelect').value = state.ai.thumbEngine || 'canvas';
+  applyPublicSaasUI();
   refreshAiBadge();
   syncLoopButtons();
   renderAccounts();
   renderSchedule();
+  if (hasProxy()) {
+    checkProxyHealth();
+  }
 })();
 </script>
 </body>
