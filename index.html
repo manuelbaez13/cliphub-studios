@@ -357,6 +357,8 @@
           </label>
           <button type="button" class="btn" id="loadDemoBtn">✨ Cargar Video Demo</button>
           <button type="button" class="btn btn-green" id="analyzeBtn">🚀 Auto-Analizar Todo (IA)</button>
+        <button type="button" class="btn btn-danger" id="cancelBtn" style="display:none;">⏹ Cancelar análisis</button>
+        <button type="button" class="btn" id="restoreBtn" style="display:none;" title="Recupera el video, cortes y transcripción de tu última sesión">♻️ Restaurar último proyecto</button>
           <label style="display:flex; align-items:center; gap:6px; margin:0; cursor:pointer;">
             <input type="checkbox" id="autoAnalyzeCheck" checked style="width:auto;" />
             Auto al subir
@@ -473,6 +475,7 @@
             <div style="flex:1; min-width:150px;">
               <label>Estilo de Subtítulo</label>
               <select id="subStyleSelect">
+                <option value="word">Palabra por palabra (Karaoke)</option>
                 <option value="viral">Viral Amarillo (Alto CTR)</option>
                 <option value="neon">Neón Cian</option>
                 <option value="box">Caja Blanca Moderna</option>
@@ -1085,6 +1088,35 @@
   'use strict';
   const $ = id => document.getElementById(id);
 
+  // ==================== CANCELACIÓN (todas las llamadas fetch del análisis) ====================
+  let activeAbort = null;
+  const fetch = (u, o = {}) => window.fetch(u, { signal: activeAbort ? activeAbort.signal : undefined, ...o });
+
+  // ==================== PERSISTENCIA LOCAL (IndexedDB: último proyecto) ====================
+  let pendingRestore = null;
+  const ProjectDB = {
+    open() {
+      return new Promise((res, rej) => {
+        const r = indexedDB.open('cliphub_studio', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('projects');
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+    },
+    async run(mode, fn) {
+      const db = await this.open();
+      return new Promise((res, rej) => {
+        const tx = db.transaction('projects', mode);
+        const req = fn(tx.objectStore('projects'));
+        tx.oncomplete = () => { db.close(); res(req.result); };
+        tx.onerror = tx.onabort = () => { db.close(); rej(tx.error); };
+      });
+    },
+    put(k, v) { return this.run('readwrite', s => s.put(v, k)); },
+    get(k) { return this.run('readonly', s => s.get(k)); },
+    del(k) { return this.run('readwrite', s => s.delete(k)); }
+  };
+
   // ==================== CONFIGURACIÓN PÚBLICA DE PRODUCCIÓN ====================
   // 1. Pega aquí la URL real de tu Cloudflare Worker (cloudflare-worker-proxy.js)
   //    Ejemplo: 'https://cliphub-api-proxy.tu-cuenta.workers.dev'
@@ -1326,7 +1358,7 @@
     endTime: 15,
     loopCut: true,
     aspect: '9:16',
-    subStyle: 'viral',
+    subStyle: 'word',
     showSubs: true,
     subtitles: [],
     pngImg: null,
@@ -1914,7 +1946,9 @@
       updateCutRangeLabel();
       showToast(`Video "${state.videoName}" cargado (${fmtTime(state.duration)})`, 'ok');
 
-      if ($('autoAnalyzeCheck').checked) {
+      if (pendingRestore) {
+        applyRestore();
+      } else if ($('autoAnalyzeCheck').checked) {
         await runFullAnalysis();
       } else {
         setStep(1, 'done', 'Video cargado');
@@ -2112,6 +2146,9 @@
     if (!AudioCtx) throw new Error('Web Audio API no soportada en este navegador.');
     const ctxAudio = new AudioCtx();
     try {
+      if (videoBlob.size > 1.5 * 1024 * 1024 * 1024) {
+        throw new Error('el archivo supera 1.5 GB y no se puede extraer el audio en el navegador');
+      }
       const arrayBuf = await videoBlob.arrayBuffer();
       const decoded = await ctxAudio.decodeAudioData(arrayBuf);
       const targetRate = 16000;
@@ -3022,8 +3059,12 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
     }
 
     state.isAnalyzing = true;
+    state.cancelled = false;
+    activeAbort = new AbortController();
     $('analyzeBtn').disabled = true;
-    $('pipelineMsg').textContent = 'Ejecutando pipeline optimizado: Fotogramas → Audio Whisper → Cortes Flash-Lite → Miniaturas...';
+    $('cancelBtn').style.display = 'inline-flex';
+    const preEst = ((state.duration / 3600) * 0.04 + 0.0008).toFixed(4);
+    $('pipelineMsg').textContent = `Ejecutando pipeline: Fotogramas → Audio Whisper → Cortes → Miniaturas... (costo estimado ≈ $${preEst} USD)`;
 
     let usedWhisper = false;
     let usedLLM = false;
@@ -3046,6 +3087,7 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
             setStep(3, 'done', 'Sin voz detectada (respaldo)');
           }
         } catch (err) {
+          if (state.cancelled) throw err;
           console.warn('Groq Whisper fallback:', err);
           setStep(3, 'err', 'Audio sin API; usando respaldo');
           showToast(`Whisper no disponible (${err.message}). Continuando con respaldo local.`, 'warn');
@@ -3054,10 +3096,12 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
         setStep(3, 'done', 'Modo local (sin clave Groq)');
       }
 
+      if (state.cancelled) throw new Error('cancelado');
       // PASO 3: Detección de cortes emocionantes enviando SOLO TEXTO a Gemini 2.5 Flash-Lite
       setStep(2, 'run', 'Analizando texto (Flash-Lite)...');
       state.creativeSeed += 1;
       const aiCuts = await askAIForCuts();
+      if (state.cancelled) throw new Error('cancelado');
       usedLLM = Boolean(aiCuts);
       state.cuts = aiCuts || buildSmartCutsFallback();
       const modelTag = usedLLM
@@ -3070,6 +3114,7 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
 
       // PASO 4: Miniaturas (Canvas $0 o FLUX.1 Schnell $0.003)
       await buildAllThumbnails(false);
+      saveProject();
 
       // Estimación transparente del costo real de esta ejecución (solo visible en modo admin/dev)
       const estWhisper = usedWhisper ? (state.duration / 3600) * 0.04 : 0;
@@ -3083,14 +3128,65 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
         : `✅ ¡Análisis listo! Subtítulos: ${usedWhisper ? 'Groq Whisper real' : 'Local'} • Cortes: ${modelTag} • Costo estimado de este video: ~$${totalEst.toFixed(4)} USD.`;
       showToast('Análisis completo: cortes, subtítulos y miniaturas listos', 'ok');
     } catch (err) {
-      setStep(2, 'err', 'Error en análisis');
-      $('pipelineMsg').textContent = `⚠️ Ocurrió un problema durante el análisis: ${err.message}`;
-      showToast('Error al analizar el video', 'warn');
+      if (state.cancelled || err.name === 'AbortError') {
+        setStep(2, 'err', 'Cancelado');
+        $('pipelineMsg').textContent = '⏹ Análisis cancelado. No se guardó nada.';
+        showToast('Análisis cancelado', 'warn');
+      } else {
+        setStep(2, 'err', 'Error en análisis');
+        $('pipelineMsg').textContent = `⚠️ Ocurrió un problema durante el análisis: ${err.message}`;
+        showToast('Error al analizar el video', 'warn');
+      }
     } finally {
+      activeAbort = null;
       state.isAnalyzing = false;
       $('analyzeBtn').disabled = false;
+      $('cancelBtn').style.display = 'none';
     }
   }
+
+  // ==================== GUARDAR / RESTAURAR PROYECTO ====================
+  async function saveProject() {
+    if (!state.videoBlob || !state.cuts.length) return;
+    try {
+      await ProjectDB.put('last', {
+        videoBlob: state.videoBlob, videoName: state.videoName, duration: state.duration,
+        transcript: state.transcript, cuts: state.cuts, savedAt: Date.now()
+      });
+      $('restoreBtn').style.display = 'inline-flex';
+    } catch (err) {
+      console.warn('No se pudo guardar el proyecto:', err);
+      showToast('No se pudo guardar el proyecto (¿poco espacio en disco?)', 'warn');
+    }
+  }
+  function applyRestore() {
+    const p = pendingRestore;
+    pendingRestore = null;
+    if (!p) return;
+    state.transcript = p.transcript || null;
+    state.cuts = p.cuts || [];
+    setStep(1, 'done', 'Proyecto restaurado');
+    $('pipelineMsg').textContent = `♻️ Proyecto "${state.videoName}" restaurado (${state.cuts.length} cortes).`;
+    if (state.cuts.length) loadCutIntoPlayer(0, true);
+    if (state.ai.thumbEngine !== 'fal') buildAllThumbnails(false).catch(() => {});
+    showToast('Último proyecto restaurado', 'ok');
+  }
+  $('cancelBtn').addEventListener('click', () => {
+    state.cancelled = true;
+    if (activeAbort) activeAbort.abort();
+  });
+  $('restoreBtn').addEventListener('click', async () => {
+    try {
+      const p = await ProjectDB.get('last');
+      if (!p || !p.videoBlob) { showToast('No hay proyecto guardado', 'warn'); return; }
+      pendingRestore = p;
+      state.videoBlob = p.videoBlob;
+      loadVideoSrc(URL.createObjectURL(p.videoBlob), p.videoName, p.duration || 15);
+    } catch (err) {
+      showToast('No se pudo restaurar el proyecto', 'warn');
+    }
+  });
+  ProjectDB.get('last').then(p => { if (p && p.videoBlob) $('restoreBtn').style.display = 'inline-flex'; }).catch(() => {});
 
   $('analyzeBtn').addEventListener('click', runFullAnalysis);
   $('regenThumbsBtn').addEventListener('click', async () => {
@@ -3128,11 +3224,60 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
     return f;
   }
 
+  // Palabras de una frase: tiempos reales de Whisper si existen; si no, se reparte el tiempo en partes iguales
+  function getSubWords(active) {
+    if (active._words) return active._words;
+    const tw = (state.transcript && state.transcript.words) || [];
+    let ws = tw.filter(x => x.start >= active.start - 0.15 && x.end <= active.end + 0.15 && String(x.word).trim());
+    if (!ws.length) {
+      const parts = String(active.text || '').trim().split(/\s+/).filter(Boolean);
+      const step = (active.end - active.start) / Math.max(1, parts.length);
+      ws = parts.map((p, i) => ({ word: p, start: active.start + i * step, end: active.start + (i + 1) * step }));
+    }
+    active._words = ws;
+    return ws;
+  }
+
+  // Muestra grupos de 3 palabras y resalta en amarillo la que se está diciendo
+  function drawWordByWord(c, w, h, now, active) {
+    const ws = getSubWords(active);
+    if (!ws.length) return;
+    let idx = 0;
+    for (let i = 0; i < ws.length; i++) { if (ws[i].start <= now) idx = i; }
+    const G = 3, g = Math.floor(idx / G);
+    const txt = ws.slice(g * G, g * G + G).map(x => String(x.word).trim().toUpperCase());
+    let fs = state.aspect === '9:16' ? 38 : 42;
+    c.save();
+    c.textAlign = 'left';
+    c.lineJoin = 'round';
+    let widths, sp, total;
+    const measure = () => {
+      c.font = `900 ${fs}px Segoe UI, Impact, sans-serif`;
+      sp = c.measureText(' ').width;
+      widths = txt.map(t => c.measureText(t).width);
+      total = widths.reduce((a, b) => a + b, 0) + sp * (txt.length - 1);
+    };
+    measure();
+    if (total > w * 0.92) { fs = Math.floor(fs * (w * 0.92) / total); measure(); }
+    let x = (w - total) / 2;
+    const y = h * 0.80;
+    txt.forEach((t, i) => {
+      c.lineWidth = 9;
+      c.strokeStyle = '#050811';
+      c.strokeText(t, x, y);
+      c.fillStyle = (g * G + i) === idx ? '#fde047' : '#ffffff';
+      c.fillText(t, x, y);
+      x += widths[i] + sp;
+    });
+    c.restore();
+  }
+
   function drawSubtitleOverlay(c, w, h, now) {
     if (!state.showSubs || !state.subtitles.length) return;
     const active = state.subtitles.find(s => now >= s.start && now <= s.end) ||
                    (now >= state.startTime && now <= state.endTime ? state.subtitles[state.subtitles.length - 1] : null);
     if (!active) return;
+    if (state.subStyle === 'word') { drawWordByWord(c, w, h, now, active); return; }
 
     const fontSize = state.aspect === '9:16' ? 32 : 36;
     c.save();
@@ -3572,9 +3717,11 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
     img.onload = () => {
       state.pngImg = img;
       processPngChroma();
+      try { URL.revokeObjectURL(pngUrl); } catch (_) {}
       showToast('Foto PNG añadida (puedes arrastrarla sobre el video)', 'ok');
     };
-    img.src = URL.createObjectURL(f);
+    const pngUrl = URL.createObjectURL(f);
+    img.src = pngUrl;
     e.target.value = '';
   });
   $('chromaSelect').addEventListener('change', processPngChroma);
@@ -3667,6 +3814,8 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
 
       await new Promise(r => { rec.onstop = r; });
       const blob = new Blob(chunks, { type: 'video/webm' });
+      const prevUrl = $('downloadExportBtn').href || '';
+      if (prevUrl.startsWith('blob:')) { try { URL.revokeObjectURL(prevUrl); } catch (_) {} }
       const url = URL.createObjectURL(blob);
       $('exportProgress').style.width = '100%';
       $('exportStatus').textContent = '✅ Clip listo. Revísalo antes de descargarlo o publicarlo.';
