@@ -3814,6 +3814,7 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
 
       await new Promise(r => { rec.onstop = r; });
       const blob = new Blob(chunks, { type: 'video/webm' });
+      state.lastExport = { blob, title: (state.cuts[state.activeCutIdx] || {}).title || '' };
       const prevUrl = $('downloadExportBtn').href || '';
       if (prevUrl.startsWith('blob:')) { try { URL.revokeObjectURL(prevUrl); } catch (_) {} }
       const url = URL.createObjectURL(blob);
@@ -4528,6 +4529,47 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
     });
   }
 
+  // Subida real a YouTube (Data API v3, subida resumible)
+  async function uploadToYouTube(token, blob, item) {
+    const type = blob.type || 'video/webm';
+    const meta = {
+      snippet: {
+        title: String(item.title || 'Clip').replace(/[<>]/g, '').slice(0, 100),
+        description: `${item.caption || ''}\n\n#Shorts`.slice(0, 4900),
+        categoryId: '22'
+      },
+      status: { privacyStatus: 'public', selfDeclaredMadeForKids: false }
+    };
+    const init = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json; charset=UTF-8',
+        'X-Upload-Content-Length': String(blob.size),
+        'X-Upload-Content-Type': type
+      },
+      body: JSON.stringify(meta)
+    });
+    if (!init.ok) {
+      const e = await init.json().catch(() => ({}));
+      throw new Error((e && e.error && e.error.message) || `HTTP ${init.status}`);
+    }
+    const loc = init.headers.get('Location');
+    if (!loc) throw new Error('YouTube no devolvió la URL de subida');
+    const up = await fetch(loc, { method: 'PUT', headers: { 'Content-Type': type }, body: blob });
+    const data = await up.json().catch(() => ({}));
+    if (!up.ok) throw new Error((data && data.error && data.error.message) || `HTTP ${up.status}`);
+    return data;
+  }
+
+  function buildWebhookBody(obj) {
+    if (!state.lastExport) return JSON.stringify(obj);
+    const fd = new FormData();
+    Object.entries(obj).forEach(([k, v]) => fd.append(k, v == null ? '' : v));
+    fd.append('video', state.lastExport.blob, 'clip.webm');
+    return fd;
+  }
+
   async function publishScheduledItem(id) {
     const item = state.schedule.find(x => x.id === id);
     if (!item) return;
@@ -4551,16 +4593,45 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
     $('pubStatus').textContent = 'Empaquetando video, subtítulos y copiando descripción al portapapeles...';
     $('publishModal').classList.add('open');
 
+    if (accKey === 'youtube' && acc.mode === 'token' && acc.token) {
+      if (!state.lastExport) {
+        $('pubProgress').style.width = '100%';
+        $('pubStatus').textContent = '⚠️ Primero exporta el clip (Editor → Exportar) y luego pulsa Publicar otra vez, para tener el archivo de video que subir.';
+        $('pubLinks').style.display = 'flex';
+        return;
+      }
+      try {
+        $('pubProgress').style.width = '50%';
+        $('pubStatus').textContent = 'Subiendo el video a YouTube... (puede tardar según el tamaño)';
+        const r = await uploadToYouTube(acc.token, state.lastExport.blob, item);
+        $('pubProgress').style.width = '100%';
+        const priv = r && r.status && r.status.privacyStatus;
+        $('pubStatus').textContent = `✅ Video subido a YouTube: https://youtube.com/shorts/${r.id}` +
+          (priv && priv !== 'public' ? ` — ⚠️ quedó como "${priv}": YouTube bloquea como privados los videos de apps de API sin verificar; cámbialo a público en YouTube Studio.` : '');
+        item.status = 'Publicado';
+        saveSchedule();
+      } catch (err) {
+        const m = String(err.message || err);
+        const hint = /invalid credentials|401|expired/i.test(m) ? ' Tu token expiró (duran ~1 hora); genera uno nuevo y vuelve a guardarlo.'
+          : /insufficient|scope|403/i.test(m) ? ' El token necesita el permiso youtube.upload.'
+          : /quota/i.test(m) ? ' Superaste la cuota diaria de la API de YouTube.' : '';
+        $('pubStatus').textContent = `❌ No se pudo subir a YouTube: ${m}.${hint} La descripción quedó copiada para subirlo a mano.`;
+        $('pubProgress').style.width = '100%';
+      }
+      $('pubLinks').style.display = 'flex';
+      return;
+    }
+
     if (acc.connected && acc.mode === 'webhook' && acc.webhookUrl) {
       try {
         $('pubProgress').style.width = '65%';
         $('pubStatus').textContent = 'Enviando paquete automático a tu Webhook...';
-        const headers = { 'Content-Type': 'application/json' };
+        const headers = state.lastExport ? {} : { 'Content-Type': 'application/json' };
         if (acc.webhookSecret) headers['Authorization'] = acc.webhookSecret;
         const res = await fetch(acc.webhookUrl, {
           method: 'POST',
           headers,
-          body: JSON.stringify({
+          body: buildWebhookBody({
             event: 'cliphub_publish',
             platform: item.platform,
             account: acc.handle || acc.loginUser,
@@ -4590,9 +4661,9 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
     }, 550);
     setTimeout(() => {
       $('pubProgress').style.width = '100%';
-      $('pubStatus').textContent = `✅ Listo para publicar en ${item.platform}. La descripción ya se copió al portapapeles; abre tu Studio para completar la subida:`;
+      $('pubStatus').textContent = `📋 Aún NO se subió nada a ${item.platform}: la subida automática solo funciona con YouTube (token con permiso de subida) o con un Webhook. La descripción ya se copió; abre tu Studio para subirlo a mano:`;
       $('pubLinks').style.display = 'flex';
-      item.status = 'Publicado';
+      item.status = 'Pendiente manual';
       saveSchedule();
     }, 1250);
   }
