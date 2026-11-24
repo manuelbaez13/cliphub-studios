@@ -409,6 +409,8 @@
         </div>
         <div id="ytCutsList" style="margin-top:10px; display:grid; gap:8px;"></div>
         <div class="row" style="margin-top:8px; align-items:center;">
+          <label class="muted">Grabar en:</label>
+          <select id="ytRecMode"><option value="popup">Ventana nueva (mejor calidad)</option><option value="page">Esta página</option></select>
           <span id="ytRecStatus" class="muted"></span>
           <button type="button" class="btn" id="ytRecStopBtn" style="display:none;">⏹ Detener grabación</button>
         </div>
@@ -4326,7 +4328,7 @@ function loadYtApi() {
 
 function recordYtOne(stream, fr, player, it, fmt) {
   return new Promise(resolve => {
-    const rec = new MediaRecorder(stream, fmt.mime ? { mimeType: fmt.mime, videoBitsPerSecond: 3000000 } : {});
+    const rec = new MediaRecorder(stream, fmt.mime ? { mimeType: fmt.mime, videoBitsPerSecond: 8000000, audioBitsPerSecond: 128000 } : {});
     const chunks = [];
     let started = false, done = false, t0 = 0, guard = null;
     rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
@@ -4346,10 +4348,10 @@ function recordYtOne(stream, fr, player, it, fmt) {
     const len = Math.max(3, it.e - it.s);
     if (player) {
       ytRec.onState = s => { if (s === 1) begin(); if (s === 0 && started) finish(); }; // 1 = reproduciendo, 0 = terminó
-      player.loadVideoById({ videoId: it.id, startSeconds: it.s, endSeconds: it.e });
+      player.loadVideoById({ videoId: it.id, startSeconds: it.s, endSeconds: it.e, suggestedQuality: 'hd1080' });
       guard = setTimeout(finish, (len + 45) * 1000);
     } else {
-      fr.src = `https://www.youtube.com/embed/${it.id}?start=${it.s}&end=${it.e}&autoplay=1&controls=0&rel=0&modestbranding=1&playsinline=1`;
+      ytRec.loader(`https://www.youtube.com/embed/${it.id}?start=${it.s}&end=${it.e}&autoplay=1&controls=0&rel=0&modestbranding=1&playsinline=1&vq=hd1080`);
       begin();
       guard = setTimeout(finish, (len + 6) * 1000);
     }
@@ -4365,7 +4367,7 @@ function addYtClip(c) {
     const row = document.createElement('div');
     row.className = 'row'; row.style.alignItems = 'center';
     const lbl = document.createElement('span');
-    lbl.textContent = `🎬 ${x.it.title} · ${Math.round(x.dur)} s · ${(x.blob.size / 1048576).toFixed(1)} MB${x.precise ? '' : ' (puede traer unos segundos de más al inicio)'}`;
+    lbl.textContent = `🎬 ${x.it.title} · ${Math.round(x.dur)} s · ${(x.blob.size / 1048576).toFixed(1)} MB${x.precise ? '' : ' (puede traer unos segundos de más al inicio)'}${x.ok === false ? ' ⚠️ posible archivo dañado: cambia el "Formato" y graba de nuevo' : ' ✅'}`;
     row.append(
       lbl,
       mkBtn('Cargar en el editor', () => {
@@ -4383,66 +4385,117 @@ function addYtClip(c) {
   });
 }
 
+function openYtPopup(id, useApi) {
+  const pw = window.open('', 'cliphub_player', 'popup=yes,width=1280,height=720');
+  if (!pw) return null;
+  const api = useApi
+    ? '<script src="https://www.youtube.com/iframe_api"><\/script><script>window.onYouTubeIframeAPIReady=function(){window.pl=new YT.Player("p",{events:{onReady:function(){try{window.opener.__ytPopupReady(window.pl)}catch(e){}},onStateChange:function(e){try{window.opener.__ytPopupState(e.data)}catch(x){}}}})}<\/script>'
+    : '';
+  pw.document.open();
+  pw.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>CLIPHUB - Reproductor (comparte ESTA pestaña)</title><style>html,body{margin:0;height:100%;background:#000;overflow:hidden}iframe{width:100%;height:100%;border:0}</style></head><body><iframe id="p" allow="autoplay; encrypted-media; fullscreen" src="https://www.youtube.com/embed/${id}?controls=0&rel=0&modestbranding=1&playsinline=1&vq=hd1080${useApi ? '&enablejsapi=1&origin=' + encodeURIComponent(location.origin) : ''}"></iframe>${api}</body></html>`);
+  pw.document.close();
+  return pw;
+}
+
+function verifyClip(blob) {
+  return new Promise(res => {
+    const v = document.createElement('video');
+    const u = URL.createObjectURL(blob);
+    let fin = false;
+    const done = ok => { if (fin) return; fin = true; URL.revokeObjectURL(u); res(ok); };
+    v.muted = true; v.preload = 'auto';
+    v.onloadeddata = () => done(v.videoWidth > 0);
+    v.onerror = () => done(false);
+    setTimeout(() => done(false), 8000);
+    v.src = u;
+  });
+}
+
 async function recordYtClips(items) {
   if (ytRec.busy) { showToast('Ya hay una grabación en curso', 'warn'); return; }
   if (!items.length) { showToast('Marca al menos un corte como "Aprobar"', 'warn'); return; }
   if (liveCapture.stream) { showToast('Detén primero la captura del directo', 'warn'); return; }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-    showToast('Tu navegador no permite capturar la pestaña (usa Chrome o Edge de escritorio)', 'warn');
+    showToast('Tu navegador no permite capturar (usa Chrome o Edge de escritorio)', 'warn');
     return;
   }
-  const fmt = LIVE_FORMATS.find(f => f.id === $('liveFormat').value) || LIVE_FORMATS[0];
+  const mode = $('ytRecMode').value;
+  const useApi = location.protocol !== 'file:';
   const st = $('ytRecStatus');
+  const fmt = LIVE_FORMATS.find(f => f.id === $('liveFormat').value) || LIVE_FORMATS[0];
+  const fr = $('ytIframe');
+  window.__ytPopupState = s => { if (ytRec.onState) ytRec.onState(s); };
+  // La ventana se abre aquí, antes de cualquier espera, o el navegador la bloquea
+  let pw = null, readyP = null;
+  if (mode === 'popup') {
+    if (useApi) {
+      readyP = new Promise((res, rej) => { window.__ytPopupReady = pl => res(pl); setTimeout(() => rej(new Error('el reproductor no respondió')), 12000); });
+      readyP.catch(() => {});
+    }
+    pw = openYtPopup(items[0].id, useApi);
+    if (!pw) { showToast('El navegador bloqueó la ventana nueva: permite las ventanas emergentes de esta página y vuelve a intentarlo', 'warn'); return; }
+  }
   ytRec.busy = true; ytRec.cancel = false;
   $('ytRecStopBtn').style.display = 'inline-flex';
   let stream = null, player = null;
-  const fr = $('ytIframe');
   try {
-    const useApi = location.protocol !== 'file:';
-    fr.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
-    const w = Math.min((fr.parentElement && fr.parentElement.clientWidth) || 800, 960);
-    fr.style.width = w + 'px';
-    fr.style.height = Math.round(w * 9 / 16) + 'px';
-    fr.src = `https://www.youtube.com/embed/${items[0].id}?controls=0&rel=0&modestbranding=1&playsinline=1` +
-      (useApi ? `&enablejsapi=1&origin=${encodeURIComponent(location.origin)}` : '');
-    $('ytEmbedWrap').style.display = 'block';
-    fr.scrollIntoView({ block: 'center' });
-    await sleepMs(900);
-    stream = await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: 30, displaySurface: 'browser' }, audio: true,
-      preferCurrentTab: true, selfBrowserSurface: 'include'
-    });
-    if (!stream.getAudioTracks().length) showToast('No se capturó audio: marca "Compartir audio de la pestaña"', 'warn');
-    try {
-      const vt = stream.getVideoTracks()[0];
-      if (window.CropTarget && vt.cropTo) await vt.cropTo(await CropTarget.fromElement(fr));
-    } catch (e) { console.warn('Sin recorte al reproductor:', e); }
-    if (useApi) {
+    if (mode === 'popup') {
+      st.textContent = '👉 En el aviso del navegador elige la PESTAÑA "CLIPHUB - Reproductor" (no la pantalla completa) y marca "Compartir audio".';
+      showToast('Elige la pestaña "CLIPHUB - Reproductor" y marca "Compartir audio"', 'ok');
+      await sleepMs(1500);
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
+      ytRec.loader = u => { try { pw.location.replace(u); } catch (e) { console.warn(e); } };
+      if (readyP) { try { player = await readyP; } catch (e) { player = null; } }
+    } else {
+      fr.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+      const w = Math.min((fr.parentElement && fr.parentElement.clientWidth) || 800, 960);
+      fr.style.width = w + 'px';
+      fr.style.height = Math.round(w * 9 / 16) + 'px';
+      fr.src = `https://www.youtube.com/embed/${items[0].id}?controls=0&rel=0&modestbranding=1&playsinline=1&vq=hd1080` +
+        (useApi ? `&enablejsapi=1&origin=${encodeURIComponent(location.origin)}` : '');
+      $('ytEmbedWrap').style.display = 'block';
+      fr.scrollIntoView({ block: 'center' });
+      await sleepMs(900);
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 30, displaySurface: 'browser' }, audio: true,
+        preferCurrentTab: true, selfBrowserSurface: 'include'
+      });
       try {
-        await loadYtApi();
-        player = await new Promise((res, rej) => {
-          const pl = new YT.Player(fr, { events: { onReady: () => res(pl), onStateChange: ev => { if (ytRec.onState) ytRec.onState(ev.data); } } });
-          setTimeout(() => rej(new Error('el reproductor no respondió')), 10000);
-        });
-      } catch (e) {
-        console.warn('Sin control del reproductor:', e);
-        player = null;
+        const vt = stream.getVideoTracks()[0];
+        if (window.CropTarget && vt.cropTo) await vt.cropTo(await CropTarget.fromElement(fr));
+      } catch (e) { console.warn('Sin recorte al reproductor:', e); }
+      ytRec.loader = u => { fr.src = u; };
+      if (useApi) {
+        try {
+          await loadYtApi();
+          player = await new Promise((res, rej) => {
+            const pl = new YT.Player(fr, { events: { onReady: () => res(pl), onStateChange: ev => { if (ytRec.onState) ytRec.onState(ev.data); } } });
+            setTimeout(() => rej(new Error('el reproductor no respondió')), 10000);
+          });
+        } catch (e) { console.warn('Sin control del reproductor:', e); player = null; }
       }
     }
-    if (!player) showToast('Sin control exacto del reproductor: los clips pueden traer unos segundos de más al inicio (abre la página desde un servidor, no como archivo, para mejor precisión)', 'warn');
-    let ok = 0;
+    if (!stream.getAudioTracks().length) showToast('No se capturó audio: marca "Compartir audio" al elegir la pestaña', 'warn');
+    if (!player) showToast('Sin control exacto del reproductor: los clips pueden traer unos segundos de más al inicio (abre la página desde un servidor y no como archivo para mayor precisión)', 'warn');
+    let ok = 0, bad = 0;
     for (let i = 0; i < items.length && !ytRec.cancel; i++) {
       const it = items[i];
-      st.textContent = `🎥 Grabando corte ${i + 1} de ${items.length}: "${it.title}" (${Math.max(3, it.e - it.s)} s en tiempo real). No cierres ni minimices la ventana.`;
+      st.textContent = `🎥 Grabando corte ${i + 1} de ${items.length}: "${it.title}" (${Math.max(3, it.e - it.s)} s en tiempo real). No cierres ni minimices ninguna de las dos ventanas.`;
       const clip = await recordYtOne(stream, fr, player, it, fmt);
-      if (clip) { addYtClip(clip); ok++; } else if (!ytRec.cancel) showToast(`El corte "${it.title}" no se pudo grabar (el video no arrancó)`, 'warn');
+      if (clip) {
+        st.textContent = `Comprobando el archivo del corte ${i + 1}...`;
+        clip.ok = await verifyClip(clip.blob);
+        clip.ok ? ok++ : bad++;
+        addYtClip(clip);
+      } else if (!ytRec.cancel) showToast(`El corte "${it.title}" no se pudo grabar (el video no arrancó)`, 'warn');
     }
-    st.textContent = ytRec.cancel ? 'Grabación detenida.' : `✅ ${ok} de ${items.length} cortes grabados. Los tienes abajo, listos para cargar en el editor.`;
+    st.textContent = ytRec.cancel ? 'Grabación detenida.' : `✅ ${ok} cortes verificados${bad ? `, ⚠️ ${bad} con posible daño (cambia el "Formato" y repite)` : ''}. Los tienes abajo.`;
   } catch (err) {
     st.textContent = `⚠️ No se pudo grabar: ${err && err.message ? err.message : err}`;
   } finally {
     if (stream) stream.getTracks().forEach(tr => tr.stop());
     try { if (player && player.pauseVideo) player.pauseVideo(); } catch (_) {}
+    try { if (pw) pw.close(); } catch (_) {}
     ytRec.busy = false; ytRec.finishNow = null; ytRec.onState = null;
     $('ytRecStopBtn').style.display = 'none';
   }
