@@ -559,6 +559,66 @@
       background: linear-gradient(135deg, #229ED9, #0284c7);
       border: none; color: #fff;
     }
+
+    /* ==================== v10: HUD EN VIVO, SUB-PESTAÑAS, PREVIEW Y TELEGRAM LOG ==================== */
+    .live-hud-bar {
+      position: sticky; top: 61px; z-index: 35;
+      display: none; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+      padding: 8px 20px;
+      background: linear-gradient(90deg, rgba(127, 29, 29, 0.94), rgba(15, 23, 42, 0.96));
+      border-bottom: 1px solid rgba(239, 68, 68, 0.55);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    .live-hud-bar.active { display: flex; }
+    .rec-dot {
+      width: 10px; height: 10px; border-radius: 50%; background: #ef4444;
+      box-shadow: 0 0 10px #ef4444; animation: recPulse 1.1s infinite;
+      display: inline-block;
+    }
+    @keyframes recPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.82); } }
+
+    .live-subtabs {
+      display: flex; gap: 6px; flex-wrap: wrap;
+      background: #080e1c; padding: 5px; border-radius: 12px;
+      border: 1px solid var(--border); margin-bottom: 14px;
+    }
+    .live-subtab {
+      flex: 1; min-width: 150px; background: transparent; border: none; color: var(--muted);
+      padding: 9px 12px; border-radius: 9px; cursor: pointer; font-weight: 700; font-size: 0.85rem; transition: .18s;
+    }
+    .live-subtab:hover { color: #fff; }
+    .live-subtab.active {
+      background: linear-gradient(135deg, rgba(14,165,233,0.22), rgba(99,102,241,0.28));
+      color: #fff; border: 1px solid rgba(56,189,248,0.45);
+    }
+    .live-subpane { display: none; }
+    .live-subpane.active { display: block; }
+
+    .live-preview-wrap {
+      margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);
+    }
+    .live-preview-video {
+      width: 100%; max-height: 260px; border-radius: 10px; background: #000; display: block;
+    }
+
+    .tg-history-list {
+      margin-top: 8px; display: flex; flex-direction: column; gap: 5px;
+    }
+    .tg-history-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      font-size: 0.76rem; padding: 6px 9px; border-radius: 8px;
+      background: rgba(7, 11, 20, 0.72); border: 1px solid var(--border);
+    }
+    .kbd-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.74rem; color: var(--muted); background: #091020;
+      border: 1px solid var(--border); padding: 4px 9px; border-radius: 8px;
+    }
+    .kbd-pill kbd {
+      background: var(--panel-2); color: var(--text); padding: 1px 5px;
+      border-radius: 4px; font-family: monospace; font-size: 0.72rem; border: 1px solid var(--border);
+    }
   </style>
 </head>
 <body>
@@ -571,6 +631,7 @@
   </div>
   <nav>
     <button type="button" class="tab-btn active" data-tab="studio">✂️ Estudio de Cortes</button>
+    <button type="button" class="tab-btn" data-tab="live">🔴 En Vivo &amp; Radar</button>
     <button type="button" class="tab-btn" data-tab="editor">🎬 Editor de Video</button>
     <button type="button" class="tab-btn" data-tab="thumbs">🖼️ Miniaturas IA</button>
     <button type="button" class="tab-btn" data-tab="social">📅 Redes &amp; Calendario</button>
@@ -580,6 +641,24 @@
     <span id="aiStatusText">Configurar IA</span>
   </button>
 </header>
+
+<!-- Barra fija de Estado en Vivo (HUD compacto visible en todas las pestañas cuando hay captura activa) -->
+<div id="liveHudBar" class="live-hud-bar">
+  <div class="row" style="gap:10px;">
+    <span class="rec-dot"></span>
+    <strong style="font-size:0.84rem; color:#fecaca;">EN VIVO</strong>
+    <div class="audio-meter-wrap" title="Nivel de voz humana en tiempo real">
+      <div class="audio-meter-fill" id="hudAudioMeter"></div>
+    </div>
+    <span class="badge green" id="hudRadarBadge">Escuchando</span>
+    <span class="muted" id="hudTgLast" style="font-size:0.78rem;">Telegram: en espera</span>
+  </div>
+  <div class="row" style="gap:6px;">
+    <button type="button" class="btn btn-sm btn-amber" id="hudCutNowBtn" title="Atajo: tecla K">✂️ Cortar Ahora (K)</button>
+    <button type="button" class="btn btn-sm" id="hudOpenLiveBtn">🔴 Ver Panel</button>
+    <button type="button" class="btn btn-sm btn-danger" id="hudStopBtn">⏹ Detener</button>
+  </div>
+</div>
 
 <video id="sourceVideo" playsinline preload="auto"></video>
 
@@ -625,161 +704,6 @@
           <button type="button" class="btn" id="emptyOpenYtBtn">🔴 YouTube / En Directo</button>
           <button type="button" class="btn" id="restoreBtn" style="display:none;" title="Recupera el video, cortes y transcripción de tu última sesión">♻️ Restaurar último proyecto</button>
         </div>
-      </div>
-    </div>
-
-    <!-- PANEL YOUTUBE / EN DIRECTO (desplegable desde ambos estados sin duplicar IDs) -->
-    <div class="card" id="ytPanel" style="display:none;">
-      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-        <h2 style="margin:0;">🔴 YouTube y Captura de Directos</h2>
-        <button type="button" class="btn btn-sm" id="closeYtPanelBtn">✕ Ocultar</button>
-      </div>
-      <div class="row">
-        <input type="url" id="ytUrlInput" placeholder="Pega el enlace de YouTube o directo (ej. https://www.youtube.com/watch?v=...)" style="flex:1; min-width:240px;" />
-        <button type="button" class="btn btn-primary" id="loadYtEmbedBtn">Cargar Video/Directo</button>
-        <button type="button" class="btn btn-amber" id="ytQuickCutBtn">✂️ Sacar Corte del Directo</button>
-      </div>
-      <div class="row" style="margin-top:10px; align-items:center;">
-        <label class="muted" style="margin:0;">Creador autorizado:</label>
-        <select id="ytCreatorSelect" style="width:auto; min-width:170px;"><option value="">— elige un creador —</option></select>
-        <button type="button" class="btn btn-sm" id="creatorDelBtn" title="Quitar de la lista">🗑</button>
-        <input type="text" id="creatorNameInput" placeholder="Nombre del creador" style="flex:1; min-width:140px;" />
-        <input type="text" id="creatorUrlInput" placeholder="Enlace a su canal" style="flex:1; min-width:160px;" />
-        <button type="button" class="btn btn-sm" id="creatorAddBtn">➕ Añadir</button>
-      </div>
-      <div class="row" style="margin-top:10px;">
-        <input type="password" id="ytGeminiKeyInput" placeholder="Clave de Gemini (AIza...) para analizar enlaces" autocomplete="off" style="flex:1; min-width:200px;" />
-        <button type="button" class="btn btn-green" id="ytAiCutsBtn">✨ Generar cortes del enlace con IA (sin descargar)</button>
-      </div>
-      <div class="row" style="margin-top:8px; align-items:center;">
-        <label class="muted" style="margin:0;">Analizar solo (opcional): desde min</label>
-        <input type="number" id="ytFromMin" min="0" placeholder="0" style="width:78px;" />
-        <label class="muted" style="margin:0;">hasta min</label>
-        <input type="number" id="ytToMin" min="1" placeholder="fin" style="width:78px;" />
-      </div>
-      <div id="ytCutsList" style="margin-top:10px; display:grid; gap:8px;"></div>
-      <div class="row" style="margin-top:8px; align-items:center;">
-        <label class="muted" style="margin:0;">Grabar en:</label>
-        <select id="ytRecMode" style="width:auto;"><option value="popup">Ventana nueva (mejor calidad)</option><option value="page">Esta página</option></select>
-        <span id="ytRecStatus" class="muted"></span>
-        <button type="button" class="btn" id="ytRecStopBtn" style="display:none;">⏹ Detener grabación</button>
-      </div>
-      <div id="ytClipFiles" style="margin-top:8px; display:grid; gap:6px;"></div>
-      <div class="row" style="margin-top:12px; align-items:center;">
-        <button type="button" class="btn btn-danger" id="liveHereBtn">🔴 Capturar directo del enlace</button>
-        <button type="button" class="btn" id="liveStartBtn">Capturar otra pestaña</button>
-        <label class="muted" style="margin:0;">Últimos</label>
-        <select id="liveSecs" style="width:auto;"><option value="30">30 s</option><option value="60" selected>60 s</option><option value="90">90 s</option><option value="180">3 min</option></select>
-        <label class="muted" style="margin:0;">Auto:</label>
-        <select id="liveAuto" style="width:auto;"><option value="0">Desactivado</option><option value="60">Cada 60 s</option><option value="120">Cada 2 min</option><option value="300">Cada 5 min</option></select>
-        <label class="muted" style="margin:0;">Formato:</label>
-        <select id="liveFormat" style="width:auto;"></select>
-        <button type="button" class="btn" id="liveStopBtn" style="display:none;">⏹ Detener captura</button>
-      </div>
-      <!-- Radar de Momentos Épicos (Emociones en Vivo, YouTube y Videos) -->
-      <div class="epic-radar-box">
-        <div class="row" style="justify-content:space-between;">
-          <strong style="font-size:0.86rem;">🔥 Radar de Momentos Épicos (En Vivo &amp; IA)</strong>
-          <div class="row" style="gap:8px;">
-            <span class="muted" style="font-size:0.75rem;">Audio:</span>
-            <div class="audio-meter-wrap" title="Nivel de audio del directo en tiempo real">
-              <div class="audio-meter-fill" id="liveAudioMeter"></div>
-            </div>
-            <span class="badge" id="liveRadarBadge">En espera</span>
-          </div>
-        </div>
-        <div class="row" style="margin-top:8px;">
-          <label class="muted" style="margin:0;">Detección en vivo:</label>
-          <select id="liveEpicMode" style="width:auto;">
-            <option value="ai" selected>🧠 IA + Audio (Whisper + Gemini — todas las emociones)</option>
-            <option value="audio">⚡ Solo Picos de Audio ($0 — risas, gritos, peleas)</option>
-            <option value="off">Desactivado (solo cortes manuales)</option>
-          </select>
-          <label class="muted" style="margin:0;">Analizar cada:</label>
-          <select id="liveEpicInterval" style="width:auto;">
-            <option value="30" selected>30 s</option>
-            <option value="45">45 s</option>
-            <option value="60">60 s</option>
-          </select>
-          <label class="muted" style="margin:0;">Exigencia:</label>
-          <select id="liveEpicMinScore" style="width:auto;" title="Puntaje mínimo de IA para aprobar un corte automático">
-            <option value="65">Flexible (65+)</option>
-            <option value="75" selected>Equilibrado (75+)</option>
-            <option value="85">Solo Oro (85+)</option>
-          </select>
-        </div>
-        <div class="form-grid-2" style="margin-top:8px;">
-          <input type="text" id="liveEpicContext" placeholder="Contexto del directo (ej: Podcast de humor y farándula)" />
-          <input type="text" id="liveEpicKeywords" placeholder="Palabras gatillo (ej: no puede ser, mentira, jajaja, escúchame)" />
-        </div>
-        <div class="row" style="justify-content:space-between; margin-top:8px;">
-          <span class="muted" style="font-size:0.75rem;">Reacciones y momentos a detectar:</span>
-          <div class="row" style="gap:6px;">
-            <button type="button" class="btn btn-sm" id="emoSelectAllBtn" style="padding:3px 8px; font-size:0.73rem;">✓ Todas</button>
-            <button type="button" class="btn btn-sm" id="emoPresetPartyBtn" style="padding:3px 8px; font-size:0.73rem;">🎉 Fiesta &amp; Risas</button>
-            <button type="button" class="btn btn-sm" id="emoPresetDeepBtn" style="padding:3px 8px; font-size:0.73rem;">🧠 Serio &amp; Reflexión</button>
-          </div>
-        </div>
-        <div class="epic-pills" id="epicEmotionPills" title="Elige qué tipos de momentos y reacciones buscar">
-          <button type="button" class="emo-pill active" data-emo="risa">😂 Risas y Chistes</button>
-          <button type="button" class="emo-pill active" data-emo="feliz">😊 Felicidad</button>
-          <button type="button" class="emo-pill active" data-emo="fiesta">🎉 Fiesta / Baile</button>
-          <button type="button" class="emo-pill active" data-emo="pelea">🤬 Discusión / Pelea</button>
-          <button type="button" class="emo-pill active" data-emo="serio">😐 Momento Serio</button>
-          <button type="button" class="emo-pill active" data-emo="reflexion">🧠 Reflexión</button>
-          <button type="button" class="emo-pill active" data-emo="tristeza">😢 Tristeza</button>
-          <button type="button" class="emo-pill active" data-emo="sorpresa">😱 Sorpresa / Shock</button>
-          <button type="button" class="emo-pill active" data-emo="reaccion">🤯 Reacción / Fail</button>
-          <button type="button" class="emo-pill active" data-emo="salseo">👀 Chisme / Polémica</button>
-          <button type="button" class="emo-pill active" data-emo="inspiracion">💡 Motivación / Consejo</button>
-          <button type="button" class="emo-pill active" data-emo="amor">❤️ Cariño / Tierno</button>
-        </div>
-        <div class="muted" id="liveRadarStatus" style="margin-top:6px; font-size:0.78rem;">Activa las emociones que quieras cazar. Se aplican al directo en vivo, a enlaces de YouTube y al Auto-Análisis IA.</div>
-
-        <!-- Configuración de envío automático a Telegram con subtítulos -->
-        <div class="tg-box">
-          <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-            <strong style="font-size:0.84rem;">✈️ Envío a Telegram (con Subtítulos)</strong>
-            <span class="badge" id="tgBadge">Sin configurar</span>
-          </div>
-          <div class="form-grid-2" style="margin-bottom:8px;">
-            <div class="input-group">
-              <input type="password" id="tgBotTokenInput" placeholder="Bot Token (de @BotFather)" autocomplete="off" />
-              <button type="button" class="btn btn-sm" data-toggle-vis="tgBotTokenInput" title="Mostrar u ocultar">👁️</button>
-            </div>
-            <input type="text" id="tgChatIdInput" placeholder="Chat ID o @canal (ej. 123456789)" />
-          </div>
-          <div class="row" style="justify-content:space-between; gap:8px;">
-            <div class="row" style="gap:10px;">
-              <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; color:var(--text);">
-                <input type="checkbox" id="tgAutoSendCheck" checked style="width:auto;" />
-                Auto-enviar épicos
-              </label>
-              <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; color:var(--text);">
-                <input type="checkbox" id="tgBurnSubsCheck" checked style="width:auto;" />
-                Quemar subtítulos en video
-              </label>
-              <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; color:var(--text);">
-                <input type="checkbox" id="tgSendSrtCheck" style="width:auto;" />
-                Adjuntar .SRT
-              </label>
-            </div>
-            <div class="row" style="gap:6px;">
-              <button type="button" class="btn btn-sm" id="tgTestBtn">⚡ Probar</button>
-              <button type="button" class="btn btn-sm btn-tg" id="tgSaveBtn">💾 Guardar Telegram</button>
-            </div>
-          </div>
-          <div class="muted" id="tgStatusText" style="margin-top:6px; font-size:0.77rem;">Crea un bot gratis en @BotFather, obtén tu Chat ID con @userinfobot (o añade el bot como admin de tu canal) y guárdalo aquí.</div>
-        </div>
-      </div>
-
-      <details style="margin-top:8px;">
-        <summary class="muted" style="cursor:pointer;">¿Cómo capturar un directo?</summary>
-        <div class="muted" id="liveStatus" style="margin-top:6px;">Pega el enlace arriba, pulsa "Capturar directo del enlace" y en el aviso del navegador elige "Esta pestaña" marcando "Compartir audio". Luego usa "✂️ Sacar Corte del Directo".</div>
-      </details>
-      <div id="liveClips" style="margin-top:8px; display:grid; gap:6px;"></div>
-      <div id="ytEmbedWrap" style="margin-top:10px; display:none;">
-        <iframe id="ytIframe" width="100%" height="260" style="border-radius:12px; border:1px solid var(--border);" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
       </div>
     </div>
 
@@ -961,6 +885,206 @@
     </div>
   </section>
 
+  <!-- ==================== TAB EN VIVO & RADAR (3 SUB-PESTAÑAS LIMPIAS) ==================== -->
+  <section id="tab-live" class="view">
+    <div class="card" id="ytPanel" style="margin-bottom:0;">
+      <div class="row" style="justify-content:space-between; margin-bottom:12px;">
+        <div>
+          <h2 style="margin:0;">🔴 Centro En Vivo, YouTube &amp; Radar Épico</h2>
+          <div class="muted" style="margin-top:2px;">Captura directos, analiza enlaces de YouTube sin descargar o ajusta el Radar y Telegram.</div>
+        </div>
+        <button type="button" class="btn btn-sm" id="closeYtPanelBtn">← Volver al Estudio</button>
+      </div>
+
+      <div class="live-subtabs" id="liveSubTabs">
+        <button type="button" class="live-subtab active" data-live-sub="capture">📡 Capturar Directo</button>
+        <button type="button" class="live-subtab" data-live-sub="yt">🔗 Cortes de Enlace YT</button>
+        <button type="button" class="live-subtab" data-live-sub="radar">⚙️ Radar &amp; Telegram</button>
+      </div>
+
+      <!-- SUB-PESTAÑA 1: CAPTURAR DIRECTO -->
+      <div class="live-subpane active" id="livePane-capture">
+        <div class="row">
+          <input type="url" id="ytUrlInput" placeholder="Pega el enlace de YouTube o directo (ej. https://www.youtube.com/watch?v=...)" style="flex:1; min-width:240px;" />
+          <button type="button" class="btn btn-primary" id="loadYtEmbedBtn">Cargar Video/Directo</button>
+          <button type="button" class="btn btn-amber" id="ytQuickCutBtn" title="Atajo: tecla K">✂️ Sacar Corte (K)</button>
+        </div>
+
+        <div class="row" style="margin-top:12px; align-items:center;">
+          <button type="button" class="btn btn-danger" id="liveHereBtn">🔴 Capturar directo del enlace</button>
+          <button type="button" class="btn" id="liveStartBtn">Capturar otra pestaña</button>
+          <label class="muted" style="margin:0;">Últimos</label>
+          <select id="liveSecs" style="width:auto;"><option value="30">30 s</option><option value="60" selected>60 s</option><option value="90">90 s</option><option value="180">3 min</option></select>
+          <label class="muted" style="margin:0;">Auto:</label>
+          <select id="liveAuto" style="width:auto;"><option value="0">Desactivado</option><option value="60">Cada 60 s</option><option value="120">Cada 2 min</option><option value="300">Cada 5 min</option></select>
+          <label class="muted" style="margin:0;">Formato:</label>
+          <select id="liveFormat" style="width:auto;"></select>
+          <button type="button" class="btn" id="liveStopBtn" style="display:none;">⏹ Detener captura</button>
+        </div>
+
+        <details style="margin-top:8px;">
+          <summary class="muted" style="cursor:pointer;">¿Cómo capturar un directo?</summary>
+          <div class="muted" id="liveStatus" style="margin-top:6px;">Pega el enlace arriba, pulsa "Capturar directo del enlace" y en el aviso del navegador elige "Esta pestaña" marcando "Compartir audio". Luego usa "✂️ Sacar Corte (K)" o deja que el Radar corte automáticamente.</div>
+        </details>
+
+        <div id="ytEmbedWrap" style="margin-top:12px; display:none;">
+          <iframe id="ytIframe" width="100%" height="320" style="border-radius:12px; border:1px solid var(--border);" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+            <strong style="font-size:0.9rem;">🎬 Clips Capturados del Directo</strong>
+            <span class="muted" id="liveClipsCount" style="font-size:0.78rem;">0 clips</span>
+          </div>
+          <div id="liveClips" style="display:grid; gap:8px;">
+            <div class="muted">Aún no hay clips capturados. Inicia la captura de un directo y pulsa <strong>✂️ Sacar Corte (K)</strong> o deja actuar al Radar.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUB-PESTAÑA 2: CORTES DE ENLACE YT (SIN DESCARGAR) -->
+      <div class="live-subpane" id="livePane-yt">
+        <div class="row" style="align-items:center;">
+          <label class="muted" style="margin:0;">Creador autorizado:</label>
+          <select id="ytCreatorSelect" style="width:auto; min-width:170px;"><option value="">— elige un creador —</option></select>
+          <button type="button" class="btn btn-sm" id="creatorDelBtn" title="Quitar de la lista">🗑</button>
+          <input type="text" id="creatorNameInput" placeholder="Nombre del creador" style="flex:1; min-width:140px;" />
+          <input type="text" id="creatorUrlInput" placeholder="Enlace a su canal" style="flex:1; min-width:160px;" />
+          <button type="button" class="btn btn-sm" id="creatorAddBtn">➕ Añadir</button>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <input type="password" id="ytGeminiKeyInput" placeholder="Clave de Gemini (AIza...) para analizar enlaces" autocomplete="off" style="flex:1; min-width:200px;" />
+          <button type="button" class="btn btn-green" id="ytAiCutsBtn">✨ Generar cortes del enlace con IA (sin descargar)</button>
+        </div>
+        <div class="row" style="margin-top:8px; align-items:center;">
+          <label class="muted" style="margin:0;">Analizar solo (opcional): desde min</label>
+          <input type="number" id="ytFromMin" min="0" placeholder="0" style="width:78px;" />
+          <label class="muted" style="margin:0;">hasta min</label>
+          <input type="number" id="ytToMin" min="1" placeholder="fin" style="width:78px;" />
+          <span class="muted" style="margin-left:auto; font-size:0.78rem;">Usa el enlace pegado en "Capturar Directo"</span>
+        </div>
+        <div id="ytCutsList" style="margin-top:10px; display:grid; gap:8px;"></div>
+        <div class="row" style="margin-top:10px; align-items:center;">
+          <label class="muted" style="margin:0;">Grabar en:</label>
+          <select id="ytRecMode" style="width:auto;"><option value="popup">Ventana nueva (mejor calidad)</option><option value="page">Esta página</option></select>
+          <span id="ytRecStatus" class="muted"></span>
+          <button type="button" class="btn" id="ytRecStopBtn" style="display:none;">⏹ Detener grabación</button>
+        </div>
+        <div id="ytClipFiles" style="margin-top:8px; display:grid; gap:6px;"></div>
+      </div>
+
+      <!-- SUB-PESTAÑA 3: AJUSTES DE RADAR & TELEGRAM -->
+      <div class="live-subpane" id="livePane-radar">
+        <!-- Radar de Momentos Épicos -->
+        <div class="epic-radar-box" style="margin-top:0;">
+          <div class="row" style="justify-content:space-between;">
+            <strong style="font-size:0.88rem;">🔥 Radar de Momentos Épicos (En Vivo &amp; IA)</strong>
+            <div class="row" style="gap:8px;">
+              <span class="muted" style="font-size:0.75rem;">Voz:</span>
+              <div class="audio-meter-wrap" title="Nivel de voz humana del directo en tiempo real">
+                <div class="audio-meter-fill" id="liveAudioMeter"></div>
+              </div>
+              <span class="badge" id="liveRadarBadge">En espera</span>
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px;">
+            <label class="muted" style="margin:0;">Detección en vivo:</label>
+            <select id="liveEpicMode" style="width:auto;">
+              <option value="ai" selected>🧠 IA + Audio (Whisper + Gemini — todas las emociones)</option>
+              <option value="audio">⚡ Solo Picos de Voz ($0 — risas, gritos, peleas)</option>
+              <option value="off">Desactivado (solo cortes manuales)</option>
+            </select>
+            <label class="muted" style="margin:0;">Analizar cada:</label>
+            <select id="liveEpicInterval" style="width:auto;">
+              <option value="30" selected>30 s</option>
+              <option value="45">45 s</option>
+              <option value="60">60 s</option>
+            </select>
+            <label class="muted" style="margin:0;">Exigencia:</label>
+            <select id="liveEpicMinScore" style="width:auto;" title="Puntaje mínimo de IA para aprobar un corte automático">
+              <option value="65">Flexible (65+)</option>
+              <option value="75" selected>Equilibrado (75+)</option>
+              <option value="85">Solo Oro (85+)</option>
+            </select>
+          </div>
+          <div class="form-grid-2" style="margin-top:8px;">
+            <input type="text" id="liveEpicContext" placeholder="Contexto del directo (ej: Podcast de humor y farándula)" />
+            <input type="text" id="liveEpicKeywords" placeholder="Palabras gatillo (ej: no puede ser, mentira, jajaja, escúchame)" />
+          </div>
+          <div class="row" style="justify-content:space-between; margin-top:8px;">
+            <span class="muted" style="font-size:0.75rem;">Reacciones y momentos a detectar:</span>
+            <div class="row" style="gap:6px;">
+              <button type="button" class="btn btn-sm" id="emoSelectAllBtn" style="padding:3px 8px; font-size:0.73rem;">✓ Todas</button>
+              <button type="button" class="btn btn-sm" id="emoPresetPartyBtn" style="padding:3px 8px; font-size:0.73rem;">🎉 Fiesta &amp; Risas</button>
+              <button type="button" class="btn btn-sm" id="emoPresetDeepBtn" style="padding:3px 8px; font-size:0.73rem;">🧠 Serio &amp; Reflexión</button>
+            </div>
+          </div>
+          <div class="epic-pills" id="epicEmotionPills" title="Elige qué tipos de momentos y reacciones buscar">
+            <button type="button" class="emo-pill active" data-emo="risa">😂 Risas y Chistes</button>
+            <button type="button" class="emo-pill active" data-emo="feliz">😊 Felicidad</button>
+            <button type="button" class="emo-pill active" data-emo="fiesta">🎉 Fiesta / Baile</button>
+            <button type="button" class="emo-pill active" data-emo="pelea">🤬 Discusión / Pelea</button>
+            <button type="button" class="emo-pill active" data-emo="serio">😐 Momento Serio</button>
+            <button type="button" class="emo-pill active" data-emo="reflexion">🧠 Reflexión</button>
+            <button type="button" class="emo-pill active" data-emo="tristeza">😢 Tristeza</button>
+            <button type="button" class="emo-pill active" data-emo="sorpresa">😱 Sorpresa / Shock</button>
+            <button type="button" class="emo-pill active" data-emo="reaccion">🤯 Reacción / Fail</button>
+            <button type="button" class="emo-pill active" data-emo="salseo">👀 Chisme / Polémica</button>
+            <button type="button" class="emo-pill active" data-emo="inspiracion">💡 Motivación / Consejo</button>
+            <button type="button" class="emo-pill active" data-emo="amor">❤️ Cariño / Tierno</button>
+          </div>
+          <div class="muted" id="liveRadarStatus" style="margin-top:6px; font-size:0.78rem;">Activa las emociones que quieras cazar. Se aplican al directo en vivo, a enlaces de YouTube y al Auto-Análisis IA.</div>
+        </div>
+
+        <!-- Configuración de envío automático a Telegram con subtítulos + Mini Historial -->
+        <div class="tg-box">
+          <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+            <strong style="font-size:0.86rem;">✈️ Envío a Telegram (con Subtítulos)</strong>
+            <span class="badge" id="tgBadge">Sin configurar</span>
+          </div>
+          <div class="form-grid-2" style="margin-bottom:8px;">
+            <div class="input-group">
+              <input type="password" id="tgBotTokenInput" placeholder="Bot Token (de @BotFather)" autocomplete="off" />
+              <button type="button" class="btn btn-sm" data-toggle-vis="tgBotTokenInput" title="Mostrar u ocultar">👁️</button>
+            </div>
+            <input type="text" id="tgChatIdInput" placeholder="Chat ID o @canal (ej. 646422028)" />
+          </div>
+          <div class="row" style="justify-content:space-between; gap:8px;">
+            <div class="row" style="gap:10px;">
+              <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; color:var(--text);">
+                <input type="checkbox" id="tgAutoSendCheck" checked style="width:auto;" />
+                Auto-enviar épicos
+              </label>
+              <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; color:var(--text);">
+                <input type="checkbox" id="tgBurnSubsCheck" checked style="width:auto;" />
+                Quemar subtítulos en video
+              </label>
+              <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; color:var(--text);">
+                <input type="checkbox" id="tgSendSrtCheck" style="width:auto;" />
+                Adjuntar .SRT
+              </label>
+            </div>
+            <div class="row" style="gap:6px;">
+              <button type="button" class="btn btn-sm" id="tgTestBtn">⚡ Probar</button>
+              <button type="button" class="btn btn-sm btn-tg" id="tgSaveBtn">💾 Guardar Telegram</button>
+            </div>
+          </div>
+          <div class="muted" id="tgStatusText" style="margin-top:6px; font-size:0.77rem;">Guarda tu Bot Token y Chat ID aquí para recibir cada corte con subtítulos automáticamente.</div>
+
+          <div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(56,189,248,0.18);">
+            <div class="row" style="justify-content:space-between;">
+              <span class="muted" style="font-size:0.75rem; font-weight:700;">📜 Últimos 5 envíos a Telegram</span>
+              <button type="button" class="btn btn-sm" id="tgClearHistoryBtn" style="padding:2px 7px; font-size:0.72rem;">Limpiar</button>
+            </div>
+            <div id="tgHistoryList" class="tg-history-list">
+              <div class="muted" style="font-size:0.75rem;">Sin envíos recientes todavía.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ==================== TAB 2: EDITOR DE VIDEO (UX SIMPLIFICADA) ==================== -->
   <section id="tab-editor" class="view">
     <div class="ux-ws-toolbar">
@@ -969,6 +1093,8 @@
         <span class="muted">Todos los cambios se aplican en vivo al exportar</span>
       </div>
       <div class="row">
+        <span class="kbd-pill" title="Atajos activos en Estudio y Editor">⌨️ <kbd>Espacio</kbd> Play · <kbd>I</kbd>/<kbd>O</kbd> Corte · <kbd>←</kbd><kbd>→</kbd> ±1s · <kbd>S</kbd> Dividir · <kbd>K</kbd> En Vivo</span>
+        <button type="button" class="btn btn-sm btn-green" id="edSaveBrandBtn" title="Guarda tu marca de agua, estilo de subtítulos, formato y color para futuras sesiones">💾 Guardar Plantilla</button>
         <button type="button" class="btn btn-sm" id="edResetBtn">🔄 Restablecer</button>
         <button type="button" class="btn btn-sm btn-primary" id="edExportBtn">⬇️ Exportar Video Editado</button>
       </div>
@@ -4822,6 +4948,7 @@ async function liveStart(here) {
     $('liveStartBtn').style.display = 'none';
     $('liveHereBtn').style.display = 'none';
     $('liveStopBtn').style.display = 'inline-flex';
+    if ($('liveHudBar')) $('liveHudBar').classList.add('active');
     $('liveStatus').textContent = '🔴 Capturando' + (here ? ' el reproductor de esta página' : '') + '. No minimices la ventana ni cambies el tamaño del reproductor. Cuando pase algo, pulsa "✂️ Sacar Corte del Directo" (hasta 3 min hacia atrás). Si el directo no arranca, pulsa play en el reproductor.';
     liveApplyAuto();
     startLiveEpicRadar();
@@ -4925,6 +5052,7 @@ function startLiveEpicRadar() {
 
       const pct = Math.min(100, Math.round((voiceEnergy / 135) * 100));
       if ($('liveAudioMeter')) $('liveAudioMeter').style.width = pct + '%';
+      if ($('hudAudioMeter')) $('hudAudioMeter').style.width = pct + '%';
 
       // Modo Solo Picos de Audio ($0) o respaldo si faltan claves IA
       const curMode = $('liveEpicMode')?.value || 'off';
@@ -5123,6 +5251,8 @@ function liveStop() {
   $('liveStartBtn').style.display = 'inline-flex';
   $('liveHereBtn').style.display = 'inline-flex';
   $('liveStopBtn').style.display = 'none';
+  if ($('liveHudBar')) $('liveHudBar').classList.remove('active');
+  if ($('hudAudioMeter')) $('hudAudioMeter').style.width = '0%';
   $('liveStatus').textContent = 'Captura detenida.';
 }
 function liveApplyAuto() {
@@ -5130,6 +5260,119 @@ function liveApplyAuto() {
   const v = Number($('liveAuto').value) || 0;
   if (liveCapture.stream && v) liveCapture.timer = setInterval(() => liveCutNow(Math.min(v, 180), true), v * 1000);
 }
+function renderLiveClips() {
+  const box = $('liveClips');
+  if (!box) return;
+  if ($('liveClipsCount')) $('liveClipsCount').textContent = `${liveCapture.clips.length} clip${liveCapture.clips.length === 1 ? '' : 's'}`;
+  box.textContent = '';
+  if (!liveCapture.clips.length) {
+    const empty = document.createElement('div');
+    empty.className = 'muted';
+    empty.textContent = 'Aún no hay clips capturados. Inicia la captura de un directo y pulsa "✂️ Sacar Corte (K)" o deja actuar al Radar.';
+    box.appendChild(empty);
+    return;
+  }
+  liveCapture.clips.forEach((c, idx) => {
+    const card = document.createElement('div');
+    card.className = 'live-clip-card';
+    const top = document.createElement('div');
+    top.className = 'row'; top.style.justifyContent = 'space-between';
+    const left = document.createElement('div');
+    left.className = 'row'; left.style.gap = '6px';
+    if (c.emotion) {
+      const emoBadge = document.createElement('span');
+      emoBadge.className = `badge emo-${c.emotion}`;
+      emoBadge.textContent = emotionLabel(c.emotion);
+      left.appendChild(emoBadge);
+    }
+    const titleEl = document.createElement('strong');
+    titleEl.textContent = `🎬 ${c.name}`;
+    left.appendChild(titleEl);
+    const metaEl = document.createElement('span');
+    metaEl.className = 'muted';
+    metaEl.textContent = `${c.timeTag} · ${c.n}s · ${(c.blob.size / 1048576).toFixed(1)} MB${c.score ? ` · ⭐ ${c.score}` : ''}`;
+    top.append(left, metaEl);
+    card.appendChild(top);
+
+    if (c.reason) {
+      const rEl = document.createElement('div');
+      rEl.className = 'muted'; rEl.style.fontSize = '0.78rem';
+      rEl.textContent = `💡 ${c.reason}`;
+      card.appendChild(rEl);
+    }
+
+    const previewWrap = document.createElement('div');
+    previewWrap.className = 'live-preview-wrap';
+    previewWrap.style.display = 'none';
+    let previewUrl = null;
+
+    const previewBtn = mkBtn('▶ Ver aquí', () => {
+      if (previewWrap.style.display === 'none') {
+        previewWrap.textContent = '';
+        previewUrl = URL.createObjectURL(c.blob);
+        const pv = document.createElement('video');
+        pv.className = 'live-preview-video';
+        pv.controls = true;
+        pv.playsInline = true;
+        pv.src = previewUrl;
+        pv.onloadedmetadata = () => {
+          if (c.start > 0.2 && isFinite(pv.duration) && c.start < pv.duration - 1) {
+            try { pv.currentTime = c.start; } catch (_) {}
+          }
+          pv.play().catch(() => {});
+        };
+        previewWrap.appendChild(pv);
+        previewWrap.style.display = 'block';
+        previewBtn.textContent = '✕ Ocultar vista';
+      } else {
+        const pv = previewWrap.querySelector('video');
+        if (pv) { try { pv.pause(); pv.src = ''; } catch (_) {} }
+        if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) {} previewUrl = null; }
+        previewWrap.textContent = '';
+        previewWrap.style.display = 'none';
+        previewBtn.textContent = '▶ Ver aquí';
+      }
+    });
+
+    const discardBtn = mkBtn('🗑️ Descartar', () => {
+      if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (_) {} }
+      liveCapture.clips.splice(idx, 1);
+      renderLiveClips();
+      showToast('Clip descartado', '');
+    });
+    discardBtn.classList.add('btn-danger');
+
+    const actions = document.createElement('div');
+    actions.className = 'row';
+    actions.append(
+      previewBtn,
+      mkBtn('✂️ Cargar en el Estudio', () => {
+        pendingWindow = { start: c.start, end: c.end };
+        state.videoBlob = c.blob;
+        loadVideoSrc(URL.createObjectURL(c.blob), c.name, c.dur);
+        state.sourceCredit = creatorCredit(c.creator, c.src || (c.creator && c.creator.url) || '');
+        document.querySelector('[data-tab="studio"]')?.click();
+      }),
+      mkBtn('✈️ Enviar a Telegram', () => enqueueTelegramLiveClip(c)),
+      mkBtn(`⬇️ Descargar (${c.dur} s)`, () => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(c.blob); a.download = `${c.name.replace(/[^\w-]+/g, '_')}.${c.ext}`;
+        a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      }),
+      discardBtn
+    );
+    if (c.tgStatus) {
+      const tgTag = document.createElement('span');
+      tgTag.className = 'muted';
+      tgTag.style.fontSize = '0.76rem';
+      tgTag.textContent = c.tgStatus;
+      actions.appendChild(tgTag);
+    }
+    card.append(actions, previewWrap);
+    box.appendChild(card);
+  });
+}
+
 function liveCutNow(secs, auto, epicMeta = null) {
   if (!liveCapture.stream || !liveCapture.recs.length) { showToast('Primero pulsa "Capturar directo / pestaña"', 'warn'); return; }
   if (!auto && !getCreator()) { showToast('Tip: puedes elegir un creador autorizado para añadir créditos automáticos', ''); }
@@ -5179,61 +5422,7 @@ function liveCutNow(secs, auto, epicMeta = null) {
   };
   liveCapture.clips.unshift(clipObj);
   liveCapture.clips = liveCapture.clips.slice(0, 12);
-  const box = $('liveClips');
-  box.textContent = '';
-  liveCapture.clips.forEach(c => {
-    const card = document.createElement('div');
-    card.className = 'live-clip-card';
-    const top = document.createElement('div');
-    top.className = 'row'; top.style.justifyContent = 'space-between';
-    const left = document.createElement('div');
-    left.className = 'row'; left.style.gap = '6px';
-    if (c.emotion) {
-      const emoBadge = document.createElement('span');
-      emoBadge.className = `badge emo-${c.emotion}`;
-      emoBadge.textContent = emotionLabel(c.emotion);
-      left.appendChild(emoBadge);
-    }
-    const titleEl = document.createElement('strong');
-    titleEl.textContent = `🎬 ${c.name}`;
-    left.appendChild(titleEl);
-    const metaEl = document.createElement('span');
-    metaEl.className = 'muted';
-    metaEl.textContent = `${c.timeTag} · ${c.n}s · ${(c.blob.size / 1048576).toFixed(1)} MB${c.score ? ` · ⭐ ${c.score}` : ''}`;
-    top.append(left, metaEl);
-    card.appendChild(top);
-    if (c.reason) {
-      const rEl = document.createElement('div');
-      rEl.className = 'muted'; rEl.style.fontSize = '0.78rem';
-      rEl.textContent = `💡 ${c.reason}`;
-      card.appendChild(rEl);
-    }
-    const actions = document.createElement('div');
-    actions.className = 'row';
-    actions.append(
-      mkBtn('✂️ Cargar en el Estudio', () => {
-        pendingWindow = { start: c.start, end: c.end };
-        state.videoBlob = c.blob;
-        loadVideoSrc(URL.createObjectURL(c.blob), c.name, c.dur);
-        state.sourceCredit = creatorCredit(c.creator, c.src || (c.creator && c.creator.url) || '');
-      }),
-      mkBtn('✈️ Enviar a Telegram', () => enqueueTelegramLiveClip(c)),
-      mkBtn(`⬇️ Descargar (${c.dur} s)`, () => {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(c.blob); a.download = `${c.name.replace(/[^\w-]+/g, '_')}.${c.ext}`;
-        a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      })
-    );
-    if (c.tgStatus) {
-      const tgTag = document.createElement('span');
-      tgTag.className = 'muted';
-      tgTag.style.fontSize = '0.76rem';
-      tgTag.textContent = c.tgStatus;
-      actions.appendChild(tgTag);
-    }
-    card.appendChild(actions);
-    box.appendChild(card);
-  });
+  renderLiveClips();
   if (auto && epicMeta && isTelegramConfigured() && $('tgAutoSendCheck')?.checked) {
     enqueueTelegramLiveClip(clipObj);
   }
@@ -5447,7 +5636,7 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
 
 // ==================== YOUTUBE DIRECTO ====================
   $('toggleYtBtn').addEventListener('click', () => {
-    $('ytPanel').style.display = $('ytPanel').style.display === 'none' ? 'block' : 'none';
+    document.querySelector('[data-tab="live"]')?.click();
   });
 
   $('loadYtEmbedBtn').addEventListener('click', () => {
@@ -6451,11 +6640,13 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
   // Botón "+ Nuevo Video" en el Workspace
   $('wsUploadNewBtn')?.addEventListener('click', () => $('videoInput').click());
 
-  // Abrir / cerrar panel YouTube desde ambos estados
+  // Navegar entre Estudio y la pestaña dedicada En Vivo & Radar
   $('emptyOpenYtBtn')?.addEventListener('click', () => {
-    $('ytPanel').style.display = $('ytPanel').style.display === 'none' ? 'block' : 'none';
+    document.querySelector('[data-tab="live"]')?.click();
   });
-  $('closeYtPanelBtn')?.addEventListener('click', () => { $('ytPanel').style.display = 'none'; });
+  $('closeYtPanelBtn')?.addEventListener('click', () => {
+    document.querySelector('[data-tab="studio"]')?.click();
+  });
 
   // Pestañas del Inspector derecho del Estudio (Subtítulos / PNG / Tiempos)
   document.querySelectorAll('#studioInspTabs .ux-insp-tab').forEach(tab => {
@@ -6900,10 +7091,14 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
         });
         c.tgStatus = '✅ Enviado a Telegram';
         if ($('tgStatusText')) $('tgStatusText').textContent = `✅ "${c.name}" enviado a Telegram con subtítulos.`;
+        pushTelegramHistory({ ok: true, title: c.name, emotion: c.emotion, time: new Date().toLocaleTimeString() });
+        renderLiveClips();
         showToast(`✈️ "${c.name}" enviado a Telegram`, 'ok');
       } catch (err) {
         c.tgStatus = `❌ Error TG`;
         if ($('tgStatusText')) $('tgStatusText').textContent = `❌ No se pudo enviar "${c.name}" a Telegram: ${err.message}`;
+        pushTelegramHistory({ ok: false, title: c.name, emotion: c.emotion, error: err.message, time: new Date().toLocaleTimeString() });
+        renderLiveClips();
         showToast(`Error Telegram: ${err.message}`, 'warn');
       }
     }
@@ -6950,6 +7145,7 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
         startOffset: state.startTime || 0,
         credit: state.sourceCredit || ''
       });
+      pushTelegramHistory({ ok: true, title: cut.title || state.videoName || 'Clip', emotion: cut.emotion || '', time: new Date().toLocaleTimeString() });
       showToast('✈️ Clip enviado a Telegram con subtítulos incluidos', 'ok');
     } catch (err) {
       showToast(`Error al enviar a Telegram: ${err.message}`, 'warn');
@@ -6960,6 +7156,209 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
   });
 
   refreshTelegramUI();
+
+  // ==================== v10: SUB-PESTAÑAS EN VIVO, HUD, HISTORIAL TG, PLANTILLA DE MARCA Y ATAJOS ====================
+
+  // 1. Sub-pestañas de la pestaña "En Vivo & Radar"
+  function setLiveSubTab(key) {
+    document.querySelectorAll('#liveSubTabs .live-subtab').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.liveSub === key);
+    });
+    document.querySelectorAll('.live-subpane').forEach(p => {
+      p.classList.toggle('active', p.id === 'livePane-' + key);
+    });
+  }
+  document.querySelectorAll('#liveSubTabs .live-subtab').forEach(btn => {
+    btn.addEventListener('click', () => setLiveSubTab(btn.dataset.liveSub));
+  });
+
+  // 2. Controles y sincronización del HUD fijo en vivo
+  $('hudCutNowBtn')?.addEventListener('click', () => liveCutNow());
+  $('hudStopBtn')?.addEventListener('click', () => liveStop());
+  $('hudOpenLiveBtn')?.addEventListener('click', () => {
+    document.querySelector('[data-tab="live"]')?.click();
+    setLiveSubTab('capture');
+  });
+
+  if ($('liveRadarBadge') && $('hudRadarBadge') && typeof MutationObserver !== 'undefined') {
+    const syncHudBadge = () => {
+      $('hudRadarBadge').textContent = $('liveRadarBadge').textContent;
+      $('hudRadarBadge').className = $('liveRadarBadge').className;
+    };
+    const badgeObs = new MutationObserver(syncHudBadge);
+    badgeObs.observe($('liveRadarBadge'), { childList: true, characterData: true, subtree: true, attributes: true });
+    syncHudBadge();
+  }
+
+  // 3. Mini historial de los últimos 5 envíos a Telegram
+  function loadTelegramHistory() {
+    try {
+      const arr = JSON.parse(safeGet('cliphub_tg_history', '[]'));
+      return Array.isArray(arr) ? arr.slice(0, 5) : [];
+    } catch (_) { return []; }
+  }
+  function renderTelegramHistory() {
+    const list = loadTelegramHistory();
+    const box = $('tgHistoryList');
+    if (box) {
+      if (!list.length) {
+        box.innerHTML = '<div class="muted" style="font-size:0.75rem;">Sin envíos recientes todavía.</div>';
+      } else {
+        box.innerHTML = list.map(item => `
+          <div class="tg-history-item">
+            <div class="row" style="gap:6px; min-width:0;">
+              <span>${item.ok ? '✅' : '❌'}</span>
+              ${item.emotion ? `<span class="badge emo-${escapeHtml(item.emotion)}">${escapeHtml(emotionLabel(item.emotion))}</span>` : ''}
+              <strong style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:260px;">${escapeHtml(item.title || 'Clip')}</strong>
+            </div>
+            <span class="muted" style="font-size:0.72rem; flex-shrink:0;">${escapeHtml(item.time || '')}</span>
+          </div>
+        `).join('');
+      }
+    }
+    if ($('hudTgLast')) {
+      if (!list.length) {
+        $('hudTgLast').textContent = isTelegramConfigured() ? 'Telegram: listo' : 'Telegram: sin configurar';
+      } else {
+        const last = list[0];
+        $('hudTgLast').textContent = `TG: ${last.ok ? '✅' : '❌'} ${(last.title || 'Clip').slice(0, 26)} (${last.time})`;
+      }
+    }
+  }
+  function pushTelegramHistory(entry) {
+    const list = loadTelegramHistory();
+    list.unshift(entry);
+    safeSet('cliphub_tg_history', JSON.stringify(list.slice(0, 5)));
+    renderTelegramHistory();
+  }
+  $('tgClearHistoryBtn')?.addEventListener('click', () => {
+    safeSet('cliphub_tg_history', '[]');
+    renderTelegramHistory();
+    showToast('Historial de Telegram limpiado', '');
+  });
+  renderTelegramHistory();
+
+  // 4. Guardado automático de Estilo de Marca / Plantilla Visual
+  function saveBrandPreset(notify = false) {
+    const preset = {
+      aspect: state.aspect,
+      subStyle: state.subStyle,
+      showSubs: state.showSubs,
+      cutDuration: state.cutDuration,
+      filterPreset: state.edit.filterPreset,
+      brightness: state.edit.brightness,
+      contrast: state.edit.contrast,
+      saturate: state.edit.saturate,
+      grayscale: state.edit.grayscale,
+      sepia: state.edit.sepia,
+      showHook: state.edit.showHook,
+      hookColor: state.edit.hookColor,
+      watermark: state.edit.watermark,
+      watermarkPos: state.edit.watermarkPos,
+      watermarkOpacity: state.edit.watermarkOpacity
+    };
+    safeSet('cliphub_brand_preset', JSON.stringify(preset));
+    if (notify) showToast('💾 Plantilla de marca guardada (se cargará automáticamente)', 'ok');
+  }
+
+  function loadBrandPreset() {
+    try {
+      const p = JSON.parse(safeGet('cliphub_brand_preset', 'null'));
+      if (!p || typeof p !== 'object') return;
+      if (p.aspect) applyAspectRatio(p.aspect);
+      if (p.subStyle && $('subStyleSelect')) {
+        state.subStyle = p.subStyle;
+        $('subStyleSelect').value = p.subStyle;
+      }
+      if (typeof p.showSubs === 'boolean' && $('showSubsCheck')) {
+        state.showSubs = p.showSubs;
+        $('showSubsCheck').checked = p.showSubs;
+      }
+      if (p.cutDuration) {
+        setCutDuration(Number(p.cutDuration), false);
+        if ($('quickDurSelect') && ['10','15','30','45','60'].includes(String(p.cutDuration))) {
+          $('quickDurSelect').value = String(p.cutDuration);
+        }
+      }
+      if (p.filterPreset && $('edFilterPreset')) {
+        state.edit.filterPreset = p.filterPreset;
+        $('edFilterPreset').value = p.filterPreset;
+      }
+      ['brightness', 'contrast', 'saturate', 'grayscale', 'sepia'].forEach(k => {
+        if (typeof p[k] === 'number') state.edit[k] = p[k];
+      });
+      syncColorSliders();
+      if (typeof p.showHook === 'boolean' && $('edShowHookCheck')) {
+        state.edit.showHook = p.showHook;
+        $('edShowHookCheck').checked = p.showHook;
+      }
+      if (p.hookColor && $('edHookColorSelect')) {
+        state.edit.hookColor = p.hookColor;
+        $('edHookColorSelect').value = p.hookColor;
+      }
+      if (typeof p.watermark === 'string' && $('edWatermarkInput')) {
+        state.edit.watermark = p.watermark;
+        $('edWatermarkInput').value = p.watermark;
+      }
+      if (p.watermarkPos && $('edWatermarkPos')) {
+        state.edit.watermarkPos = p.watermarkPos;
+        $('edWatermarkPos').value = p.watermarkPos;
+      }
+      if (typeof p.watermarkOpacity === 'number' && $('edWatermarkOpacity')) {
+        state.edit.watermarkOpacity = p.watermarkOpacity;
+        const pct = Math.round(p.watermarkOpacity * 100);
+        $('edWatermarkOpacity').value = String(pct);
+        if ($('edWmOpVal')) $('edWmOpVal').textContent = `${pct}%`;
+      }
+    } catch (_) {}
+  }
+
+  $('edSaveBrandBtn')?.addEventListener('click', () => saveBrandPreset(true));
+  ['aspectSelect', 'edAspectSelect', 'subStyleSelect', 'showSubsCheck', 'edFilterPreset', 'edHookColorSelect', 'edWatermarkInput', 'edWatermarkPos', 'edWatermarkOpacity', 'edShowHookCheck'].forEach(id => {
+    $(id)?.addEventListener('change', () => saveBrandPreset(false));
+  });
+  loadBrandPreset();
+
+  // 5. Atajos de teclado globales (ignorados cuando se escribe en campos de texto)
+  window.addEventListener('keydown', e => {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable)) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    const key = e.key;
+    if (key === 'k' || key === 'K') {
+      if (liveCapture.stream) {
+        e.preventDefault();
+        liveCutNow();
+      }
+      return;
+    }
+
+    if (state.activeTab !== 'studio' && state.activeTab !== 'editor') return;
+    if (!video.src) return;
+
+    if (key === ' ') {
+      e.preventDefault();
+      togglePlayPause();
+    } else if (key === 'i' || key === 'I') {
+      e.preventDefault();
+      $('edMarkStartBtn')?.click();
+    } else if (key === 'o' || key === 'O') {
+      e.preventDefault();
+      $('edMarkEndBtn')?.click();
+    } else if (key === 's' || key === 'S') {
+      e.preventDefault();
+      $('edSplitCutBtn')?.click();
+    } else if (key === 'ArrowLeft') {
+      e.preventDefault();
+      const step = e.shiftKey ? 5 : 1;
+      video.currentTime = Math.max(0, (video.currentTime || 0) - step);
+    } else if (key === 'ArrowRight') {
+      e.preventDefault();
+      const step = e.shiftKey ? 5 : 1;
+      video.currentTime = Math.min(state.duration || 9999, (video.currentTime || 0) + step);
+    }
+  });
 
 })();
 </script>
