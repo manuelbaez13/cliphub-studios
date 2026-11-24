@@ -532,9 +532,16 @@
     }
     .badge.emo-risa { background: rgba(250, 204, 21, 0.2); color: #fde047; }
     .badge.emo-feliz { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+    .badge.emo-fiesta { background: rgba(236, 72, 153, 0.22); color: #f9a8d4; }
     .badge.emo-pelea { background: rgba(239, 68, 68, 0.22); color: #fca5a5; }
+    .badge.emo-serio { background: rgba(148, 163, 184, 0.24); color: #e2e8f0; }
     .badge.emo-tristeza { background: rgba(59, 130, 246, 0.22); color: #93c5fd; }
     .badge.emo-reflexion { background: rgba(168, 85, 247, 0.22); color: #d8b4fe; }
+    .badge.emo-sorpresa { background: rgba(249, 115, 22, 0.22); color: #fdba74; }
+    .badge.emo-reaccion { background: rgba(6, 182, 212, 0.22); color: #67e8f9; }
+    .badge.emo-salseo { background: rgba(245, 158, 11, 0.22); color: #fcd34d; }
+    .badge.emo-inspiracion { background: rgba(34, 197, 94, 0.22); color: #86efac; }
+    .badge.emo-amor { background: rgba(244, 63, 94, 0.22); color: #fda4af; }
     .live-clip-card {
       padding: 10px 12px; border-radius: 10px;
       background: #0b1222; border: 1px solid var(--border);
@@ -694,13 +701,38 @@
             <option value="45">45 s</option>
             <option value="60">60 s</option>
           </select>
+          <label class="muted" style="margin:0;">Exigencia:</label>
+          <select id="liveEpicMinScore" style="width:auto;" title="Puntaje mínimo de IA para aprobar un corte automático">
+            <option value="65">Flexible (65+)</option>
+            <option value="75" selected>Equilibrado (75+)</option>
+            <option value="85">Solo Oro (85+)</option>
+          </select>
         </div>
-        <div class="epic-pills" id="epicEmotionPills" title="Elige qué tipos de momentos buscar">
+        <div class="form-grid-2" style="margin-top:8px;">
+          <input type="text" id="liveEpicContext" placeholder="Contexto del directo (ej: Podcast de humor y farándula)" />
+          <input type="text" id="liveEpicKeywords" placeholder="Palabras gatillo (ej: no puede ser, mentira, jajaja, escúchame)" />
+        </div>
+        <div class="row" style="justify-content:space-between; margin-top:8px;">
+          <span class="muted" style="font-size:0.75rem;">Reacciones y momentos a detectar:</span>
+          <div class="row" style="gap:6px;">
+            <button type="button" class="btn btn-sm" id="emoSelectAllBtn" style="padding:3px 8px; font-size:0.73rem;">✓ Todas</button>
+            <button type="button" class="btn btn-sm" id="emoPresetPartyBtn" style="padding:3px 8px; font-size:0.73rem;">🎉 Fiesta &amp; Risas</button>
+            <button type="button" class="btn btn-sm" id="emoPresetDeepBtn" style="padding:3px 8px; font-size:0.73rem;">🧠 Serio &amp; Reflexión</button>
+          </div>
+        </div>
+        <div class="epic-pills" id="epicEmotionPills" title="Elige qué tipos de momentos y reacciones buscar">
           <button type="button" class="emo-pill active" data-emo="risa">😂 Risas y Chistes</button>
           <button type="button" class="emo-pill active" data-emo="feliz">😊 Felicidad</button>
+          <button type="button" class="emo-pill active" data-emo="fiesta">🎉 Fiesta / Baile</button>
           <button type="button" class="emo-pill active" data-emo="pelea">🤬 Discusión / Pelea</button>
-          <button type="button" class="emo-pill active" data-emo="tristeza">😢 Tristeza</button>
+          <button type="button" class="emo-pill active" data-emo="serio">😐 Momento Serio</button>
           <button type="button" class="emo-pill active" data-emo="reflexion">🧠 Reflexión</button>
+          <button type="button" class="emo-pill active" data-emo="tristeza">😢 Tristeza</button>
+          <button type="button" class="emo-pill active" data-emo="sorpresa">😱 Sorpresa / Shock</button>
+          <button type="button" class="emo-pill active" data-emo="reaccion">🤯 Reacción / Fail</button>
+          <button type="button" class="emo-pill active" data-emo="salseo">👀 Chisme / Polémica</button>
+          <button type="button" class="emo-pill active" data-emo="inspiracion">💡 Motivación / Consejo</button>
+          <button type="button" class="emo-pill active" data-emo="amor">❤️ Cariño / Tierno</button>
         </div>
         <div class="muted" id="liveRadarStatus" style="margin-top:6px; font-size:0.78rem;">Activa las emociones que quieras cazar. Se aplican al directo en vivo, a enlaces de YouTube y al Auto-Análisis IA.</div>
 
@@ -2889,7 +2921,7 @@ Responde ÚNICAMENTE con un JSON válido (sin texto adicional ni bloques markdow
       "title": "Título viral en español",
       "hookText": "2 A 4 PALABRAS IMPACTO",
       "badge": "ETIQUETA CORTA",
-      "emotion": "risa | feliz | pelea | tristeza | reflexion",
+      "emotion": "${EMOTION_KEYS_STR}",
       "score": 95,
       "start": 0.0,
       "end": 15.0,
@@ -4254,8 +4286,8 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
     state.isExporting = true;
 
     const exportFormats = [
-      { mime: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', ext: 'mp4', label: 'MP4 (H.264)' },
-      { mime: 'video/mp4;codecs=avc1.42E01E', ext: 'mp4', label: 'MP4 (H.264)' },
+      { mime: 'video/mp4;codecs=avc1.4D4028,mp4a.40.2', ext: 'mp4', label: 'MP4 (H.264)' },
+      { mime: 'video/mp4;codecs=avc1.640028,mp4a.40.2', ext: 'mp4', label: 'MP4 (H.264)' },
       { mime: 'video/mp4', ext: 'mp4', label: 'MP4' },
       { mime: 'video/webm;codecs=vp9,opus', ext: 'webm', label: 'WebM (VP9)' },
       { mime: 'video/webm;codecs=vp8,opus', ext: 'webm', label: 'WebM (VP8)' },
@@ -4308,8 +4340,15 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
 
       const clipSecs = Math.max(1.2, (state.endTime - state.startTime) / Math.max(0.5, state.edit.speed));
       const durMs = Math.min(45000, clipSecs * 1000);
-      video.currentTime = state.startTime;
+      await new Promise(resolve => {
+        let done = false;
+        const fin = () => { if (!done) { done = true; resolve(); } };
+        video.addEventListener('seeked', fin, { once: true });
+        try { video.currentTime = state.startTime; } catch (_) { fin(); }
+        setTimeout(fin, 1200);
+      });
       await video.play().catch(() => {});
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       rec.start();
 
       const t0 = performance.now();
@@ -4461,7 +4500,7 @@ async function callYtGemini(model, key, id, range, flags) {
     ? ' IMPORTANTE: solo ves un fragmento del video; da los tiempos en segundos RELATIVOS al inicio de ese fragmento (0 = inicio del fragmento).'
     : ' Usa tiempos EXACTOS en segundos desde el inicio del video.';
   const activeEmos = getSelectedEmotionsText();
-  const prompt = `Eres editor experto en retención para YouTube Shorts, Reels y TikTok. Mira este video y elige los 5 momentos más ÉPICOS (cada uno de ~${state.cutDuration} segundos, máximo 60), buscando específicamente: ${activeEmos}.${timeRule} Escribe "start" y "end" como números (segundos) y clasifica "emotion" como risa, feliz, pelea, tristeza o reflexion. Responde SOLO con JSON: {"cuts":[{"title":"título viral en español","hookText":"2-4 PALABRAS","emotion":"risa","score":95,"start":0,"end":30,"reason":"por qué atrapa","caption":"descripción corta con hashtags"}]}`;
+  const prompt = `Eres editor experto en retención para YouTube Shorts, Reels y TikTok. Mira este video y elige los 5 momentos más ÉPICOS (cada uno de ~${state.cutDuration} segundos, máximo 60), buscando específicamente: ${activeEmos}.${timeRule} Escribe "start" y "end" como números (segundos) y clasifica "emotion" usando una de estas claves: ${EMOTION_KEYS_STR}. Responde SOLO con JSON: {"cuts":[{"title":"título viral en español","hookText":"2-4 PALABRAS","emotion":"risa","score":95,"start":0,"end":30,"reason":"por qué atrapa","caption":"descripción corta con hashtags"}]}`;
   const gen = { responseMimeType: 'application/json' };
   if (flags.res) gen.mediaResolution = 'MEDIA_RESOLUTION_LOW';
   if (flags.schema) {
@@ -4635,21 +4674,36 @@ $('ytAiCutsBtn').addEventListener('click', generateYtCuts);
 // Grabadoras solapadas: cada una guarda TODO lo que lleva grabado (archivo válido); una nueva empieza cada 3 min
 // y las viejas se detienen a los 6 min, así siempre hay al menos 3 min de historial sin recortar trozos.
 const EMOTION_CATALOG = {
-  risa: { label: '😂 Risa / Chiste', desc: 'momentos graciosos, carcajadas, chistes o humor' },
-  feliz: { label: '😊 Felicidad / Épico', desc: 'momentos felices, celebraciones, logros o euforia' },
-  pelea: { label: '🤬 Discusión / Pelea', desc: 'discusiones intensas, peleas, drama, tensión o polémica' },
-  tristeza: { label: '😢 Tristeza / Emotivo', desc: 'momentos tristes, nostalgia, desahogo o emoción profunda' },
-  reflexion: { label: '🧠 Reflexión / Consejo', desc: 'reflexiones profundas, lecciones de vida o consejos potentes' }
+  risa: { label: '😂 Risa / Chiste', desc: 'momentos graciosos, carcajadas, chistes, burlas o humor' },
+  feliz: { label: '😊 Felicidad / Logro', desc: 'momentos felices, alegría genuina, logros o euforia' },
+  fiesta: { label: '🎉 Fiesta / Baile', desc: 'momentos de fiesta, baile, música, brindis, coros o ambiente prendido' },
+  pelea: { label: '🤬 Discusión / Pelea', desc: 'discusiones intensas, peleas, enojo, gritos o conflictos' },
+  serio: { label: '😐 Momento Serio', desc: 'conversaciones serias, temas profundos, confesiones honestas o anuncios importantes' },
+  reflexion: { label: '🧠 Reflexión', desc: 'momentos de reflexión, pensamiento profundo, análisis de vida o madurez' },
+  tristeza: { label: '😢 Tristeza / Emotivo', desc: 'momentos tristes, nostalgia, llanto, desahogo o vulnerabilidad' },
+  sorpresa: { label: '😱 Sorpresa / Shock', desc: 'reacciones de sorpresa, sustos, giros inesperados, asombro o shock' },
+  reaccion: { label: '🤯 Reacción / Fail', desc: 'reacciones épicas, caras/gestos exagerados, fails, bloopers o momentos incómodos' },
+  salseo: { label: '👀 Chisme / Polémica', desc: 'chismes, revelaciones picantes, indirectas, tiraderas o polémica' },
+  inspiracion: { label: '💡 Motivación / Consejo', desc: 'consejos potentes, frases motivadoras, enseñanzas o superación personal' },
+  amor: { label: '❤️ Cariño / Tierno', desc: 'momentos tiernos, abrazos, romance, gratitud o muestras de cariño' }
 };
+const EMOTION_KEYS_STR = Object.keys(EMOTION_CATALOG).join('|');
 const selectedEmotions = new Set(Object.keys(EMOTION_CATALOG));
 
 function normalizeEmotion(val) {
   const s = String(val || '').toLowerCase();
+  if (/fiest|bail|rumba|party|brind|music|celebr/.test(s)) return 'fiesta';
+  if (/seri|grave|formal|anunci|confes|sincer/.test(s)) return 'serio';
+  if (/sorpres|shock|sust|asombr|inesper|impact/.test(s)) return 'sorpresa';
+  if (/salse|chism|polem|tirader|indirect|revel|picant/.test(s)) return 'salseo';
+  if (/inspir|motiv|consej|lecci|superac|enseñ/.test(s)) return 'inspiracion';
+  if (/reacc|fail|bloop|incomod|verguenz|cringe|epico/.test(s)) return 'reaccion';
+  if (/amor|cariñ|tiern|romanc|abraz|gratit/.test(s)) return 'amor';
   if (/risa|chiste|grac|humor|divert|broma/.test(s)) return 'risa';
-  if (/feliz|alegr|celebr|epic|eufor/.test(s)) return 'feliz';
-  if (/pelea|discus|enoj|drama|tens|polem|conflic/.test(s)) return 'pelea';
-  if (/trist|llor|dolor|emotiv|nostalg/.test(s)) return 'tristeza';
-  if (/reflex|consej|lecci|sabid|filosof|pens/.test(s)) return 'reflexion';
+  if (/feliz|alegr|logr|eufor/.test(s)) return 'feliz';
+  if (/pelea|discus|enoj|drama|tens|conflic/.test(s)) return 'pelea';
+  if (/trist|llor|dolor|emotiv|nostalg|desahog/.test(s)) return 'tristeza';
+  if (/reflex|sabid|filosof|pens|profund/.test(s)) return 'reflexion';
   return '';
 }
 function emotionLabel(key) {
@@ -4657,13 +4711,28 @@ function emotionLabel(key) {
 }
 function getSelectedEmotionsText() {
   const list = [...selectedEmotions].map(k => EMOTION_CATALOG[k]?.desc).filter(Boolean);
-  return list.length ? list.join('; ') : 'momentos felices, de risa, chistes, discusión, pelea, tristeza y reflexión';
+  return list.length ? list.join('; ') : 'todas las reacciones: risas, fiesta, momentos serios, reflexión, pelea, sorpresa, chisme, tristeza, motivación y cariño';
 }
+function syncEmotionPillsUI() {
+  document.querySelectorAll('#epicEmotionPills .emo-pill').forEach(pill => {
+    pill.classList.toggle('active', selectedEmotions.has(pill.dataset.emo));
+  });
+}
+function applyEmotionPreset(keys, msg) {
+  selectedEmotions.clear();
+  keys.forEach(k => { if (EMOTION_CATALOG[k]) selectedEmotions.add(k); });
+  syncEmotionPillsUI();
+  showToast(msg, 'ok');
+}
+$('emoSelectAllBtn')?.addEventListener('click', () => applyEmotionPreset(Object.keys(EMOTION_CATALOG), 'Todas las reacciones y momentos activados (12)'));
+$('emoPresetPartyBtn')?.addEventListener('click', () => applyEmotionPreset(['risa', 'feliz', 'fiesta', 'sorpresa', 'reaccion', 'salseo'], 'Preset activado: Fiesta, Risas y Reacciones'));
+$('emoPresetDeepBtn')?.addEventListener('click', () => applyEmotionPreset(['serio', 'reflexion', 'tristeza', 'inspiracion', 'amor'], 'Preset activado: Serio, Reflexión y Emotivo'));
+
 document.querySelectorAll('#epicEmotionPills .emo-pill').forEach(pill => {
   pill.addEventListener('click', () => {
     const emo = pill.dataset.emo;
     if (selectedEmotions.has(emo)) {
-      if (selectedEmotions.size === 1) { showToast('Deja al menos una emoción activa', 'warn'); return; }
+      if (selectedEmotions.size === 1) { showToast('Deja al menos una categoría activa', 'warn'); return; }
       selectedEmotions.delete(emo);
       pill.classList.remove('active');
     } else {
@@ -4677,14 +4746,16 @@ const liveCapture = {
   stream: null, recs: [], timer: null, rotTimer: null, clips: [],
   audioCtx: null, analyser: null, meterRaf: null,
   epicTimer: null, epicAudioRec: null, epicAudioChunks: [],
-  epicBusy: false, lastAutoCutAt: 0, baselineRms: 0.03, peakFrames: 0, peakInWindow: 0
+  epicBusy: false, lastAutoCutAt: 0, baselineVoice: 18,
+  peakStartAt: 0, peakInWindow: 0, postRollTimer: null,
+  prevTranscript: ''
 };
 
 const LIVE_FORMATS = [
-  { id: 'mp4', label: 'MP4 (H.264)', mime: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', ext: 'mp4' },
-  { id: 'mp4b', label: 'MP4 (genérico)', mime: 'video/mp4', ext: 'mp4' },
-  { id: 'vp9', label: 'WebM VP9', mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
-  { id: 'vp8', label: 'WebM VP8', mime: 'video/webm;codecs=vp8,opus', ext: 'webm' }
+  { id: 'vp8', label: 'WebM VP8 (Recomendado en vivo)', mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
+  { id: 'vp9', label: 'WebM VP9 (Alta calidad)', mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
+  { id: 'mp4', label: 'MP4 (H.264 Main)', mime: 'video/mp4;codecs=avc1.4D4028,mp4a.40.2', ext: 'mp4' },
+  { id: 'mp4b', label: 'MP4 (genérico)', mime: 'video/mp4', ext: 'mp4' }
 ].filter(f => { try { return MediaRecorder.isTypeSupported(f.mime); } catch (_) { return false; } });
 if (!LIVE_FORMATS.length) LIVE_FORMATS.push({ id: 'auto', label: 'Automático', mime: '', ext: 'webm' });
 LIVE_FORMATS.forEach(f => {
@@ -4697,7 +4768,7 @@ function liveSpawnRecorder() {
   const stream = liveCapture.stream;
   if (!stream) return;
   const fmt = LIVE_FORMATS.find(f => f.id === $('liveFormat').value) || LIVE_FORMATS[0];
-  const rec = new MediaRecorder(stream, fmt.mime ? { mimeType: fmt.mime, videoBitsPerSecond: 2000000 } : {});
+  const rec = new MediaRecorder(stream, fmt.mime ? { mimeType: fmt.mime, videoBitsPerSecond: 4500000 } : { videoBitsPerSecond: 4500000 });
   const r = { rec, chunks: [], t0: Date.now(), fmt };
   rec.ondataavailable = e => { if (e.data && e.data.size) r.chunks.push(e.data); };
   rec.start(1000);
@@ -4758,12 +4829,48 @@ async function liveStart(here) {
     showToast('No se inició la captura: ' + (err.message || err), 'warn');
   }
 }
+function loadRadarPrefs() {
+  try {
+    const saved = JSON.parse(safeGet('cliphub_radar_cfg', 'null'));
+    if (saved && typeof saved === 'object') {
+      if ($('liveEpicMinScore') && saved.minScore) $('liveEpicMinScore').value = String(saved.minScore);
+      if ($('liveEpicContext') && saved.context) $('liveEpicContext').value = saved.context;
+      if ($('liveEpicKeywords') && saved.keywords) $('liveEpicKeywords').value = saved.keywords;
+    }
+  } catch (_) {}
+}
+function saveRadarPrefs() {
+  safeSet('cliphub_radar_cfg', JSON.stringify({
+    minScore: $('liveEpicMinScore')?.value || '75',
+    context: ($('liveEpicContext')?.value || '').trim(),
+    keywords: ($('liveEpicKeywords')?.value || '').trim()
+  }));
+}
+['liveEpicMinScore', 'liveEpicContext', 'liveEpicKeywords'].forEach(id => {
+  $(id)?.addEventListener('change', saveRadarPrefs);
+  $(id)?.addEventListener('input', saveRadarPrefs);
+});
+loadRadarPrefs();
+
+function findMatchedKeywords(text) {
+  const raw = ($('liveEpicKeywords')?.value || '').trim();
+  if (!raw || !text) return [];
+  const lower = text.toLowerCase();
+  return raw.split(',').map(k => k.trim()).filter(k => k.length >= 2 && lower.includes(k.toLowerCase()));
+}
+
 function stopLiveEpicRadar() {
   if (liveCapture.meterRaf) cancelAnimationFrame(liveCapture.meterRaf);
   clearInterval(liveCapture.epicTimer);
+  clearTimeout(liveCapture.postRollTimer);
   try { if (liveCapture.epicAudioRec && liveCapture.epicAudioRec.state !== 'inactive') liveCapture.epicAudioRec.stop(); } catch (_) {}
   try { if (liveCapture.audioCtx) liveCapture.audioCtx.close(); } catch (_) {}
-  Object.assign(liveCapture, { audioCtx: null, analyser: null, meterRaf: null, epicTimer: null, epicAudioRec: null, epicAudioChunks: [], epicBusy: false, peakFrames: 0, peakInWindow: 0 });
+  Object.assign(liveCapture, {
+    audioCtx: null, analyser: null, meterRaf: null,
+    epicTimer: null, epicAudioRec: null, epicAudioChunks: [],
+    epicBusy: false, peakStartAt: 0, peakInWindow: 0,
+    postRollTimer: null, prevTranscript: ''
+  });
   if ($('liveAudioMeter')) $('liveAudioMeter').style.width = '0%';
   if ($('liveRadarBadge')) { $('liveRadarBadge').textContent = 'En espera'; $('liveRadarBadge').className = 'badge'; }
 }
@@ -4783,55 +4890,70 @@ function startLiveEpicRadar() {
     return;
   }
 
-  // 1. Monitor de energía de audio en tiempo real (Web Audio API)
+  // 1. Monitor de frecuencias de VOZ HUMANA (300 Hz - 3,400 Hz) + duración sostenida + post-roll 8s
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     const ac = new AudioCtx();
     const src = ac.createMediaStreamSource(new MediaStream(audioTracks));
     const analyser = ac.createAnalyser();
     analyser.fftSize = 1024;
+    analyser.smoothingTimeConstant = 0.72;
     src.connect(analyser);
     liveCapture.audioCtx = ac;
     liveCapture.analyser = analyser;
-    liveCapture.baselineRms = 0.03;
-    liveCapture.peakFrames = 0;
+    liveCapture.baselineVoice = 18;
+    liveCapture.peakStartAt = 0;
     liveCapture.peakInWindow = 0;
 
-    const buf = new Uint8Array(analyser.fftSize);
+    const binHz = ac.sampleRate / analyser.fftSize;
+    const voiceLowBin = Math.max(1, Math.floor(300 / binHz));
+    const voiceHighBin = Math.min(analyser.frequencyBinCount - 1, Math.ceil(3400 / binHz));
+    const freqBuf = new Uint8Array(analyser.frequencyBinCount);
+
     const tickMeter = () => {
       if (!liveCapture.analyser || !liveCapture.stream) return;
-      analyser.getByteTimeDomainData(buf);
+      analyser.getByteFrequencyData(freqBuf);
       let sum = 0;
-      for (let i = 0; i < buf.length; i++) {
-        const v = (buf[i] - 128) / 128;
-        sum += v * v;
+      const count = Math.max(1, voiceHighBin - voiceLowBin + 1);
+      for (let i = voiceLowBin; i <= voiceHighBin; i++) {
+        sum += freqBuf[i];
       }
-      const rms = Math.sqrt(sum / buf.length);
-      liveCapture.baselineRms = liveCapture.baselineRms * 0.985 + rms * 0.015;
-      const ratio = rms / Math.max(0.015, liveCapture.baselineRms);
+      const voiceEnergy = sum / count; // 0..255 solo en banda de voz humana (ignora bajos de música/golpes)
+      liveCapture.baselineVoice = liveCapture.baselineVoice * 0.985 + Math.max(8, voiceEnergy) * 0.015;
+      const ratio = voiceEnergy / Math.max(12, liveCapture.baselineVoice);
       if (ratio > liveCapture.peakInWindow) liveCapture.peakInWindow = ratio;
 
-      const pct = Math.min(100, Math.round(rms * 360));
+      const pct = Math.min(100, Math.round((voiceEnergy / 135) * 100));
       if ($('liveAudioMeter')) $('liveAudioMeter').style.width = pct + '%';
 
       // Modo Solo Picos de Audio ($0) o respaldo si faltan claves IA
       const curMode = $('liveEpicMode')?.value || 'off';
       const hasAiStack = Boolean((state.ai.groqKey || '').trim() || hasProxy()) && Boolean((state.ai.apiKey || '').trim() || getYtGeminiKey() || hasProxy());
       if (curMode === 'audio' || (curMode === 'ai' && !hasAiStack)) {
-        if (rms > 0.08 && ratio > 2.05) {
-          liveCapture.peakFrames++;
-          if (liveCapture.peakFrames >= 12 && Date.now() - liveCapture.lastAutoCutAt > 25000) {
-            liveCapture.lastAutoCutAt = Date.now();
-            liveCapture.peakFrames = 0;
-            liveCutNow(Number($('liveSecs').value) || 45, true, {
-              emotion: 'feliz',
-              title: 'Pico de energía / risas / gritos en vivo',
-              reason: 'Subida brusca de volumen sostenida detectada automáticamente',
-              score: 88
-            });
+        const now = Date.now();
+        if (voiceEnergy > 42 && ratio > 1.85) {
+          if (!liveCapture.peakStartAt) liveCapture.peakStartAt = now;
+          // Exigir al menos 850 ms sostenidos en banda de voz (filtra toses, aplausos sueltos y golpes de micro)
+          if (now - liveCapture.peakStartAt >= 850 && !liveCapture.postRollTimer && now - liveCapture.lastAutoCutAt > 35000) {
+            liveCapture.peakStartAt = 0;
+            liveCapture.lastAutoCutAt = now;
+            if ($('liveRadarBadge')) { $('liveRadarBadge').textContent = '⏳ Post-roll 8s'; $('liveRadarBadge').className = 'badge amber'; }
+            if ($('liveRadarStatus')) $('liveRadarStatus').textContent = '🔥 Pico de voz sostenido detectado. Esperando 8 s para capturar la reacción completa...';
+            liveCapture.postRollTimer = setTimeout(() => {
+              liveCapture.postRollTimer = null;
+              if (!liveCapture.stream) return;
+              liveCutNow(Number($('liveSecs').value) || 45, true, {
+                emotion: 'feliz',
+                title: 'Reacción / risas / momento intenso en vivo',
+                reason: 'Pico sostenido en frecuencias de voz humana (+8 s de reacción completa)',
+                score: 88
+              });
+              if ($('liveRadarBadge')) { $('liveRadarBadge').textContent = '⚡ Radar Voz ($0)'; $('liveRadarBadge').className = 'badge green'; }
+              if ($('liveRadarStatus')) $('liveRadarStatus').textContent = '✅ Corte guardado con reacción completa. Siguiendo la escucha en banda de voz...';
+            }, 8000);
           }
-        } else {
-          liveCapture.peakFrames = Math.max(0, liveCapture.peakFrames - 1);
+        } else if (voiceEnergy < 34) {
+          liveCapture.peakStartAt = 0;
         }
       }
       liveCapture.meterRaf = requestAnimationFrame(tickMeter);
@@ -4841,13 +4963,13 @@ function startLiveEpicRadar() {
     console.warn('No se pudo iniciar el medidor de audio:', e);
   }
 
-  // 2. Escucha inteligente por ventanas con Groq Whisper + Gemini Flash-Lite
+  // 2. Escucha inteligente por ventanas con Memoria + Timestamps exactos + Palabras gatillo + Antiduplicados
   const canGroq = Boolean((state.ai.groqKey || '').trim() || hasProxy());
   const canLlm = Boolean((state.ai.apiKey || '').trim() || getYtGeminiKey() || hasProxy());
   if (mode === 'ai' && canGroq && canLlm) {
     const secInterval = Math.max(20, Number($('liveEpicInterval')?.value || 30));
     if ($('liveRadarBadge')) { $('liveRadarBadge').textContent = '🧠 Escuchando IA'; $('liveRadarBadge').className = 'badge green'; }
-    if ($('liveRadarStatus')) $('liveRadarStatus').textContent = `Analizando audio y emociones cada ${secInterval} s con Groq Whisper + IA...`;
+    if ($('liveRadarStatus')) $('liveRadarStatus').textContent = `Analizando voz y emociones cada ${secInterval} s (con memoria de contexto y recorte exacto)...`;
 
     const audioStream = new MediaStream(audioTracks);
     const audioMime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(m => {
@@ -4894,20 +5016,39 @@ function startLiveEpicRadar() {
         const wRes = await fetchWithBackoff(endpoint, { method: 'POST', headers, body: form }, 1);
         const wData = await wRes.json().catch(() => ({}));
         const transcript = String(wData.text || '').trim();
+        const rawSegs = Array.isArray(wData.segments) ? wData.segments : [];
+        const rawWords = Array.isArray(wData.words) ? wData.words : [];
 
         if (transcript.length < 15) {
           if ($('liveRadarStatus')) $('liveRadarStatus').textContent = 'Sin diálogo relevante en el último bloque. Siguiendo la escucha...';
           return;
         }
 
-        const energyDesc = peakRatio > 2.1 ? 'ALTA (posibles risas, gritos o discusión)' : peakRatio < 1.25 ? 'CALMA/SUAVE (posible reflexión o momento emotivo)' : 'NORMAL';
-        const prompt = `Analiza este fragmento recién dicho en un directo en vivo y decide si es un MOMENTO ÉPICO digno de cortar para TikTok/Shorts/Reels.
-Emociones buscadas: ${getSelectedEmotionsText()}.
-Energía del audio: ${energyDesc}.
-Transcripción: "${transcript.slice(0, 1800)}"
+        // Guardar memoria de contexto de los últimos ~20 s para el siguiente bloque
+        const prevContext = liveCapture.prevTranscript || '';
+        const tailSegs = rawSegs.filter(s => Number(s.end || 0) >= Math.max(0, secInterval - 20));
+        liveCapture.prevTranscript = (tailSegs.length ? tailSegs.map(s => String(s.text || '').trim()).join(' ') : transcript).slice(-450);
 
+        const segLines = rawSegs.length
+          ? rawSegs.map(s => `[${Number(s.start || 0).toFixed(1)}s-${Number(s.end || 0).toFixed(1)}s] ${String(s.text || '').trim()}`).join('\n')
+          : `[0.0s-${secInterval.toFixed(1)}s] ${transcript}`;
+
+        const matchedKws = findMatchedKeywords(transcript);
+        const userCtx = ($('liveEpicContext')?.value || '').trim();
+        const energyDesc = peakRatio > 1.9 ? 'ALTA en banda de voz (posibles risas, gritos o discusión)'
+          : peakRatio < 1.25 ? 'CALMA/SUAVE (posible reflexión o momento emotivo)'
+          : 'NORMAL';
+
+        const prompt = `Eres director de clips virales (TikTok/Shorts/Reels). Analiza este bloque recién dicho en un directo (duración ${secInterval}s) y decide si contiene un MOMENTO ÉPICO.
+${userCtx ? `Contexto del directo: ${userCtx}\n` : ''}Emociones buscadas: ${getSelectedEmotionsText()}.
+Energía de voz: ${energyDesc}.
+${matchedKws.length ? `Palabras gatillo detectadas (priorizar): ${matchedKws.join(', ')}\n` : ''}${prevContext ? `Contexto previo (solo referencia para entender chistes o discusiones; NO repitas ese bloque): "${prevContext}"\n` : ''}
+SEGMENTOS ACTUALES CON TIEMPO (0s a ${secInterval}s):
+${segLines.slice(0, 2600)}
+
+Si es épico, indica exactamente clipStart y clipEnd (en segundos dentro de 0 a ${secInterval}) abarcando el momento clave completo.
 Responde SOLO JSON válido:
-{"isEpic": true/false, "emotion": "risa|feliz|pelea|tristeza|reflexion", "score": 0-100, "title": "Título viral corto en español", "reason": "Por qué es épico en 1 frase"}`;
+{"isEpic": true/false, "emotion": "${EMOTION_KEYS_STR}", "score": 0-100, "clipStart": 0.0, "clipEnd": ${secInterval}, "title": "Título viral corto en español", "reason": "Por qué es épico en 1 frase"}`;
 
         const llmCfg = (state.ai.apiKey || '').trim() || hasProxy()
           ? null
@@ -4917,23 +5058,36 @@ Responde SOLO JSON válido:
         const m = cleaned.match(/\{[\s\S]*\}/);
         const parsed = JSON.parse(m ? m[0] : cleaned);
         const emo = normalizeEmotion(parsed.emotion);
-        const score = Number(parsed.score) || 0;
+        const baseScore = Number(parsed.score) || 0;
+        const score = Math.min(100, baseScore + (matchedKws.length ? 8 : 0));
+        const minScore = Number($('liveEpicMinScore')?.value || 75);
 
-        if (parsed.isEpic && score >= 70 && (!emo || selectedEmotions.has(emo))) {
+        // Cooldown inteligente antiduplicados: 45 s tras un corte, salvo que sea oro puro (score >= 90)
+        const sinceLast = Date.now() - liveCapture.lastAutoCutAt;
+        const blockedByCooldown = sinceLast < 45000 && score < 90;
+
+        if (parsed.isEpic && score >= minScore && (!emo || selectedEmotions.has(emo)) && !blockedByCooldown) {
           liveCapture.lastAutoCutAt = Date.now();
+          const cStart = isFinite(Number(parsed.clipStart)) ? Math.max(0, Number(parsed.clipStart) - 2) : 0;
+          const cEnd = isFinite(Number(parsed.clipEnd)) ? Math.min(secInterval, Number(parsed.clipEnd) + 3) : secInterval;
+          const exactRange = (cEnd - cStart >= 6) ? { relStart: cStart, relEnd: cEnd } : null;
+
           liveCutNow(Number($('liveSecs').value) || 60, true, {
             emotion: emo || 'feliz',
             title: String(parsed.title || 'Momento épico en vivo'),
-            reason: String(parsed.reason || transcript.slice(0, 90)),
+            reason: String(parsed.reason || transcript.slice(0, 90)) + (matchedKws.length ? ` · Gatillo: ${matchedKws.join(', ')}` : ''),
             score,
             transcript,
             windowSecs: secInterval,
-            rawSegments: Array.isArray(wData.segments) ? wData.segments : [],
-            rawWords: Array.isArray(wData.words) ? wData.words : []
+            exactRange,
+            rawSegments: rawSegs,
+            rawWords
           });
-          if ($('liveRadarStatus')) $('liveRadarStatus').textContent = `🔥 ¡Detectado [${emotionLabel(emo)}]: "${parsed.title}" (Score ${score})!`;
+          if ($('liveRadarStatus')) $('liveRadarStatus').textContent = `🔥 ¡Detectado [${emotionLabel(emo)}]: "${parsed.title}" (Score ${score}/${minScore})!`;
+        } else if (blockedByCooldown && parsed.isEpic && score >= minScore) {
+          if ($('liveRadarStatus')) $('liveRadarStatus').textContent = `⏳ Bloque épico (${score}) omitido por enfriamiento antiduplicados (${Math.ceil((45000 - sinceLast) / 1000)}s).`;
         } else {
-          if ($('liveRadarStatus')) $('liveRadarStatus').textContent = `Último bloque revisado (score ${score}/100, no superó umbral). Escuchando...`;
+          if ($('liveRadarStatus')) $('liveRadarStatus').textContent = `Último bloque revisado (score ${score}/${minScore}). Escuchando con memoria activa...`;
         }
       } catch (err) {
         console.warn('Radar IA en vivo:', err);
@@ -4950,11 +5104,11 @@ Responde SOLO JSON válido:
     startAudioChunk();
     liveCapture.epicTimer = setInterval(analyzeLiveWindow, secInterval * 1000);
   } else {
-    if ($('liveRadarBadge')) { $('liveRadarBadge').textContent = '⚡ Radar Audio ($0)'; $('liveRadarBadge').className = 'badge green'; }
+    if ($('liveRadarBadge')) { $('liveRadarBadge').textContent = '⚡ Radar Voz ($0)'; $('liveRadarBadge').className = 'badge green'; }
     if ($('liveRadarStatus')) {
       $('liveRadarStatus').textContent = mode === 'ai'
-        ? '⚡ Faltan tokens de Groq Whisper o Gemini: usando Radar por Picos de Audio ($0) para detectar risas, gritos y peleas.'
-        : '⚡ Radar de Picos de Audio activo ($0): guardará clips automáticamente cuando suba la energía del directo.';
+        ? '⚡ Faltan tokens de Groq Whisper o Gemini: usando Radar de Voz Humana ($0) con post-roll de 8 s.'
+        : '⚡ Radar de Voz Humana activo ($0): filtra música/ruido y espera 8 s tras cada pico para capturar la reacción completa.';
     }
   }
 }
@@ -4982,14 +5136,20 @@ function liveCutNow(secs, auto, epicMeta = null) {
   const r = liveCapture.recs[0]; // la que tiene más historial
   const dur = r.chunks.length; // 1 trozo = 1 segundo
   if (dur < 5) { if (!auto) showToast('Aún hay muy poco video capturado', 'warn'); return; }
-  const n = Math.min(secs || Number($('liveSecs').value) || 60, dur);
+  const defaultN = Math.min(secs || Number($('liveSecs').value) || 60, dur);
   const blob = new Blob(r.chunks, { type: (r.fmt.mime || 'video/webm').split(';')[0] });
   const timeTag = new Date().toLocaleTimeString();
   const name = epicMeta?.title ? epicMeta.title : `Directo ${timeTag}`;
-  const cutStart = Math.max(0, dur - n);
-  const cutEnd = dur;
-  const winSec = Number(epicMeta?.windowSecs) || n;
-  const chunkOffset = Math.max(cutStart, cutEnd - winSec);
+  const winSec = Number(epicMeta?.windowSecs) || defaultN;
+  const winOrigin = Math.max(0, dur - winSec);
+  let cutStart = Math.max(0, dur - defaultN);
+  let cutEnd = dur;
+  if (epicMeta?.exactRange && dur >= winSec) {
+    cutStart = Math.max(0, Math.min(dur - 4, winOrigin + epicMeta.exactRange.relStart));
+    cutEnd = Math.max(cutStart + 4, Math.min(dur, winOrigin + epicMeta.exactRange.relEnd));
+  }
+  const n = Math.max(1, Math.round(cutEnd - cutStart));
+  const chunkOffset = winOrigin;
   const mappedSegments = (epicMeta?.rawSegments || [])
     .map(seg => ({
       start: Math.max(cutStart, Number(seg.start || 0) + chunkOffset),
@@ -6520,7 +6680,7 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
     const offVideo = document.createElement('video');
     offVideo.playsInline = true;
     offVideo.preload = 'auto';
-    offVideo.style.cssText = 'position:fixed;bottom:0;right:0;width:160px;height:90px;opacity:0.001;pointer-events:none;z-index:-2;';
+    offVideo.style.cssText = 'position:fixed;bottom:0;right:0;width:320px;height:180px;opacity:0.001;pointer-events:none;z-index:-2;';
     document.body.appendChild(offVideo);
 
     const srcUrl = URL.createObjectURL(clipObj.blob);
@@ -6562,7 +6722,8 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       } catch (_) {}
 
       const formats = [
-        { mime: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', ext: 'mp4' },
+        { mime: 'video/mp4;codecs=avc1.4D4028,mp4a.40.2', ext: 'mp4' },
+        { mime: 'video/mp4;codecs=avc1.640028,mp4a.40.2', ext: 'mp4' },
         { mime: 'video/mp4', ext: 'mp4' },
         { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
         { mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
@@ -6576,7 +6737,7 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       const combined = new MediaStream(tracks);
       const rec = new MediaRecorder(
         combined,
-        chosen.mime ? { mimeType: chosen.mime, videoBitsPerSecond: 2600000 } : { videoBitsPerSecond: 2600000 }
+        chosen.mime ? { mimeType: chosen.mime, videoBitsPerSecond: 3800000 } : { videoBitsPerSecond: 3800000 }
       );
       const chunks = [];
       rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
@@ -6611,10 +6772,20 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
         requestAnimationFrame(drawLoop);
       };
 
-      offVideo.currentTime = startT;
+      // Esperar a que offVideo complete el salto (seeked) a un fotograma limpio antes de empezar a grabar
+      if (startT > 0.2) {
+        await new Promise(resolve => {
+          let done = false;
+          const fin = () => { if (!done) { done = true; resolve(); } };
+          offVideo.addEventListener('seeked', fin, { once: true });
+          try { offVideo.currentTime = startT; } catch (_) { fin(); }
+          setTimeout(fin, 1800);
+        });
+      }
       if (ac && ac.state === 'suspended') { await ac.resume().catch(() => {}); }
       await offVideo.play().catch(() => {});
       requestAnimationFrame(drawLoop);
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       rec.start(500);
 
       await new Promise(r => setTimeout(r, clipMs));
