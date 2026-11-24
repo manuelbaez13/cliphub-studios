@@ -1117,6 +1117,7 @@
 
   // ==================== PERSISTENCIA LOCAL (IndexedDB: último proyecto) ====================
   let pendingRestore = null;
+  let pendingWindow = null; // ventana inicio/fin a aplicar al cargar un corte de directo
   const ProjectDB = {
     open() {
       return new Promise((res, rej) => {
@@ -1954,6 +1955,13 @@
       handled = true;
       if (loadWatchdog) clearTimeout(loadWatchdog);
 
+      if (!isFinite(video.duration)) {
+        try {
+          video.currentTime = 1e101;
+          await new Promise(res => { const f = () => { video.removeEventListener('timeupdate', f); res(); }; video.addEventListener('timeupdate', f); setTimeout(res, 1500); });
+          video.currentTime = 0;
+        } catch (_) {}
+      }
       let detectedDur = video.duration;
       if (!isFinite(detectedDur) || detectedDur <= 0) {
         detectedDur = fallbackDuration;
@@ -1965,6 +1973,15 @@
       state.endTime = Math.min(state.duration, state.cutDuration);
       $('startInput').value = state.startTime.toFixed(1);
       $('endInput').value = state.endTime.toFixed(1);
+      const liveWin = pendingWindow;
+      pendingWindow = null;
+      if (liveWin) {
+        state.startTime = Math.max(0, Math.min(liveWin.start, state.duration - 1));
+        state.endTime = Math.min(state.duration, liveWin.end);
+        $('startInput').value = state.startTime.toFixed(1);
+        $('endInput').value = state.endTime.toFixed(1);
+        try { video.currentTime = state.startTime; } catch (_) {}
+      }
       $('seekBar').max = state.duration;
       $('seekBar').value = 0;
       updateCutRangeLabel();
@@ -1972,7 +1989,7 @@
 
       if (pendingRestore) {
         applyRestore();
-      } else if ($('autoAnalyzeCheck').checked) {
+      } else if ($('autoAnalyzeCheck').checked && !liveWin) {
         await runFullAnalysis();
       } else {
         setStep(1, 'done', 'Video cargado');
@@ -4046,9 +4063,24 @@ $('ytGeminiKeyInput').value = (state.ai.provider === 'gemini' && state.ai.apiKey
 $('ytAiCutsBtn').addEventListener('click', generateYtCuts);
 
 // ==================== CORTES DE DIRECTOS (captura de pestaña con búfer de 5 min) ====================
-const liveCapture = { stream: null, rec: null, chunks: [], timer: null, clips: [] };
-const LIVE_MAX_CHUNKS = 300;
+// Grabadoras solapadas: cada una guarda TODO lo que lleva grabado (archivo válido); una nueva empieza cada 3 min
+// y las viejas se detienen a los 6 min, así siempre hay al menos 3 min de historial sin recortar trozos.
+const liveCapture = { stream: null, recs: [], timer: null, rotTimer: null, clips: [] };
 
+function liveSpawnRecorder() {
+  const stream = liveCapture.stream;
+  if (!stream) return;
+  const mime = ['video/webm;codecs=vp8,opus', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m));
+  const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 2000000 } : {});
+  const r = { rec, chunks: [], t0: Date.now() };
+  rec.ondataavailable = e => { if (e.data && e.data.size) r.chunks.push(e.data); };
+  rec.start(1000);
+  liveCapture.recs.push(r);
+  liveCapture.recs = liveCapture.recs.filter(x => {
+    if (Date.now() - x.t0 > 360000 && liveCapture.recs.length > 1) { try { x.rec.stop(); } catch (_) {} return false; }
+    return true;
+  });
+}
 async function liveStart() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
     showToast('Tu navegador no permite capturar pestañas (usa Chrome o Edge de escritorio)', 'warn');
@@ -4057,20 +4089,14 @@ async function liveStart() {
   try {
     const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
     if (!stream.getAudioTracks().length) showToast('No se capturó audio: al elegir la pestaña marca "Compartir audio de la pestaña"', 'warn');
-    const mime = ['video/webm;codecs=vp8,opus', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m));
-    const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 2500000 } : {});
-    liveCapture.chunks = [];
-    rec.ondataavailable = e => {
-      if (!e.data || !e.data.size) return;
-      liveCapture.chunks.push(e.data);
-      if (liveCapture.chunks.length > LIVE_MAX_CHUNKS + 1) liveCapture.chunks.splice(1, 1); // conserva la cabecera (chunk 0)
-    };
-    rec.start(1000);
+    liveCapture.stream = stream;
+    liveCapture.recs = [];
     stream.getVideoTracks()[0].addEventListener('ended', liveStop);
-    Object.assign(liveCapture, { stream, rec });
+    liveSpawnRecorder();
+    liveCapture.rotTimer = setInterval(liveSpawnRecorder, 180000);
     $('liveStartBtn').style.display = 'none';
     $('liveStopBtn').style.display = 'inline-flex';
-    $('liveStatus').textContent = '🔴 Capturando. Guardo los últimos 5 minutos; pulsa "✂️ Sacar Corte del Directo" cuando pase algo.';
+    $('liveStatus').textContent = '🔴 Capturando. Cuando pase algo, pulsa "✂️ Sacar Corte del Directo" (hasta 3 min hacia atrás).';
     liveApplyAuto();
   } catch (err) {
     showToast('No se inició la captura: ' + (err.message || err), 'warn');
@@ -4078,9 +4104,10 @@ async function liveStart() {
 }
 function liveStop() {
   clearInterval(liveCapture.timer);
-  try { if (liveCapture.rec && liveCapture.rec.state !== 'inactive') liveCapture.rec.stop(); } catch (_) {}
-  if (liveCapture.stream) liveCapture.stream.getTracks().forEach(t => t.stop());
-  Object.assign(liveCapture, { stream: null, rec: null, chunks: [], timer: null });
+  clearInterval(liveCapture.rotTimer);
+  liveCapture.recs.forEach(x => { try { if (x.rec.state !== 'inactive') x.rec.stop(); } catch (_) {} });
+  if (liveCapture.stream) liveCapture.stream.getTracks().forEach(tr => tr.stop());
+  Object.assign(liveCapture, { stream: null, recs: [], timer: null, rotTimer: null });
   $('liveStartBtn').style.display = 'inline-flex';
   $('liveStopBtn').style.display = 'none';
   $('liveStatus').textContent = 'Captura detenida.';
@@ -4088,29 +4115,35 @@ function liveStop() {
 function liveApplyAuto() {
   clearInterval(liveCapture.timer);
   const v = Number($('liveAuto').value) || 0;
-  if (liveCapture.rec && v) liveCapture.timer = setInterval(() => liveCutNow(v, true), v * 1000);
+  if (liveCapture.stream && v) liveCapture.timer = setInterval(() => liveCutNow(Math.min(v, 180), true), v * 1000);
 }
 function liveCutNow(secs, auto) {
-  if (!liveCapture.rec) { showToast('Primero pulsa "Capturar directo / pestaña"', 'warn'); return; }
+  if (!liveCapture.stream || !liveCapture.recs.length) { showToast('Primero pulsa "Capturar directo / pestaña"', 'warn'); return; }
   if (!getCreator()) { showToast('Elige el creador autorizado antes de cortar', 'warn'); return; }
-  const n = secs || Number($('liveSecs').value) || 60;
-  const tail = liveCapture.chunks.slice(1).slice(-n);
-  if (tail.length < 3) { showToast('Aún hay muy poco video capturado', 'warn'); return; }
-  const blob = new Blob([liveCapture.chunks[0], ...tail], { type: 'video/webm' });
+  const r = liveCapture.recs[0]; // la que tiene más historial
+  const dur = r.chunks.length; // 1 trozo = 1 segundo
+  if (dur < 5) { showToast('Aún hay muy poco video capturado', 'warn'); return; }
+  const n = Math.min(secs || Number($('liveSecs').value) || 60, dur);
+  const blob = new Blob(r.chunks, { type: 'video/webm' });
   const name = `Directo ${new Date().toLocaleTimeString()}`;
-  liveCapture.clips.unshift({ name, blob, secs: tail.length, creator: getCreator(), src: $('ytUrlInput').value.trim() });
-  liveCapture.clips = liveCapture.clips.slice(0, 10);
+  liveCapture.clips.unshift({ name, blob, dur, start: Math.max(0, dur - n), end: dur, n, creator: getCreator(), src: $('ytUrlInput').value.trim() });
+  liveCapture.clips = liveCapture.clips.slice(0, 6);
   const box = $('liveClips');
   box.textContent = '';
   liveCapture.clips.forEach(c => {
     const row = document.createElement('div');
     row.className = 'row'; row.style.alignItems = 'center';
     const lbl = document.createElement('span');
-    lbl.textContent = `🎬 ${c.name} (${c.secs} s, ${(c.blob.size / 1048576).toFixed(1)} MB)`;
+    lbl.textContent = `🎬 ${c.name} · corte de ${c.n} s (${(c.blob.size / 1048576).toFixed(1)} MB en memoria)`;
     row.append(
       lbl,
-      mkBtn('Cargar en el editor', () => { state.videoBlob = c.blob; loadVideoSrc(URL.createObjectURL(c.blob), c.name, c.secs); state.sourceCredit = creatorCredit(c.creator, c.src || (c.creator && c.creator.url) || ''); }),
-      mkBtn('Descargar', () => {
+      mkBtn('Cargar en el editor', () => {
+        pendingWindow = { start: c.start, end: c.end };
+        state.videoBlob = c.blob;
+        loadVideoSrc(URL.createObjectURL(c.blob), c.name, c.dur);
+        state.sourceCredit = creatorCredit(c.creator, c.src || (c.creator && c.creator.url) || '');
+      }),
+      mkBtn(`Descargar grabación completa (${c.dur} s)`, () => {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(c.blob); a.download = `${c.name.replace(/[^\w-]+/g, '_')}.webm`;
         a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -4118,7 +4151,7 @@ function liveCutNow(secs, auto) {
     );
     box.appendChild(row);
   });
-  showToast(auto ? `Corte automático de ${tail.length} s guardado` : `Corte de ${tail.length} s listo`, 'ok');
+  showToast(auto ? `Corte automático de ${n} s guardado` : `Corte de ${n} s listo`, 'ok');
 }
 $('liveStartBtn').addEventListener('click', liveStart);
 $('liveStopBtn').addEventListener('click', liveStop);
