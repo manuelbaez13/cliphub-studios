@@ -408,6 +408,8 @@
           <select id="liveSecs"><option value="30">30 s</option><option value="60" selected>60 s</option><option value="90">90 s</option><option value="180">3 min</option></select>
           <label class="muted">Auto:</label>
           <select id="liveAuto"><option value="0">Desactivado</option><option value="60">Cada 60 s</option><option value="120">Cada 2 min</option><option value="300">Cada 5 min</option></select>
+          <label class="muted">Formato:</label>
+          <select id="liveFormat"></select>
           <button type="button" class="btn" id="liveStopBtn" style="display:none;">⏹ Detener captura</button>
         </div>
         <div class="muted" id="liveStatus" style="margin-top:6px;">Para cortar un directo: pulsa "Capturar", elige la pestaña donde se ve el directo y marca "Compartir audio de la pestaña". Luego usa "✂️ Sacar Corte del Directo".</div>
@@ -2000,7 +2002,8 @@
     video.onerror = () => {
       if (loadWatchdog) clearTimeout(loadWatchdog);
       setStep(1, 'err', 'Formato no compatible');
-      $('pipelineMsg').textContent = '⚠️ No se pudo decodificar este archivo. Prueba con MP4 (H.264) o WebM.';
+      const ve = video.error;
+      $('pipelineMsg').textContent = `⚠️ No se pudo decodificar este archivo (código ${ve ? ve.code : '?'}${ve && ve.message ? ': ' + ve.message : ''}). Si es un corte de directo, cambia el "Formato" de captura (prueba MP4 o WebM VP9) y vuelve a capturar.`;
       showToast('Error al leer el archivo de video. Usa MP4 o WebM.', 'warn');
     };
     video.onloadedmetadata = () => {
@@ -4067,12 +4070,25 @@ $('ytAiCutsBtn').addEventListener('click', generateYtCuts);
 // y las viejas se detienen a los 6 min, así siempre hay al menos 3 min de historial sin recortar trozos.
 const liveCapture = { stream: null, recs: [], timer: null, rotTimer: null, clips: [] };
 
+const LIVE_FORMATS = [
+  { id: 'mp4', label: 'MP4 (H.264)', mime: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', ext: 'mp4' },
+  { id: 'mp4b', label: 'MP4 (genérico)', mime: 'video/mp4', ext: 'mp4' },
+  { id: 'vp9', label: 'WebM VP9', mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
+  { id: 'vp8', label: 'WebM VP8', mime: 'video/webm;codecs=vp8,opus', ext: 'webm' }
+].filter(f => { try { return MediaRecorder.isTypeSupported(f.mime); } catch (_) { return false; } });
+if (!LIVE_FORMATS.length) LIVE_FORMATS.push({ id: 'auto', label: 'Automático', mime: '', ext: 'webm' });
+LIVE_FORMATS.forEach(f => {
+  const o = document.createElement('option');
+  o.value = f.id; o.textContent = f.label;
+  $('liveFormat').appendChild(o);
+});
+
 function liveSpawnRecorder() {
   const stream = liveCapture.stream;
   if (!stream) return;
-  const mime = ['video/webm;codecs=vp8,opus', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m));
-  const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 2000000 } : {});
-  const r = { rec, chunks: [], t0: Date.now() };
+  const fmt = LIVE_FORMATS.find(f => f.id === $('liveFormat').value) || LIVE_FORMATS[0];
+  const rec = new MediaRecorder(stream, fmt.mime ? { mimeType: fmt.mime, videoBitsPerSecond: 2000000 } : {});
+  const r = { rec, chunks: [], t0: Date.now(), fmt };
   rec.ondataavailable = e => { if (e.data && e.data.size) r.chunks.push(e.data); };
   rec.start(1000);
   liveCapture.recs.push(r);
@@ -4124,9 +4140,9 @@ function liveCutNow(secs, auto) {
   const dur = r.chunks.length; // 1 trozo = 1 segundo
   if (dur < 5) { showToast('Aún hay muy poco video capturado', 'warn'); return; }
   const n = Math.min(secs || Number($('liveSecs').value) || 60, dur);
-  const blob = new Blob(r.chunks, { type: 'video/webm' });
+  const blob = new Blob(r.chunks, { type: (r.fmt.mime || 'video/webm').split(';')[0] });
   const name = `Directo ${new Date().toLocaleTimeString()}`;
-  liveCapture.clips.unshift({ name, blob, dur, start: Math.max(0, dur - n), end: dur, n, creator: getCreator(), src: $('ytUrlInput').value.trim() });
+  liveCapture.clips.unshift({ ext: r.fmt.ext, name, blob, dur, start: Math.max(0, dur - n), end: dur, n, creator: getCreator(), src: $('ytUrlInput').value.trim() });
   liveCapture.clips = liveCapture.clips.slice(0, 6);
   const box = $('liveClips');
   box.textContent = '';
@@ -4145,7 +4161,7 @@ function liveCutNow(secs, auto) {
       }),
       mkBtn(`Descargar grabación completa (${c.dur} s)`, () => {
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(c.blob); a.download = `${c.name.replace(/[^\w-]+/g, '_')}.webm`;
+        a.href = URL.createObjectURL(c.blob); a.download = `${c.name.replace(/[^\w-]+/g, '_')}.${c.ext}`;
         a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
       })
     );
