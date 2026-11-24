@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
   <title>ClipHub Studio Pro — Cortes IA, Editor, Miniaturas IA y Redes</title>
   <style>
     :root {
@@ -321,6 +322,182 @@
       position: fixed; bottom: 0; right: 0; width: 320px; height: 180px;
       opacity: 0.001; pointer-events: none; z-index: -1;
     }
+  
+    /* ==================== REDISEÑO UX ESTUDIO DE CORTES ==================== */
+    .ux-hidden { display: none !important; }
+
+    /* Estado A: Pantalla de entrada limpia */
+    .ux-empty-wrap {
+      max-width: 760px;
+      margin: 28px auto 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .ux-empty-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+    }
+    .ux-empty-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .ux-dropzone {
+      margin: 20px 0 16px;
+      padding: 38px 20px;
+      border: 2px dashed #33486e;
+      border-radius: 16px;
+      background: rgba(10, 16, 32, 0.72);
+      cursor: pointer;
+      transition: .2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .ux-dropzone:hover, .ux-dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.08);
+      transform: translateY(-1px);
+    }
+    .ux-drop-ico {
+      width: 52px; height: 52px; border-radius: 14px;
+      display: grid; place-items: center; font-size: 1.5rem;
+      background: linear-gradient(135deg, rgba(14,165,233,.2), rgba(99,102,241,.2));
+      border: 1px solid rgba(56,189,248,.35);
+    }
+    .ux-empty-actions {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 14px;
+    }
+
+    /* Barra compacta de APIs (BYOK siempre visible pero sin saturar) */
+    .api-bar.ux-compact {
+      margin-top: 0;
+      margin-bottom: 14px;
+      padding: 8px 12px;
+      background: rgba(11, 18, 36, 0.85);
+    }
+
+    /* Barra superior del Espacio de Trabajo (Estado B) */
+    .ux-ws-toolbar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 14px; padding: 10px 14px; margin-bottom: 14px;
+    }
+
+    /* Pipeline plegable (solo se despliega cuando está analizando o hay aviso) */
+    .ux-pipeline-drawer {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 14px; padding: 12px 14px; margin-bottom: 14px;
+    }
+    .ux-pipeline-drawer .pipeline { margin: 8px 0 6px; }
+
+    /* Cuadrícula de 3 columnas del Workspace */
+    .ux-workspace-grid {
+      display: grid;
+      grid-template-columns: 280px minmax(340px, 1fr) 340px;
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 1140px) {
+      .ux-workspace-grid { grid-template-columns: 260px 1fr; }
+      .ux-col-inspector { grid-column: 1 / -1; }
+    }
+    @media (max-width: 820px) {
+      .ux-workspace-grid { grid-template-columns: 1fr; }
+    }
+
+    .ux-col-card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 16px; padding: 14px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .ux-cuts-scroll {
+      max-height: 540px; overflow-y: auto; padding-right: 4px;
+    }
+
+    /* Pestañas del Inspector derecho (Subtítulos / PNG / Tiempos) */
+    .ux-insp-tabs {
+      display: flex; gap: 5px;
+      background: #080e1c; padding: 4px; border-radius: 11px; border: 1px solid var(--border);
+    }
+    .ux-insp-tab {
+      flex: 1; background: transparent; border: none; color: var(--muted);
+      padding: 7px 8px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.8rem; transition: .18s;
+    }
+    .ux-insp-tab.active {
+      background: #162544; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .ux-insp-pane { display: none; }
+    .ux-insp-pane.active { display: block; }
+
+    /* Fotogramas en acordeón discreto debajo del monitor */
+    .ux-frames-details {
+      background: #091020; border: 1px solid var(--border);
+      border-radius: 12px; padding: 8px 12px;
+    }
+    .ux-frames-details summary {
+      cursor: pointer; font-size: 0.82rem; font-weight: 700; color: var(--muted); user-select: none;
+    }
+    .ux-frames-details[open] summary { color: var(--text); margin-bottom: 8px; }
+
+    /* ==================== REDISEÑO UX EDITOR Y REDES ==================== */
+    .ux-editor-layout {
+      display: grid;
+      grid-template-columns: minmax(340px, 1fr) 390px;
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 980px) {
+      .ux-editor-layout { grid-template-columns: 1fr; }
+    }
+
+    .ux-ed-pane { display: none; }
+    .ux-ed-pane.active { display: block; }
+
+    /* Redes & Calendario: barra compacta de cuentas + 2 columnas */
+    .ux-accounts-details {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+    .ux-accounts-summary {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+      cursor: pointer; list-style: none; user-select: none;
+    }
+    .ux-accounts-summary::-webkit-details-marker { display: none; }
+    .ux-accounts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .ux-accounts-grid .social-card {
+      padding: 11px 12px;
+      gap: 8px;
+    }
+
+    .ux-social-workspace {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .ux-social-workspace { grid-template-columns: 1fr; }
+    }
+    .ux-sched-scroll {
+      max-height: 470px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
   </style>
 </head>
 <body>
@@ -346,172 +523,207 @@
 <video id="sourceVideo" playsinline preload="auto"></video>
 
 <main>
-  <!-- ==================== TAB 1: ESTUDIO DE CORTES ==================== -->
+  <!-- ==================== TAB 1: ESTUDIO DE CORTES (UX SIMPLIFICADA) ==================== -->
   <section id="tab-studio" class="view active">
-    <div class="card">
-      <div class="row" style="justify-content: space-between;">
-        <div class="row">
-          <label class="btn btn-primary" style="margin:0; cursor:pointer;">
-            📁 Subir Video
-            <input type="file" id="videoInput" accept="video/*" hidden />
-          </label>
-          <button type="button" class="btn" id="loadDemoBtn">✨ Cargar Video Demo</button>
-          <button type="button" class="btn btn-green" id="analyzeBtn">🚀 Auto-Analizar Todo (IA)</button>
-        <button type="button" class="btn btn-danger" id="cancelBtn" style="display:none;">⏹ Cancelar análisis</button>
-        <button type="button" class="btn" id="restoreBtn" style="display:none;" title="Recupera el video, cortes y transcripción de tu última sesión">♻️ Restaurar último proyecto</button>
+    <!-- Input oculto reutilizado por la Dropzone y el botón "+ Nuevo Video" -->
+    <input type="file" id="videoInput" accept="video/*" hidden />
+
+    <!-- Barra compacta de conexión manual BYOK -->
+    <div class="api-bar ux-compact" id="manualApiBar">
+      <div class="row" style="gap:8px;">
+        <span style="font-size:0.8rem; font-weight:700; color:#cbd5e1;">🔑 IAs:</span>
+        <button type="button" class="api-pill" id="pillGroq">🎙️ Groq Whisper: Sin conectar</button>
+        <button type="button" class="api-pill" id="pillLlm">✂️ Gemini / LLM: Sin conectar</button>
+        <button type="button" class="api-pill ok" id="pillThumb">🖼️ Miniaturas: Canvas ($0)</button>
+      </div>
+      <button type="button" class="btn btn-sm" id="openManualApiBtn">⚙️ Tokens IA</button>
+    </div>
+
+    <!-- ESTADO A: PANTALLA DE ENTRADA LIMPIA (cuando aún no hay video cargado) -->
+    <div id="studioEmptyState" class="ux-empty-wrap">
+      <div class="ux-empty-card">
+        <div class="ux-empty-title">Convierte videos largos en clips virales</div>
+        <div class="muted">Sube un archivo, prueba el demo o captura un directo de YouTube.</div>
+
+        <div class="ux-dropzone" id="studioDropZone">
+          <div class="ux-drop-ico">📁</div>
+          <div style="font-weight:700; font-size:1rem;">Arrastra tu video aquí o haz clic para seleccionarlo</div>
+          <div class="muted">MP4, WebM o MOV • Procesamiento local + subtítulos IA</div>
+          <span class="btn btn-primary" style="margin-top:4px;">Seleccionar Video</span>
+        </div>
+
+        <div class="row" style="justify-content:center; margin-bottom:6px;">
           <label style="display:flex; align-items:center; gap:6px; margin:0; cursor:pointer;">
             <input type="checkbox" id="autoAnalyzeCheck" checked style="width:auto;" />
-            Auto al subir
+            Auto-analizar y detectar cortes al subir
           </label>
         </div>
-        <button type="button" class="btn" id="toggleYtBtn">🔴 YouTube / En Directo</button>
-      </div>
 
-      <!-- Selector de duración en segundos para los cortes -->
-      <div class="dur-bar">
-        <span style="font-size:0.82rem; font-weight:700; color:#e2e8f0;">⏱️ Segundos por corte:</span>
-        <button type="button" class="dur-pill" data-dur="10">10s</button>
-        <button type="button" class="dur-pill active" data-dur="15">15s</button>
-        <button type="button" class="dur-pill" data-dur="30">30s</button>
-        <button type="button" class="dur-pill" data-dur="45">45s</button>
-        <button type="button" class="dur-pill" data-dur="60">60s</button>
-        <div class="row" style="gap:6px; flex-wrap:nowrap;">
-          <input type="number" id="cutDurationInput" value="15" min="3" max="300" step="1" style="width:78px; padding:6px 8px;" title="Segundos personalizados por corte" />
-          <button type="button" class="btn btn-sm btn-primary" id="applyCutDurationBtn">Aplicar seg</button>
-          <button type="button" class="btn btn-sm btn-amber" id="addManualCutBtn">➕ Crear Corte Aquí</button>
+        <div class="ux-empty-actions">
+          <button type="button" class="btn" id="loadDemoBtn">✨ Probar con Video Demo</button>
+          <button type="button" class="btn" id="emptyOpenYtBtn">🔴 YouTube / En Directo</button>
+          <button type="button" class="btn" id="restoreBtn" style="display:none;" title="Recupera el video, cortes y transcripción de tu última sesión">♻️ Restaurar último proyecto</button>
         </div>
-      </div>
-
-      <!-- Panel YouTube Directo -->
-      <div id="ytPanel" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
-        <div class="row">
-          <input type="url" id="ytUrlInput" placeholder="Pega el enlace de YouTube o directo (ej. https://www.youtube.com/watch?v=...)" style="flex:1; min-width:240px;" />
-          <button type="button" class="btn btn-primary" id="loadYtEmbedBtn">Cargar Video/Directo</button>
-          <button type="button" class="btn btn-amber" id="ytQuickCutBtn">✂️ Sacar Corte del Directo</button>
-        </div>
-        <div class="row" style="margin-top:10px; align-items:center;">
-          <label class="muted">Creador autorizado:</label>
-          <select id="ytCreatorSelect"><option value="">— elige un creador —</option></select>
-          <button type="button" class="btn btn-sm" id="creatorDelBtn" title="Quitar de la lista">🗑</button>
-          <input type="text" id="creatorNameInput" placeholder="Nombre del creador" style="min-width:150px;" />
-          <input type="text" id="creatorUrlInput" placeholder="Enlace a su canal" style="min-width:170px;" />
-          <button type="button" class="btn btn-sm" id="creatorAddBtn">➕ Añadir</button>
-        </div>
-        <div class="row" style="margin-top:10px;">
-          <input type="password" id="ytGeminiKeyInput" placeholder="Clave de Gemini (AIza...) para analizar enlaces" autocomplete="off" style="flex:1; min-width:200px;" />
-          <button type="button" class="btn btn-green" id="ytAiCutsBtn">✨ Generar cortes del enlace con IA (sin descargar)</button>
-        </div>
-        <div class="row" style="margin-top:8px; align-items:center;">
-          <label class="muted">Analizar solo (opcional): desde el minuto</label>
-          <input type="number" id="ytFromMin" min="0" placeholder="0" style="width:80px;" />
-          <label class="muted">hasta el minuto</label>
-          <input type="number" id="ytToMin" min="1" placeholder="fin" style="width:80px;" />
-        </div>
-        <div id="ytCutsList" style="margin-top:10px; display:grid; gap:8px;"></div>
-        <div class="row" style="margin-top:8px; align-items:center;">
-          <label class="muted">Grabar en:</label>
-          <select id="ytRecMode"><option value="popup">Ventana nueva (mejor calidad)</option><option value="page">Esta página</option></select>
-          <span id="ytRecStatus" class="muted"></span>
-          <button type="button" class="btn" id="ytRecStopBtn" style="display:none;">⏹ Detener grabación</button>
-        </div>
-        <div id="ytClipFiles" style="margin-top:8px; display:grid; gap:6px;"></div>
-        <div class="row" style="margin-top:14px; align-items:center;">
-          <button type="button" class="btn btn-danger" id="liveHereBtn">🔴 Capturar el directo del enlace (sin otra ventana)</button>
-          <button type="button" class="btn" id="liveStartBtn">Capturar otra pestaña/ventana</button>
-          <label class="muted">Cortar últimos</label>
-          <select id="liveSecs"><option value="30">30 s</option><option value="60" selected>60 s</option><option value="90">90 s</option><option value="180">3 min</option></select>
-          <label class="muted">Auto:</label>
-          <select id="liveAuto"><option value="0">Desactivado</option><option value="60">Cada 60 s</option><option value="120">Cada 2 min</option><option value="300">Cada 5 min</option></select>
-          <label class="muted">Formato:</label>
-          <select id="liveFormat"></select>
-          <button type="button" class="btn" id="liveStopBtn" style="display:none;">⏹ Detener captura</button>
-        </div>
-        <div class="muted" id="liveStatus" style="margin-top:6px;">Para cortar un directo: pega el enlace arriba, pulsa "Capturar el directo del enlace" y en el aviso del navegador elige "Esta pestaña" marcando "Compartir audio". Luego usa "✂️ Sacar Corte del Directo".</div>
-        <div id="liveClips" style="margin-top:8px; display:grid; gap:6px;"></div>
-        <div id="ytEmbedWrap" style="margin-top:10px; display:none;">
-          <iframe id="ytIframe" width="100%" height="260" style="border-radius:12px; border:1px solid var(--border);" allowfullscreen></iframe>
-        </div>
-      </div>
-
-      <!-- Barra visible de conexión manual de APIs IA -->
-      <div class="api-bar" id="manualApiBar">
-        <div class="row" style="gap:8px;">
-          <span style="font-size:0.82rem; font-weight:700; color:#e2e8f0;">🔑 Conexión Manual de IAs:</span>
-          <button type="button" class="api-pill" id="pillGroq">🎙️ Groq Whisper: Sin conectar</button>
-          <button type="button" class="api-pill" id="pillLlm">✂️ Gemini / LLM: Sin conectar</button>
-          <button type="button" class="api-pill ok" id="pillThumb">🖼️ Miniaturas: Canvas ($0)</button>
-        </div>
-        <button type="button" class="btn btn-sm btn-primary" id="openManualApiBtn">⚙️ Conectar Tokens IA</button>
-      </div>
-
-      <!-- Pipeline 4 pasos optimizados -->
-      <div class="pipeline">
-        <div class="pipe-step" id="pStep1"><div class="pipe-ico">1</div><div><strong>Fotogramas</strong><div class="muted" id="pSub1">Esperando video</div></div></div>
-        <div class="pipe-step" id="pStep3"><div class="pipe-ico">2</div><div><strong>Audio + Whisper</strong><div class="muted" id="pSub3">En cola</div></div></div>
-        <div class="pipe-step" id="pStep2"><div class="pipe-ico">3</div><div><strong>Cortes (Flash-Lite)</strong><div class="muted" id="pSub2">En cola</div></div></div>
-        <div class="pipe-step" id="pStep4"><div class="pipe-ico">4</div><div><strong>Miniaturas Pro</strong><div class="muted" id="pSub4">En cola</div></div></div>
-      </div>
-      <div class="muted" id="pipelineMsg">Sube un video o pulsa "✨ Cargar Video Demo" para extraer fotogramas, transcribir audio, detectar cortes virales y crear miniaturas.</div>
-
-      <div class="frames-strip" id="framesStrip">
-        <div class="frame-box"></div><div class="frame-box"></div><div class="frame-box"></div><div class="frame-box"></div><div class="frame-box"></div>
       </div>
     </div>
 
-    <div class="grid-2">
-      <!-- Reproductor en vivo con subtítulos + PNG -->
-      <div class="card">
-        <h2>📱 Vista Previa en Vivo (Subtítulos + PNG)</h2>
-        <div class="stage-wrap">
-          <canvas id="previewCanvas" width="540" height="960"></canvas>
-          <div class="row" style="width:100%; justify-content:center;">
-            <button type="button" class="btn btn-primary btn-sm" id="playPauseBtn">▶ Reproducir</button>
-            <button type="button" class="btn btn-sm" id="loopCutBtn" style="border-color: var(--green);">🔁 Loop Corte</button>
-            <select id="aspectSelect" style="width:auto; padding:6px 8px;">
-              <option value="9:16">9:16 Vertical</option>
-              <option value="16:9">16:9 Horizontal</option>
-              <option value="1:1">1:1 Cuadrado</option>
-            </select>
-          </div>
-          <input type="range" id="seekBar" min="0" max="100" value="0" step="0.1" />
-          <div class="row" style="width:100%; justify-content:space-between; font-size:.78rem; color:var(--muted);">
-            <span id="timeNow">00:00.0</span>
-            <span id="cutRangeLabel">Corte: 00:00.0 - 00:15.0</span>
-            <span id="timeTotal">00:00.0</span>
-          </div>
-          <div class="row" style="width:100%;">
-            <button type="button" class="btn btn-green" id="exportClipBtn" style="flex:1; justify-content:center;">⬇️ Visualizar y Descargar</button>
-            <button type="button" class="btn btn-amber" id="sendCutToSchedBtn" style="flex:1; justify-content:center;">📅 Programar Corte</button>
-          </div>
-          <button type="button" class="btn btn-sm" id="openEditorFromStudioBtn" style="width:100%; justify-content:center;">🎬 Abrir en Editor de Video Avanzado</button>
+    <!-- PANEL YOUTUBE / EN DIRECTO (desplegable desde ambos estados sin duplicar IDs) -->
+    <div class="card" id="ytPanel" style="display:none;">
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <h2 style="margin:0;">🔴 YouTube y Captura de Directos</h2>
+        <button type="button" class="btn btn-sm" id="closeYtPanelBtn">✕ Ocultar</button>
+      </div>
+      <div class="row">
+        <input type="url" id="ytUrlInput" placeholder="Pega el enlace de YouTube o directo (ej. https://www.youtube.com/watch?v=...)" style="flex:1; min-width:240px;" />
+        <button type="button" class="btn btn-primary" id="loadYtEmbedBtn">Cargar Video/Directo</button>
+        <button type="button" class="btn btn-amber" id="ytQuickCutBtn">✂️ Sacar Corte del Directo</button>
+      </div>
+      <div class="row" style="margin-top:10px; align-items:center;">
+        <label class="muted" style="margin:0;">Creador autorizado:</label>
+        <select id="ytCreatorSelect" style="width:auto; min-width:170px;"><option value="">— elige un creador —</option></select>
+        <button type="button" class="btn btn-sm" id="creatorDelBtn" title="Quitar de la lista">🗑</button>
+        <input type="text" id="creatorNameInput" placeholder="Nombre del creador" style="flex:1; min-width:140px;" />
+        <input type="text" id="creatorUrlInput" placeholder="Enlace a su canal" style="flex:1; min-width:160px;" />
+        <button type="button" class="btn btn-sm" id="creatorAddBtn">➕ Añadir</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <input type="password" id="ytGeminiKeyInput" placeholder="Clave de Gemini (AIza...) para analizar enlaces" autocomplete="off" style="flex:1; min-width:200px;" />
+        <button type="button" class="btn btn-green" id="ytAiCutsBtn">✨ Generar cortes del enlace con IA (sin descargar)</button>
+      </div>
+      <div class="row" style="margin-top:8px; align-items:center;">
+        <label class="muted" style="margin:0;">Analizar solo (opcional): desde min</label>
+        <input type="number" id="ytFromMin" min="0" placeholder="0" style="width:78px;" />
+        <label class="muted" style="margin:0;">hasta min</label>
+        <input type="number" id="ytToMin" min="1" placeholder="fin" style="width:78px;" />
+      </div>
+      <div id="ytCutsList" style="margin-top:10px; display:grid; gap:8px;"></div>
+      <div class="row" style="margin-top:8px; align-items:center;">
+        <label class="muted" style="margin:0;">Grabar en:</label>
+        <select id="ytRecMode" style="width:auto;"><option value="popup">Ventana nueva (mejor calidad)</option><option value="page">Esta página</option></select>
+        <span id="ytRecStatus" class="muted"></span>
+        <button type="button" class="btn" id="ytRecStopBtn" style="display:none;">⏹ Detener grabación</button>
+      </div>
+      <div id="ytClipFiles" style="margin-top:8px; display:grid; gap:6px;"></div>
+      <div class="row" style="margin-top:12px; align-items:center;">
+        <button type="button" class="btn btn-danger" id="liveHereBtn">🔴 Capturar directo del enlace</button>
+        <button type="button" class="btn" id="liveStartBtn">Capturar otra pestaña</button>
+        <label class="muted" style="margin:0;">Últimos</label>
+        <select id="liveSecs" style="width:auto;"><option value="30">30 s</option><option value="60" selected>60 s</option><option value="90">90 s</option><option value="180">3 min</option></select>
+        <label class="muted" style="margin:0;">Auto:</label>
+        <select id="liveAuto" style="width:auto;"><option value="0">Desactivado</option><option value="60">Cada 60 s</option><option value="120">Cada 2 min</option><option value="300">Cada 5 min</option></select>
+        <label class="muted" style="margin:0;">Formato:</label>
+        <select id="liveFormat" style="width:auto;"></select>
+        <button type="button" class="btn" id="liveStopBtn" style="display:none;">⏹ Detener captura</button>
+      </div>
+      <details style="margin-top:8px;">
+        <summary class="muted" style="cursor:pointer;">¿Cómo capturar un directo?</summary>
+        <div class="muted" id="liveStatus" style="margin-top:6px;">Pega el enlace arriba, pulsa "Capturar directo del enlace" y en el aviso del navegador elige "Esta pestaña" marcando "Compartir audio". Luego usa "✂️ Sacar Corte del Directo".</div>
+      </details>
+      <div id="liveClips" style="margin-top:8px; display:grid; gap:6px;"></div>
+      <div id="ytEmbedWrap" style="margin-top:10px; display:none;">
+        <iframe id="ytIframe" width="100%" height="260" style="border-radius:12px; border:1px solid var(--border);" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+      </div>
+    </div>
+
+    <!-- ESTADO B: ESPACIO DE TRABAJO EN 3 COLUMNAS (visible al cargar video) -->
+    <div id="studioWorkspace" class="ux-hidden">
+      <!-- Barra superior compacta de acciones -->
+      <div class="ux-ws-toolbar">
+        <div class="row">
+          <button type="button" class="btn btn-sm" id="wsUploadNewBtn">📁 Nuevo Video</button>
+          <button type="button" class="btn btn-sm btn-green" id="analyzeBtn">🚀 Auto-Analizar IA</button>
+          <button type="button" class="btn btn-sm btn-danger" id="cancelBtn" style="display:none;">⏹ Cancelar</button>
+          <button type="button" class="btn btn-sm" id="toggleYtBtn">🔴 YouTube / Directo</button>
+        </div>
+        <div class="row">
+          <label class="muted" style="margin:0;">Duración:</label>
+          <select id="quickDurSelect" style="width:auto; padding:6px 10px;">
+            <option value="10">10s</option>
+            <option value="15" selected>15s</option>
+            <option value="30">30s</option>
+            <option value="45">45s</option>
+            <option value="60">60s</option>
+          </select>
+          <button type="button" class="btn btn-sm btn-amber" id="addManualCutBtn">➕ Corte Aquí</button>
+          <button type="button" class="btn btn-sm" id="togglePipelineBtn" title="Ver progreso del análisis IA">📊 Progreso</button>
         </div>
       </div>
 
-      <!-- Controles de Cortes, Subtítulos y PNG -->
-      <div>
-        <div class="card">
-          <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <h2 style="margin:0;">🔥 Cortes Detectados (Haz clic para reproducir)</h2>
-            <button type="button" class="btn btn-sm" id="autoScheduleAllBtn">⚡ Auto-Programar los Cortes</button>
+      <!-- Pipeline de 4 pasos (oculto cuando está inactivo; se abre automáticamente al analizar) -->
+      <div id="pipelineDrawer" class="ux-pipeline-drawer ux-hidden">
+        <div class="row" style="justify-content:space-between;">
+          <strong style="font-size:0.86rem;">⚡ Progreso del Análisis IA</strong>
+          <button type="button" class="btn btn-sm" id="closePipelineBtn" style="padding:3px 8px;">✕</button>
+        </div>
+        <div class="pipeline">
+          <div class="pipe-step" id="pStep1"><div class="pipe-ico">1</div><div><strong>Fotogramas</strong><div class="muted" id="pSub1">Esperando video</div></div></div>
+          <div class="pipe-step" id="pStep3"><div class="pipe-ico">2</div><div><strong>Audio + Whisper</strong><div class="muted" id="pSub3">En cola</div></div></div>
+          <div class="pipe-step" id="pStep2"><div class="pipe-ico">3</div><div><strong>Cortes (Flash-Lite)</strong><div class="muted" id="pSub2">En cola</div></div></div>
+          <div class="pipe-step" id="pStep4"><div class="pipe-ico">4</div><div><strong>Miniaturas Pro</strong><div class="muted" id="pSub4">En cola</div></div></div>
+        </div>
+        <div class="muted" id="pipelineMsg">Listo para analizar.</div>
+      </div>
+
+      <!-- Cuadrícula principal de 3 columnas -->
+      <div class="ux-workspace-grid">
+        <!-- COLUMNA 1 (IZQUIERDA): Lista de Cortes -->
+        <div class="ux-col-card">
+          <div class="row" style="justify-content:space-between;">
+            <h2 style="margin:0; font-size:0.96rem;">🔥 Cortes Detectados</h2>
           </div>
-          <div id="cutsContainer" class="muted">Aún no hay cortes generados. Sube un video o pulsa "✨ Cargar Video Demo".</div>
+          <div id="cutsContainer" class="muted ux-cuts-scroll">Pulsa "🚀 Auto-Analizar IA" o crea un corte manual.</div>
+          <button type="button" class="btn btn-sm" id="autoScheduleAllBtn" style="width:100%; justify-content:center;">⚡ Auto-Programar Todos</button>
         </div>
 
-        <div class="card">
-          <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-            <h2 style="margin:0;">💬 Subtítulos en Vivo del Corte Actual</h2>
-            <span class="badge" id="subsSourceBadge">Modo Local</span>
+        <!-- COLUMNA 2 (CENTRO): Monitor Vista Previa -->
+        <div class="ux-col-card">
+          <div class="stage-wrap">
+            <canvas id="previewCanvas" width="540" height="960"></canvas>
+            <div class="row" style="width:100%; justify-content:center;">
+              <button type="button" class="btn btn-primary btn-sm" id="playPauseBtn">▶ Reproducir</button>
+              <button type="button" class="btn btn-sm" id="loopCutBtn" style="border-color: var(--green);">🔁 Loop</button>
+              <select id="aspectSelect" style="width:auto; padding:6px 8px;">
+                <option value="9:16">9:16 Vertical</option>
+                <option value="16:9">16:9 Horizontal</option>
+                <option value="1:1">1:1 Cuadrado</option>
+              </select>
+            </div>
+            <input type="range" id="seekBar" min="0" max="100" value="0" step="0.1" />
+            <div class="row" style="width:100%; justify-content:space-between; font-size:.76rem; color:var(--muted);">
+              <span id="timeNow">00:00.0</span>
+              <span id="cutRangeLabel">Corte: 00:00.0 - 00:15.0</span>
+              <span id="timeTotal">00:00.0</span>
+            </div>
+            <div class="row" style="width:100%;">
+              <button type="button" class="btn btn-primary" id="exportClipBtn" style="flex:1; justify-content:center;">⬇️ Descargar Clip</button>
+              <button type="button" class="btn" id="sendCutToSchedBtn" style="flex:1; justify-content:center;">📅 Programar</button>
+            </div>
+            <button type="button" class="btn btn-sm" id="openEditorFromStudioBtn" style="width:100%; justify-content:center;">🎬 Abrir en Editor Avanzado</button>
           </div>
-          <div class="row" style="margin-bottom:10px;">
-            <div style="flex:1; min-width:110px;">
-              <label>Inicio (seg)</label>
-              <input type="number" id="startInput" value="0" step="0.5" min="0" />
+
+          <details class="ux-frames-details">
+            <summary>🎞️ Ver fotogramas extraídos del video</summary>
+            <div class="frames-strip" id="framesStrip">
+              <div class="frame-box"></div><div class="frame-box"></div><div class="frame-box"></div><div class="frame-box"></div><div class="frame-box"></div>
             </div>
-            <div style="flex:1; min-width:110px;">
-              <label>Fin (seg)</label>
-              <input type="number" id="endInput" value="15" step="0.5" min="1" />
+          </details>
+        </div>
+
+        <!-- COLUMNA 3 (DERECHA): Inspector con pestañas (Subtítulos / PNG / Tiempos) -->
+        <div class="ux-col-card ux-col-inspector">
+          <div class="ux-insp-tabs" id="studioInspTabs">
+            <button type="button" class="ux-insp-tab active" data-insp="subs">💬 Subtítulos</button>
+            <button type="button" class="ux-insp-tab" data-insp="png">🧩 Imagen PNG</button>
+            <button type="button" class="ux-insp-tab" data-insp="time">⏱️ Tiempos</button>
+          </div>
+
+          <!-- Pestaña 1: Subtítulos -->
+          <div class="ux-insp-pane active" id="inspPane-subs">
+            <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+              <span class="muted">Sincronización en vivo</span>
+              <span class="badge" id="subsSourceBadge">Modo Local</span>
             </div>
-            <div style="flex:1; min-width:150px;">
+            <div class="field-block">
               <label>Estilo de Subtítulo</label>
               <select id="subStyleSelect">
                 <option value="word">Palabra por palabra (Karaoke)</option>
@@ -521,62 +733,92 @@
                 <option value="clean">Cine Limpio</option>
               </select>
             </div>
-          </div>
-          <label>Texto de subtítulos (una línea por bloque — si usas Groq Whisper se sincronizan automáticamente con la voz real)</label>
-          <textarea id="subsTextarea" rows="4" placeholder="Escribe o edita las frases del corte..."></textarea>
-          <div class="row" style="margin-top:8px;">
-            <button type="button" class="btn btn-sm btn-primary" id="applySubsBtn">✅ Aplicar y Cubrir Todo el Corte</button>
-            <label style="display:flex; align-items:center; gap:6px; margin:0; cursor:pointer;">
+            <div class="field-block">
+              <label>Texto (una línea por bloque)</label>
+              <textarea id="subsTextarea" rows="7" placeholder="Escribe o edita las frases del corte..."></textarea>
+            </div>
+            <label style="display:flex; align-items:center; gap:6px; margin-bottom:10px; cursor:pointer; color:var(--text);">
               <input type="checkbox" id="showSubsCheck" checked style="width:auto;" />
               Mostrar subtítulos en vivo
             </label>
+            <button type="button" class="btn btn-sm btn-primary" id="applySubsBtn" style="width:100%; justify-content:center;">✅ Aplicar al Corte</button>
           </div>
-        </div>
 
-        <div class="card">
-          <h2>🧩 Foto sin Fondo (PNG) sobre el Video</h2>
-          <div class="row" style="margin-bottom:10px;">
-            <label class="btn btn-sm" style="margin:0; cursor:pointer;">
-              🖼️ Subir Imagen / PNG
-              <input type="file" id="pngInput" accept="image/*" hidden />
-            </label>
-            <select id="chromaSelect" style="width:auto;">
-              <option value="none">Mantener transparencia PNG</option>
-              <option value="white">Quitar fondo blanco</option>
-              <option value="green">Quitar pantalla verde</option>
-              <option value="black">Quitar fondo negro</option>
-            </select>
-            <button type="button" class="btn btn-sm btn-danger" id="clearPngBtn">Quitar Foto</button>
+          <!-- Pestaña 2: Imagen PNG -->
+          <div class="ux-insp-pane" id="inspPane-png">
+            <div class="row" style="margin-bottom:12px;">
+              <label class="btn btn-sm btn-primary" style="margin:0; cursor:pointer; flex:1; justify-content:center;">
+                🖼️ Subir PNG / Imagen
+                <input type="file" id="pngInput" accept="image/*" hidden />
+              </label>
+              <button type="button" class="btn btn-sm btn-danger" id="clearPngBtn">Quitar</button>
+            </div>
+            <div class="field-block">
+              <label>Fondo / Chroma</label>
+              <select id="chromaSelect">
+                <option value="none">Mantener transparencia PNG</option>
+                <option value="white">Quitar fondo blanco</option>
+                <option value="green">Quitar pantalla verde</option>
+                <option value="black">Quitar fondo negro</option>
+              </select>
+            </div>
+            <div class="range-row"><label>Posición X (%)</label><input type="range" id="pngX" min="5" max="95" value="50" /></div>
+            <div class="range-row"><label>Posición Y (%)</label><input type="range" id="pngY" min="5" max="95" value="22" /></div>
+            <div class="range-row"><label>Tamaño (%)</label><input type="range" id="pngScale" min="10" max="80" value="32" /></div>
+            <div class="muted" style="margin-top:6px;">Tip: también puedes arrastrar la imagen directamente sobre el video.</div>
           </div>
-          <div class="row">
-            <div style="flex:1;"><label>Pos X (%)</label><input type="range" id="pngX" min="5" max="95" value="50" /></div>
-            <div style="flex:1;"><label>Pos Y (%)</label><input type="range" id="pngY" min="5" max="95" value="22" /></div>
-            <div style="flex:1;"><label>Tamaño (%)</label><input type="range" id="pngScale" min="10" max="80" value="32" /></div>
+
+          <!-- Pestaña 3: Tiempos y Duración -->
+          <div class="ux-insp-pane" id="inspPane-time">
+            <div class="form-grid-2 field-block">
+              <div>
+                <label>Inicio (seg)</label>
+                <input type="number" id="startInput" value="0" step="0.5" min="0" />
+              </div>
+              <div>
+                <label>Fin (seg)</label>
+                <input type="number" id="endInput" value="15" step="0.5" min="1" />
+              </div>
+            </div>
+            <div class="field-block">
+              <label>Duración rápida por corte</label>
+              <div class="chip-row">
+                <button type="button" class="dur-pill" data-dur="10">10s</button>
+                <button type="button" class="dur-pill active" data-dur="15">15s</button>
+                <button type="button" class="dur-pill" data-dur="30">30s</button>
+                <button type="button" class="dur-pill" data-dur="45">45s</button>
+                <button type="button" class="dur-pill" data-dur="60">60s</button>
+              </div>
+            </div>
+            <div class="field-block">
+              <label>Duración personalizada (segundos)</label>
+              <div class="row" style="flex-wrap:nowrap;">
+                <input type="number" id="cutDurationInput" value="15" min="3" max="300" step="1" />
+                <button type="button" class="btn btn-sm btn-primary" id="applyCutDurationBtn">Aplicar</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ==================== TAB 2: EDITOR DE VIDEO COMPLETO ==================== -->
+  <!-- ==================== TAB 2: EDITOR DE VIDEO (UX SIMPLIFICADA) ==================== -->
   <section id="tab-editor" class="view">
-    <div class="card">
-      <div class="row" style="justify-content:space-between;">
-        <div>
-          <h2 style="margin-bottom:4px;">🎬 Editor de Video Profesional (Exportación Local $0 Tokens)</h2>
-          <div class="muted">Recorta, divide, cambia la velocidad, aplica filtros de color, zoom, gancho superior y marca de agua en vivo. Todos los cambios se incluyen al exportar.</div>
-        </div>
-        <div class="row">
-          <button type="button" class="btn btn-sm" id="edResetBtn">🔄 Restablecer Ajustes</button>
-          <button type="button" class="btn btn-sm btn-green" id="edExportBtn">⬇️ Exportar Video Editado</button>
-        </div>
+    <div class="ux-ws-toolbar">
+      <div class="row">
+        <strong style="font-size:0.98rem;">🎬 Editor Local ($0 Tokens)</strong>
+        <span class="muted">Todos los cambios se aplican en vivo al exportar</span>
+      </div>
+      <div class="row">
+        <button type="button" class="btn btn-sm" id="edResetBtn">🔄 Restablecer</button>
+        <button type="button" class="btn btn-sm btn-primary" id="edExportBtn">⬇️ Exportar Video Editado</button>
       </div>
     </div>
 
-    <div class="editor-grid">
-      <!-- Monitor y Línea de Tiempo -->
-      <div class="card">
-        <h2>🖥️ Monitor del Editor</h2>
+    <div class="ux-editor-layout">
+      <!-- IZQUIERDA: Monitor y Línea de Tiempo -->
+      <div class="ux-col-card">
         <div class="stage-wrap">
           <canvas id="editorCanvas" width="540" height="960"></canvas>
 
@@ -590,7 +832,6 @@
             </select>
           </div>
 
-          <!-- Línea de tiempo visual interactiva -->
           <div class="timeline-box">
             <div class="row" style="justify-content:space-between; font-size:.76rem; color:var(--muted); margin-bottom:6px;">
               <span id="edTimeNow">00:00.0</span>
@@ -602,20 +843,26 @@
               <div class="timeline-playhead" id="timelinePlayhead"></div>
             </div>
             <div class="row" style="margin-top:10px; justify-content:center;">
-              <button type="button" class="btn btn-sm" id="edMarkStartBtn">⏮️ Inicio Aquí</button>
-              <button type="button" class="btn btn-sm" id="edMarkEndBtn">⏭️ Fin Aquí</button>
-              <button type="button" class="btn btn-sm btn-amber" id="edSplitCutBtn">✂️ Dividir Aquí</button>
+              <button type="button" class="btn btn-sm" id="edMarkStartBtn">⏮️ Inicio</button>
+              <button type="button" class="btn btn-sm" id="edMarkEndBtn">⏭️ Fin</button>
+              <button type="button" class="btn btn-sm btn-amber" id="edSplitCutBtn">✂️ Dividir</button>
               <button type="button" class="btn btn-sm btn-primary" id="edSaveNewCutBtn">💾 Guardar Corte</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Paneles de herramientas de edición -->
-      <div class="editor-section-grid">
-        <!-- 1. Duración, Velocidad y Audio -->
-        <div class="ed-panel">
-          <h3>⚡ Velocidad, Audio y Duración</h3>
+      <!-- DERECHA: Inspector de Herramientas con 4 Pestañas -->
+      <div class="ux-col-card">
+        <div class="ux-insp-tabs" id="edInspTabs">
+          <button type="button" class="ux-insp-tab active" data-ed-tab="audio">⚡ Audio</button>
+          <button type="button" class="ux-insp-tab" data-ed-tab="frame">📐 Encuadre</button>
+          <button type="button" class="ux-insp-tab" data-ed-tab="color">🎨 Color</button>
+          <button type="button" class="ux-insp-tab" data-ed-tab="brand">🏷️ Textos</button>
+        </div>
+
+        <!-- 1. Velocidad, Audio y Duración -->
+        <div class="ux-ed-pane active" id="edPane-audio">
           <div class="field-block">
             <label>Duración rápida del corte (segundos)</label>
             <div class="chip-row">
@@ -641,12 +888,11 @@
             <div class="range-head"><span>Volumen del video</span><span id="edVolumeVal">100%</span></div>
             <input type="range" id="edVolumeRange" min="0" max="100" value="100" />
           </div>
-          <button type="button" class="btn btn-sm" id="edMuteBtn" style="width:100%; justify-content:center;">🔊 Audio Activo (Clic para silenciar)</button>
+          <button type="button" class="btn btn-sm" id="edMuteBtn" style="width:100%; justify-content:center; margin-top:6px;">🔊 Audio Activo (Clic para silenciar)</button>
         </div>
 
-        <!-- 2. Encuadre, Zoom y Transformación -->
-        <div class="ed-panel">
-          <h3>📐 Encuadre, Zoom y Giro</h3>
+        <!-- 2. Encuadre, Zoom y Giro -->
+        <div class="ux-ed-pane" id="edPane-frame">
           <div class="range-row">
             <div class="range-head"><span>Zoom</span><span id="edZoomVal">100%</span></div>
             <input type="range" id="edZoomRange" min="100" max="220" value="100" />
@@ -659,15 +905,14 @@
             <div class="range-head"><span>Desplazar Vertical (Y)</span><span id="edPanYVal">0%</span></div>
             <input type="range" id="edPanYRange" min="-50" max="50" value="0" />
           </div>
-          <div class="row" style="margin-top:8px;">
+          <div class="row" style="margin-top:12px;">
             <button type="button" class="btn btn-sm" id="edRotateBtn" style="flex:1; justify-content:center;">🔄 Girar 90°</button>
             <button type="button" class="btn btn-sm" id="edFlipXBtn" style="flex:1; justify-content:center;">↔️ Espejo</button>
           </div>
         </div>
 
-        <!-- 3. Filtros y Color -->
-        <div class="ed-panel">
-          <h3>🎨 Color y Filtros Cinematográficos</h3>
+        <!-- 3. Color y Filtros -->
+        <div class="ux-ed-pane" id="edPane-color">
           <div class="field-block">
             <label>Preset de Color</label>
             <select id="edFilterPreset">
@@ -693,9 +938,8 @@
           </div>
         </div>
 
-        <!-- 4. Texto Gancho Superior y Marca de Agua -->
-        <div class="ed-panel">
-          <h3>🏷️ Gancho Superior y Marca de Agua</h3>
+        <!-- 4. Gancho Superior y Marca de Agua -->
+        <div class="ux-ed-pane" id="edPane-brand">
           <div class="field-block">
             <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#e2e8f0;">
               <input type="checkbox" id="edShowHookCheck" style="width:auto;" />
@@ -780,65 +1024,75 @@
     </div>
   </section>
 
-  <!-- ==================== TAB 4: REDES & CALENDARIO ==================== -->
+  <!-- ==================== TAB 4: REDES & CALENDARIO (UX SIMPLIFICADA) ==================== -->
   <section id="tab-social" class="view">
-    <div class="card">
-      <div class="row" style="justify-content:space-between; margin-bottom:12px;">
-        <div>
-          <h2 style="margin-bottom:4px;">🔗 Centro de Conexión de Redes Sociales</h2>
-          <div class="muted">Conecta cada red mediante <strong>Token / API Oficial</strong>, <strong>Webhook (Make / n8n / Zapier)</strong> o <strong>Perfil de acceso rápido</strong>.</div>
+    <details class="ux-accounts-details" open>
+      <summary class="ux-accounts-summary">
+        <div class="row">
+          <strong style="font-size:0.96rem;">🔗 Cuentas Conectadas (API / Webhook / Perfil)</strong>
+          <span class="muted">Haz clic aquí para plegar o desplegar</span>
         </div>
-        <button type="button" class="btn btn-sm btn-primary" id="verifyAllAccountsBtn">⚡ Verificar Conexiones</button>
-      </div>
-      <div class="grid-3" id="accountsGrid"></div>
-    </div>
+        <button type="button" class="btn btn-sm" id="verifyAllAccountsBtn">⚡ Verificar Conexiones</button>
+      </summary>
+      <div class="ux-accounts-grid" id="accountsGrid"></div>
+    </details>
 
-    <div class="card">
-      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-        <h2 style="margin:0;">📅 Programar Nueva Publicación</h2>
-        <span class="badge amber" id="schedGateBadge">🔒 Conecta una red para programar</span>
-      </div>
-      <!-- Aviso obligatorio cuando la plataforma elegida no está conectada -->
-      <div class="test-box show err" id="schedConnBanner" style="margin-top:0; margin-bottom:12px;">
+    <div class="ux-social-workspace">
+      <!-- IZQUIERDA: Programar Nueva Publicación -->
+      <div class="ux-col-card">
         <div class="row" style="justify-content:space-between;">
-          <span id="schedConnBannerText">⚠️ Debes conectar <strong>YouTube Shorts</strong> antes de programar una publicación en esta red.</span>
-          <button type="button" class="btn btn-sm btn-amber" id="schedQuickConnectBtn">🔗 Conectar esta red</button>
+          <h2 style="margin:0; font-size:0.98rem;">📅 Programar Publicación</h2>
+          <span class="badge amber" id="schedGateBadge">🔒 Conecta una red</span>
         </div>
-      </div>
-      <div class="row" style="margin-bottom:10px;">
-        <div style="flex:1; min-width:180px;">
+
+        <div class="test-box show err" id="schedConnBanner" style="margin:0;">
+          <div class="row" style="justify-content:space-between;">
+            <span id="schedConnBannerText">⚠️ Debes conectar <strong>YouTube Shorts</strong> antes de programar.</span>
+            <button type="button" class="btn btn-sm btn-amber" id="schedQuickConnectBtn">🔗 Conectar</button>
+          </div>
+        </div>
+
+        <div class="field-block" style="margin-bottom:0;">
           <label>Título / Corte</label>
           <input type="text" id="schedTitle" placeholder="Ej: El momento clave que nadie vio" />
         </div>
-        <div style="flex:1; min-width:150px;">
-          <label>Plataforma</label>
-          <select id="schedPlatform">
-            <option value="YouTube Shorts">YouTube Shorts</option>
-            <option value="Instagram Reels">Instagram Reels</option>
-            <option value="TikTok">TikTok</option>
-            <option value="Facebook Reels">Facebook Reels</option>
-            <option value="X (Twitter)">X (Twitter)</option>
-          </select>
-        </div>
-        <div style="flex:1; min-width:190px;">
-          <label>Fecha y Hora de Publicación</label>
-          <input type="datetime-local" id="schedDate" />
-        </div>
-      </div>
-      <label>Descripción y Hashtags Dinámicos</label>
-      <textarea id="schedCaption" rows="3" placeholder="Copy atractivo para la red social..."></textarea>
-      <div class="row" style="margin-top:10px;">
-        <button type="button" class="btn btn-green" id="addScheduleBtn">📌 Guardar en Calendario</button>
-        <button type="button" class="btn btn-primary" id="genDynamicCopyBtn">✨ Variar Copy Creativo (IA)</button>
-      </div>
-    </div>
 
-    <div class="card">
-      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-        <h2 style="margin:0;">🗓️ Cola de Publicaciones Programadas</h2>
-        <span class="badge green" id="schedCountBadge">0 programadas</span>
+        <div class="form-grid-2">
+          <div>
+            <label>Plataforma</label>
+            <select id="schedPlatform">
+              <option value="YouTube Shorts">YouTube Shorts</option>
+              <option value="Instagram Reels">Instagram Reels</option>
+              <option value="TikTok">TikTok</option>
+              <option value="Facebook Reels">Facebook Reels</option>
+              <option value="X (Twitter)">X (Twitter)</option>
+            </select>
+          </div>
+          <div>
+            <label>Fecha y Hora</label>
+            <input type="datetime-local" id="schedDate" />
+          </div>
+        </div>
+
+        <div class="field-block" style="margin-bottom:0;">
+          <div class="row" style="justify-content:space-between; margin-bottom:4px;">
+            <label style="margin:0;">Descripción y Hashtags</label>
+            <button type="button" class="btn btn-sm" id="genDynamicCopyBtn" style="padding:4px 9px;">✨ Variar Copy (IA)</button>
+          </div>
+          <textarea id="schedCaption" rows="4" placeholder="Copy atractivo para la red social..."></textarea>
+        </div>
+
+        <button type="button" class="btn btn-green" id="addScheduleBtn" style="width:100%; justify-content:center;">📌 Guardar en Calendario</button>
       </div>
-      <div id="scheduleList" class="muted">No hay publicaciones programadas todavía.</div>
+
+      <!-- DERECHA: Cola de Publicaciones Programadas -->
+      <div class="ux-col-card">
+        <div class="row" style="justify-content:space-between;">
+          <h2 style="margin:0; font-size:0.98rem;">🗓️ Cola Programada</h2>
+          <span class="badge green" id="schedCountBadge">0 programadas</span>
+        </div>
+        <div id="scheduleList" class="muted ux-sched-scroll">No hay publicaciones programadas todavía.</div>
+      </div>
     </div>
   </section>
 </main>
@@ -1012,6 +1266,9 @@
   <div class="modal">
     <h2 style="margin-bottom:8px;">🎬 Vista Previa del Clip Renderizado</h2>
     <div id="exportStatus" class="muted">Renderizando clip con subtítulos, filtros y capa PNG...</div>
+    <div id="exportTabWarn" class="security-note" style="margin:8px 0 4px;">
+      ⚠️ <strong>No cambies de pestaña ni minimices el navegador</strong> mientras se renderiza el clip; en segundo plano el navegador pausa el video y puede congelar fotogramas.
+    </div>
     <div class="progress-bar"><div class="progress-fill" id="exportProgress"></div></div>
     <video id="exportedVideoPreview" controls style="width:100%; max-height:360px; border-radius:12px; display:none; background:#000;"></video>
     <div class="row" style="margin-top:14px; justify-content:flex-end;">
@@ -3285,7 +3542,7 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
   // Palabras de una frase: tiempos reales de Whisper si existen; si no, se reparte el tiempo en partes iguales
   function getSubWords(active) {
     if (active._words) return active._words;
-    const tw = (state.transcript && state.transcript.words) || [];
+    const tw = (!active.edited && state.transcript && state.transcript.words) || [];
     let ws = tw.filter(x => x.start >= active.start - 0.15 && x.end <= active.end + 0.15 && String(x.word).trim());
     if (!ws.length) {
       const parts = String(active.text || '').trim().split(/\s+/).filter(Boolean);
@@ -3503,26 +3760,61 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
   $('showSubsCheck').addEventListener('change', e => { state.showSubs = e.target.checked; });
 
   $('applySubsBtn').addEventListener('click', () => {
-    state.startTime = Math.max(0, Number($('startInput').value) || 0);
-    state.endTime = Math.max(state.startTime + 0.5, Number($('endInput').value) || state.duration || 15);
-    if (state.duration > 0) state.endTime = Math.min(state.duration, state.endTime);
-    const lines = $('subsTextarea').value.split('\n');
-    state.subtitles = buildTimedSubtitles(lines, state.startTime, state.endTime);
-    if (state.activeCutIdx >= 0 && state.cuts[state.activeCutIdx]) {
-      state.cuts[state.activeCutIdx].start = state.startTime;
-      state.cuts[state.activeCutIdx].end = state.endTime;
-      state.cuts[state.activeCutIdx].lines = lines.map(l => l.trim()).filter(Boolean);
-      state.cuts[state.activeCutIdx].timedSegments = []; // Usuario editó manualmente
-      renderCutsList();
+    const newStart = Math.max(0, Number($('startInput').value) || 0);
+    let newEnd = Math.max(newStart + 0.5, Number($('endInput').value) || state.duration || 15);
+    if (state.duration > 0) newEnd = Math.min(state.duration, newEnd);
+    const cleanLines = $('subsTextarea').value.split('\n').map(l => l.trim()).filter(Boolean);
+
+    const cut = state.activeCutIdx >= 0 ? state.cuts[state.activeCutIdx] : null;
+    const prevTimed = cut && Array.isArray(cut.timedSegments) ? cut.timedSegments : [];
+    const sameLineCount = prevTimed.length > 0 && cleanLines.length === prevTimed.length;
+    const sameWindow = cut && Math.abs(newStart - cut.start) < 0.05 && Math.abs(newEnd - cut.end) < 0.05;
+
+    state.startTime = newStart;
+    state.endTime = newEnd;
+
+    let preservedWhisper = false;
+    if (sameLineCount && sameWindow) {
+      // Conserva los tiempos reales de Groq Whisper y actualiza solo el texto modificado
+      const updatedSegments = prevTimed.map((seg, i) => ({
+        start: seg.start,
+        end: seg.end,
+        text: cleanLines[i],
+        edited: seg.edited || (cleanLines[i] !== seg.text)
+      }));
+      state.subtitles = updatedSegments;
+      if (cut) {
+        cut.lines = cleanLines;
+        cut.timedSegments = updatedSegments;
+      }
+      preservedWhisper = true;
+    } else {
+      state.subtitles = buildTimedSubtitles(cleanLines, state.startTime, state.endTime);
+      if (cut) {
+        cut.start = state.startTime;
+        cut.end = state.endTime;
+        cut.lines = cleanLines;
+        cut.timedSegments = [];
+      }
     }
+
+    if (cut) renderCutsList();
     const badge = $('subsSourceBadge');
-    if (badge) { badge.textContent = '✍️ Editado Manual'; badge.className = 'badge'; }
+    if (badge) {
+      badge.textContent = preservedWhisper ? '🎙️ Whisper (Texto editado)' : '✍️ Editado Manual';
+      badge.className = preservedWhisper ? 'badge green' : 'badge';
+    }
     updateCutRangeLabel();
     if (video.src) {
       video.currentTime = state.startTime;
       video.play().then(syncPlayButtons).catch(syncPlayButtons);
     }
-    showToast('Subtítulos aplicados a todo el corte', 'ok');
+    showToast(
+      preservedWhisper
+        ? 'Texto corregido conservando los tiempos reales de Whisper'
+        : 'Subtítulos aplicados a todo el corte',
+      'ok'
+    );
   });
 
   // ==================== CONTROLES DEL EDITOR DE VIDEO ====================
@@ -3828,11 +4120,38 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
     if (state.isExporting) return;
     state.isExporting = true;
 
+    const exportFormats = [
+      { mime: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', ext: 'mp4', label: 'MP4 (H.264)' },
+      { mime: 'video/mp4;codecs=avc1.42E01E', ext: 'mp4', label: 'MP4 (H.264)' },
+      { mime: 'video/mp4', ext: 'mp4', label: 'MP4' },
+      { mime: 'video/webm;codecs=vp9,opus', ext: 'webm', label: 'WebM (VP9)' },
+      { mime: 'video/webm;codecs=vp8,opus', ext: 'webm', label: 'WebM (VP8)' },
+      { mime: 'video/webm', ext: 'webm', label: 'WebM' }
+    ];
+    const chosenFmt = exportFormats.find(f => {
+      try { return typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(f.mime); }
+      catch (_) { return false; }
+    }) || { mime: '', ext: 'webm', label: 'WebM' };
+
     $('exportModal').classList.add('open');
     $('exportedVideoPreview').style.display = 'none';
     $('downloadExportBtn').style.display = 'none';
+    if ($('exportTabWarn')) $('exportTabWarn').style.display = 'block';
     $('exportProgress').style.width = '5%';
-    $('exportStatus').textContent = 'Renderizando corte localmente con subtítulos, filtros, PNG y audio...';
+    $('exportStatus').textContent = `Renderizando corte en ${chosenFmt.label} con subtítulos, filtros, PNG y audio...`;
+
+    let wakeLock = null;
+    try {
+      if (navigator.wakeLock && navigator.wakeLock.request) {
+        wakeLock = await navigator.wakeLock.request('screen');
+      }
+    } catch (_) {}
+
+    let tabWasHidden = false;
+    const onVisChange = () => {
+      if (document.hidden && state.isExporting) tabWasHidden = true;
+    };
+    document.addEventListener('visibilitychange', onVisChange);
 
     try {
       const videoStream = canvas.captureStream(30);
@@ -3846,9 +4165,10 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
       } catch (_) {}
 
       const combined = new MediaStream(tracks);
-      const mimeTypes = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
-      const chosen = mimeTypes.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
-      const rec = chosen ? new MediaRecorder(combined, { mimeType: chosen }) : new MediaRecorder(combined);
+      const recOpts = chosenFmt.mime
+        ? { mimeType: chosenFmt.mime, videoBitsPerSecond: 5000000 }
+        : { videoBitsPerSecond: 5000000 };
+      const rec = new MediaRecorder(combined, recOpts);
       const chunks = [];
       rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
 
@@ -3871,21 +4191,28 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
       syncPlayButtons();
 
       await new Promise(r => { rec.onstop = r; });
-      const blob = new Blob(chunks, { type: 'video/webm' });
-      state.lastExport = { blob, title: (state.cuts[state.activeCutIdx] || {}).title || '' };
+      const blobType = (chosenFmt.mime || 'video/webm').split(';')[0];
+      const blob = new Blob(chunks, { type: blobType });
+      state.lastExport = { blob, ext: chosenFmt.ext, title: (state.cuts[state.activeCutIdx] || {}).title || '' };
       const prevUrl = $('downloadExportBtn').href || '';
       if (prevUrl.startsWith('blob:')) { try { URL.revokeObjectURL(prevUrl); } catch (_) {} }
       const url = URL.createObjectURL(blob);
       $('exportProgress').style.width = '100%';
-      $('exportStatus').textContent = '✅ Clip listo. Revísalo antes de descargarlo o publicarlo.';
+      if ($('exportTabWarn')) $('exportTabWarn').style.display = 'none';
+      $('exportStatus').textContent = tabWasHidden
+        ? `⚠️ Clip listo en ${chosenFmt.label}, pero cambiaste de pestaña durante el renderizado. Revisa la vista previa por si hubo algún fotograma congelado.`
+        : `✅ Clip listo en ${chosenFmt.label}. Revísalo antes de descargarlo o publicarlo.`;
       $('exportedVideoPreview').src = url;
       $('exportedVideoPreview').style.display = 'block';
       $('downloadExportBtn').href = url;
-      $('downloadExportBtn').download = `${state.videoName}_corte.webm`;
+      $('downloadExportBtn').download = `${state.videoName}_corte.${chosenFmt.ext}`;
+      $('downloadExportBtn').textContent = `⬇️ Descargar Video (${chosenFmt.ext.toUpperCase()})`;
       $('downloadExportBtn').style.display = 'inline-flex';
     } catch (err) {
       $('exportStatus').textContent = `⚠️ Error al renderizar el clip: ${err.message}`;
     } finally {
+      document.removeEventListener('visibilitychange', onVisChange);
+      if (wakeLock) { try { await wakeLock.release(); } catch (_) {} }
       state.isExporting = false;
     }
   }
@@ -4392,7 +4719,7 @@ function openYtPopup(id, useApi) {
     ? '<script src="https://www.youtube.com/iframe_api"><\/script><script>window.onYouTubeIframeAPIReady=function(){window.pl=new YT.Player("p",{events:{onReady:function(){try{window.opener.__ytPopupReady(window.pl)}catch(e){}},onStateChange:function(e){try{window.opener.__ytPopupState(e.data)}catch(x){}}}})}<\/script>'
     : '';
   pw.document.open();
-  pw.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>CLIPHUB - Reproductor (comparte ESTA pestaña)</title><style>html,body{margin:0;height:100%;background:#000;overflow:hidden}iframe{width:100%;height:100%;border:0}</style></head><body><iframe id="p" allow="autoplay; encrypted-media; fullscreen" src="https://www.youtube.com/embed/${id}?controls=0&rel=0&modestbranding=1&playsinline=1&vq=hd1080${useApi ? '&enablejsapi=1&origin=' + encodeURIComponent(location.origin) : ''}"></iframe>${api}</body></html>`);
+  pw.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="strict-origin-when-cross-origin"><title>CLIPHUB - Reproductor (comparte ESTA pestaña)</title><style>html,body{margin:0;height:100%;background:#000;overflow:hidden}iframe{width:100%;height:100%;border:0}</style></head><body><iframe id="p" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" src="https://www.youtube.com/embed/${id}?controls=0&rel=0&modestbranding=1&playsinline=1&vq=hd1080${useApi ? '&enablejsapi=1&origin=' + encodeURIComponent(location.origin) : ''}"></iframe>${api}</body></html>`);
   pw.document.close();
   return pw;
 }
@@ -4508,13 +4835,17 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
   });
 
   $('loadYtEmbedBtn').addEventListener('click', () => {
+    if (location.protocol === 'file:') {
+      showToast('YouTube bloquea embeds en archivos locales (Error 153). Ábrelo desde GitHub Pages o http://localhost', 'warn');
+    }
     const url = $('ytUrlInput').value.trim();
     const m = url.match(/(?:v=|youtu\.be\/|live\/|shorts\/)([a-zA-Z0-9_-]{11})/);
     if (!m) {
       showToast('Pega un enlace válido de YouTube o directo', 'warn');
       return;
     }
-    $('ytIframe').src = `https://www.youtube.com/embed/${m[1]}?autoplay=1`;
+    const originParam = location.protocol !== 'file:' ? `&origin=${encodeURIComponent(location.origin)}` : '';
+    $('ytIframe').src = `https://www.youtube.com/embed/${m[1]}?autoplay=1&rel=0${originParam}`;
     $('ytEmbedWrap').style.display = 'block';
     showToast('Enlace de YouTube cargado en el panel', 'ok');
   });
@@ -5235,7 +5566,7 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
     if (!state.lastExport) return JSON.stringify(obj);
     const fd = new FormData();
     Object.entries(obj).forEach(([k, v]) => fd.append(k, v == null ? '' : v));
-    fd.append('video', state.lastExport.blob, 'clip.webm');
+    fd.append('video', state.lastExport.blob, `clip.${state.lastExport.ext || 'webm'}`);
     return fd;
   }
 
@@ -5465,6 +5796,100 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
   if (hasProxy()) {
     checkProxyHealth();
   }
+
+  // ==================== CONTROLADOR UX (2 ESTADOS + 3 COLUMNAS + INSPECTORES) ====================
+  function enterStudioWorkspace() {
+    const empty = $('studioEmptyState');
+    const ws = $('studioWorkspace');
+    if (empty) empty.classList.add('ux-hidden');
+    if (ws) ws.classList.remove('ux-hidden');
+  }
+
+  // Cambiar al Estado B automáticamente en cuanto el video decodifica o se carga un corte
+  video.addEventListener('loadedmetadata', enterStudioWorkspace);
+  video.addEventListener('loadeddata', enterStudioWorkspace);
+
+  // Dropzone de arrastrar y soltar en Estado A
+  const dropZone = $('studioDropZone');
+  if (dropZone) {
+    dropZone.addEventListener('click', () => $('videoInput').click());
+    ['dragenter', 'dragover'].forEach(ev => {
+      dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    });
+    ['dragleave', 'drop'].forEach(ev => {
+      dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+    });
+    dropZone.addEventListener('drop', e => {
+      const file = e.dataTransfer?.files?.[0];
+      if (!file || !file.type.startsWith('video/')) {
+        showToast('Suelta un archivo de video válido (MP4, WebM, MOV)', 'warn');
+        return;
+      }
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      $('videoInput').files = dt.files;
+      $('videoInput').dispatchEvent(new Event('change'));
+    });
+  }
+
+  // Botón "+ Nuevo Video" en el Workspace
+  $('wsUploadNewBtn')?.addEventListener('click', () => $('videoInput').click());
+
+  // Abrir / cerrar panel YouTube desde ambos estados
+  $('emptyOpenYtBtn')?.addEventListener('click', () => {
+    $('ytPanel').style.display = $('ytPanel').style.display === 'none' ? 'block' : 'none';
+  });
+  $('closeYtPanelBtn')?.addEventListener('click', () => { $('ytPanel').style.display = 'none'; });
+
+  // Pestañas del Inspector derecho del Estudio (Subtítulos / PNG / Tiempos)
+  document.querySelectorAll('#studioInspTabs .ux-insp-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#studioInspTabs .ux-insp-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.ux-insp-pane').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const target = $('inspPane-' + tab.dataset.insp);
+      if (target) target.classList.add('active');
+    });
+  });
+
+  // Selector rápido de duración en la barra superior del Workspace
+  $('quickDurSelect')?.addEventListener('change', e => {
+    setCutDuration(Number(e.target.value), true);
+    showToast(`Duración de cortes ajustada a ${state.cutDuration}s`, 'ok');
+  });
+
+  // Mostrar/ocultar el progreso de 4 pasos automáticamente al analizar
+  const pipeDrawer = $('pipelineDrawer');
+  $('togglePipelineBtn')?.addEventListener('click', () => pipeDrawer?.classList.toggle('ux-hidden'));
+  $('closePipelineBtn')?.addEventListener('click', () => pipeDrawer?.classList.add('ux-hidden'));
+  $('analyzeBtn')?.addEventListener('click', () => pipeDrawer?.classList.remove('ux-hidden'));
+
+  if (pipeDrawer && typeof MutationObserver !== 'undefined') {
+    const obs = new MutationObserver(() => {
+      if (state.isAnalyzing || $('pStep1')?.classList.contains('run') || $('pStep1')?.classList.contains('err')) {
+        pipeDrawer.classList.remove('ux-hidden');
+      }
+    });
+    ['pStep1', 'pStep2', 'pStep3', 'pStep4'].forEach(id => {
+      const el = $(id);
+      if (el) obs.observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
+  }
+
+  // Pestañas del Inspector del Editor de Video
+  document.querySelectorAll('#edInspTabs .ux-insp-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#edInspTabs .ux-insp-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.ux-ed-pane').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const target = $('edPane-' + tab.dataset.edTab);
+      if (target) target.classList.add('active');
+    });
+  });
+
+  // Evitar que el botón "Verificar Conexiones" abra/cierre el acordeón <details>
+  $('verifyAllAccountsBtn')?.addEventListener('click', e => e.preventDefault());
+
 })();
 </script>
 </body>
