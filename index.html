@@ -408,8 +408,14 @@
           <input type="number" id="ytToMin" min="1" placeholder="fin" style="width:80px;" />
         </div>
         <div id="ytCutsList" style="margin-top:10px; display:grid; gap:8px;"></div>
+        <div class="row" style="margin-top:8px; align-items:center;">
+          <span id="ytRecStatus" class="muted"></span>
+          <button type="button" class="btn" id="ytRecStopBtn" style="display:none;">⏹ Detener grabación</button>
+        </div>
+        <div id="ytClipFiles" style="margin-top:8px; display:grid; gap:6px;"></div>
         <div class="row" style="margin-top:14px; align-items:center;">
-          <button type="button" class="btn btn-danger" id="liveStartBtn">🔴 Capturar directo / pestaña</button>
+          <button type="button" class="btn btn-danger" id="liveHereBtn">🔴 Capturar el directo del enlace (sin otra ventana)</button>
+          <button type="button" class="btn" id="liveStartBtn">Capturar otra pestaña/ventana</button>
           <label class="muted">Cortar últimos</label>
           <select id="liveSecs"><option value="30">30 s</option><option value="60" selected>60 s</option><option value="90">90 s</option><option value="180">3 min</option></select>
           <label class="muted">Auto:</label>
@@ -418,7 +424,7 @@
           <select id="liveFormat"></select>
           <button type="button" class="btn" id="liveStopBtn" style="display:none;">⏹ Detener captura</button>
         </div>
-        <div class="muted" id="liveStatus" style="margin-top:6px;">Para cortar un directo: pulsa "Capturar", elige la pestaña donde se ve el directo y marca "Compartir audio de la pestaña". Luego usa "✂️ Sacar Corte del Directo".</div>
+        <div class="muted" id="liveStatus" style="margin-top:6px;">Para cortar un directo: pega el enlace arriba, pulsa "Capturar el directo del enlace" y en el aviso del navegador elige "Esta pestaña" marcando "Compartir audio". Luego usa "✂️ Sacar Corte del Directo".</div>
         <div id="liveClips" style="margin-top:8px; display:grid; gap:6px;"></div>
         <div id="ytEmbedWrap" style="margin-top:10px; display:none;">
           <iframe id="ytIframe" width="100%" height="260" style="border-radius:12px; border:1px solid var(--border);" allowfullscreen></iframe>
@@ -4124,6 +4130,7 @@ async function generateYtCuts() {
       };
       const link = () => `https://youtu.be/${id}?t=${cur().s}`;
       const descr = () => `${c.title}\n\n${c.caption}${creatorCredit(creator, link())}`;
+      const mk = () => { const t2 = cur(); return { id, s: t2.s, e: t2.e, title: c.title, link: link(), creator }; };
       const row = document.createElement('div');
       row.className = 'row'; row.style.marginTop = '6px';
       row.append(
@@ -4132,13 +4139,14 @@ async function generateYtCuts() {
           $('ytIframe').src = `https://www.youtube.com/embed/${id}?start=${t2.s}&end=${t2.e}&autoplay=1`;
           $('ytEmbedWrap').style.display = 'block';
         }),
+        mkBtn('🎥 Grabar este corte como video', () => recordYtClips([mk()])),
         mkBtn('↗ Abrir en YouTube', () => window.open(link(), '_blank', 'noopener')),
         mkBtn('🔗 Copiar enlace con tiempo', () => { copyTextSafe(link()); showToast('Enlace copiado', 'ok'); }),
         mkBtn('📋 Copiar descripción con créditos', () => { copyTextSafe(descr()); showToast('Descripción copiada', 'ok'); })
       );
       card.append(h, r, times, row);
       list.appendChild(card);
-      rows.push({ ok, cur, link, descr });
+      rows.push({ ok, cur, link, descr, mk });
     });
     list.appendChild(mkBtn('📋 Copiar todos los aprobados', () => {
       const sel = rows.filter(x => x.ok.checked);
@@ -4146,6 +4154,7 @@ async function generateYtCuts() {
       copyTextSafe(sel.map((x, n) => `${n + 1}. ${fmtT(x.cur().s)}–${fmtT(x.cur().e)}  ${x.link()}\n${x.descr()}`).join('\n\n-----\n\n'));
       showToast(`${sel.length} cortes aprobados copiados`, 'ok');
     }));
+    list.appendChild(mkBtn('🎥 Grabar los aprobados como video', () => recordYtClips(rows.filter(x => x.ok.checked).map(x => x.mk()))));
     showToast(`${cuts.length} cortes generados desde el enlace`, 'ok');
   } catch (err) {
     fail(`Error inesperado: ${err && err.message ? err.message : err}`);
@@ -4189,13 +4198,40 @@ function liveSpawnRecorder() {
     return true;
   });
 }
-async function liveStart() {
+async function liveStart(here) {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
     showToast('Tu navegador no permite capturar pestañas (usa Chrome o Edge de escritorio)', 'warn');
     return;
   }
   try {
-    const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
+    let stream;
+    if (here) {
+      const id = ytId($('ytUrlInput').value);
+      if (!id) { showToast('Pega primero el enlace del directo en el campo de YouTube', 'warn'); return; }
+      const fr = $('ytIframe');
+      fr.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+      const w = Math.min((fr.parentElement && fr.parentElement.clientWidth) || 800, 960);
+      fr.style.width = w + 'px';
+      fr.style.height = Math.round(w * 9 / 16) + 'px';
+      fr.src = `https://www.youtube.com/embed/${id}?autoplay=1&playsinline=1&rel=0`;
+      $('ytEmbedWrap').style.display = 'block';
+      fr.scrollIntoView({ block: 'center' });
+      await new Promise(r => setTimeout(r, 900));
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 30, displaySurface: 'browser' }, audio: true,
+        preferCurrentTab: true, selfBrowserSurface: 'include'
+      });
+      try {
+        const vt = stream.getVideoTracks()[0];
+        if (window.CropTarget && vt.cropTo) { await vt.cropTo(await CropTarget.fromElement(fr)); }
+        else showToast('Tu navegador no recorta al reproductor: se captura toda la pestaña', 'warn');
+      } catch (e) {
+        console.warn('Recorte al reproductor no disponible:', e);
+        showToast('Se captura toda la pestaña (no se pudo recortar al reproductor)', 'warn');
+      }
+    } else {
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
+    }
     if (!stream.getAudioTracks().length) showToast('No se capturó audio: al elegir la pestaña marca "Compartir audio de la pestaña"', 'warn');
     liveCapture.stream = stream;
     liveCapture.recs = [];
@@ -4203,8 +4239,9 @@ async function liveStart() {
     liveSpawnRecorder();
     liveCapture.rotTimer = setInterval(liveSpawnRecorder, 180000);
     $('liveStartBtn').style.display = 'none';
+    $('liveHereBtn').style.display = 'none';
     $('liveStopBtn').style.display = 'inline-flex';
-    $('liveStatus').textContent = '🔴 Capturando. Cuando pase algo, pulsa "✂️ Sacar Corte del Directo" (hasta 3 min hacia atrás).';
+    $('liveStatus').textContent = '🔴 Capturando' + (here ? ' el reproductor de esta página' : '') + '. No minimices la ventana ni cambies el tamaño del reproductor. Cuando pase algo, pulsa "✂️ Sacar Corte del Directo" (hasta 3 min hacia atrás). Si el directo no arranca, pulsa play en el reproductor.';
     liveApplyAuto();
   } catch (err) {
     showToast('No se inició la captura: ' + (err.message || err), 'warn');
@@ -4217,6 +4254,7 @@ function liveStop() {
   if (liveCapture.stream) liveCapture.stream.getTracks().forEach(tr => tr.stop());
   Object.assign(liveCapture, { stream: null, recs: [], timer: null, rotTimer: null });
   $('liveStartBtn').style.display = 'inline-flex';
+  $('liveHereBtn').style.display = 'inline-flex';
   $('liveStopBtn').style.display = 'none';
   $('liveStatus').textContent = 'Captura detenida.';
 }
@@ -4261,9 +4299,155 @@ function liveCutNow(secs, auto) {
   });
   showToast(auto ? `Corte automático de ${n} s guardado` : `Corte de ${n} s listo`, 'ok');
 }
-$('liveStartBtn').addEventListener('click', liveStart);
+$('liveStartBtn').addEventListener('click', () => liveStart(false));
+$('liveHereBtn').addEventListener('click', () => liveStart(true));
 $('liveStopBtn').addEventListener('click', liveStop);
 $('liveAuto').addEventListener('change', liveApplyAuto);
+
+// ==================== GRABAR LOS CORTES DEL ENLACE COMO VIDEO REAL ====================
+const ytRec = { busy: false, cancel: false, finishNow: null, onState: null, clips: [] };
+let ytApiPromise = null;
+const sleepMs = ms => new Promise(r => setTimeout(r, ms));
+
+function loadYtApi() {
+  if (window.YT && window.YT.Player) return Promise.resolve();
+  if (ytApiPromise) return ytApiPromise;
+  ytApiPromise = new Promise((res, rej) => {
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { if (prev) prev(); res(); };
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    s.onerror = () => rej(new Error('no se pudo cargar la API de YouTube'));
+    document.head.appendChild(s);
+    setTimeout(() => rej(new Error('la API de YouTube tardó demasiado')), 10000);
+  });
+  return ytApiPromise;
+}
+
+function recordYtOne(stream, fr, player, it, fmt) {
+  return new Promise(resolve => {
+    const rec = new MediaRecorder(stream, fmt.mime ? { mimeType: fmt.mime, videoBitsPerSecond: 3000000 } : {});
+    const chunks = [];
+    let started = false, done = false, t0 = 0, guard = null;
+    rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = () => {
+      clearTimeout(guard);
+      ytRec.onState = null; ytRec.finishNow = null;
+      const dur = started ? (Date.now() - t0) / 1000 : 0;
+      resolve(started && chunks.length ? { blob: new Blob(chunks, { type: (fmt.mime || 'video/webm').split(';')[0] }), ext: fmt.ext, dur, it, precise: !!player } : null);
+    };
+    const begin = () => { if (started) return; started = true; t0 = Date.now(); rec.start(1000); };
+    const finish = () => {
+      if (done) return;
+      done = true;
+      if (rec.state !== 'inactive') { try { rec.stop(); } catch (_) { rec.onstop(); } } else rec.onstop();
+    };
+    ytRec.finishNow = finish;
+    const len = Math.max(3, it.e - it.s);
+    if (player) {
+      ytRec.onState = s => { if (s === 1) begin(); if (s === 0 && started) finish(); }; // 1 = reproduciendo, 0 = terminó
+      player.loadVideoById({ videoId: it.id, startSeconds: it.s, endSeconds: it.e });
+      guard = setTimeout(finish, (len + 45) * 1000);
+    } else {
+      fr.src = `https://www.youtube.com/embed/${it.id}?start=${it.s}&end=${it.e}&autoplay=1&controls=0&rel=0&modestbranding=1&playsinline=1`;
+      begin();
+      guard = setTimeout(finish, (len + 6) * 1000);
+    }
+  });
+}
+
+function addYtClip(c) {
+  ytRec.clips.unshift(c);
+  ytRec.clips = ytRec.clips.slice(0, 12);
+  const box = $('ytClipFiles');
+  box.textContent = '';
+  ytRec.clips.forEach(x => {
+    const row = document.createElement('div');
+    row.className = 'row'; row.style.alignItems = 'center';
+    const lbl = document.createElement('span');
+    lbl.textContent = `🎬 ${x.it.title} · ${Math.round(x.dur)} s · ${(x.blob.size / 1048576).toFixed(1)} MB${x.precise ? '' : ' (puede traer unos segundos de más al inicio)'}`;
+    row.append(
+      lbl,
+      mkBtn('Cargar en el editor', () => {
+        state.videoBlob = x.blob;
+        loadVideoSrc(URL.createObjectURL(x.blob), x.it.title, x.dur);
+        state.sourceCredit = creatorCredit(x.it.creator, x.it.link);
+      }),
+      mkBtn('Descargar', () => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(x.blob); a.download = `${String(x.it.title).replace(/[^\w-]+/g, '_')}.${x.ext}`;
+        a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      })
+    );
+    box.appendChild(row);
+  });
+}
+
+async function recordYtClips(items) {
+  if (ytRec.busy) { showToast('Ya hay una grabación en curso', 'warn'); return; }
+  if (!items.length) { showToast('Marca al menos un corte como "Aprobar"', 'warn'); return; }
+  if (liveCapture.stream) { showToast('Detén primero la captura del directo', 'warn'); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    showToast('Tu navegador no permite capturar la pestaña (usa Chrome o Edge de escritorio)', 'warn');
+    return;
+  }
+  const fmt = LIVE_FORMATS.find(f => f.id === $('liveFormat').value) || LIVE_FORMATS[0];
+  const st = $('ytRecStatus');
+  ytRec.busy = true; ytRec.cancel = false;
+  $('ytRecStopBtn').style.display = 'inline-flex';
+  let stream = null, player = null;
+  const fr = $('ytIframe');
+  try {
+    const useApi = location.protocol !== 'file:';
+    fr.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+    const w = Math.min((fr.parentElement && fr.parentElement.clientWidth) || 800, 960);
+    fr.style.width = w + 'px';
+    fr.style.height = Math.round(w * 9 / 16) + 'px';
+    fr.src = `https://www.youtube.com/embed/${items[0].id}?controls=0&rel=0&modestbranding=1&playsinline=1` +
+      (useApi ? `&enablejsapi=1&origin=${encodeURIComponent(location.origin)}` : '');
+    $('ytEmbedWrap').style.display = 'block';
+    fr.scrollIntoView({ block: 'center' });
+    await sleepMs(900);
+    stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: 30, displaySurface: 'browser' }, audio: true,
+      preferCurrentTab: true, selfBrowserSurface: 'include'
+    });
+    if (!stream.getAudioTracks().length) showToast('No se capturó audio: marca "Compartir audio de la pestaña"', 'warn');
+    try {
+      const vt = stream.getVideoTracks()[0];
+      if (window.CropTarget && vt.cropTo) await vt.cropTo(await CropTarget.fromElement(fr));
+    } catch (e) { console.warn('Sin recorte al reproductor:', e); }
+    if (useApi) {
+      try {
+        await loadYtApi();
+        player = await new Promise((res, rej) => {
+          const pl = new YT.Player(fr, { events: { onReady: () => res(pl), onStateChange: ev => { if (ytRec.onState) ytRec.onState(ev.data); } } });
+          setTimeout(() => rej(new Error('el reproductor no respondió')), 10000);
+        });
+      } catch (e) {
+        console.warn('Sin control del reproductor:', e);
+        player = null;
+      }
+    }
+    if (!player) showToast('Sin control exacto del reproductor: los clips pueden traer unos segundos de más al inicio (abre la página desde un servidor, no como archivo, para mejor precisión)', 'warn');
+    let ok = 0;
+    for (let i = 0; i < items.length && !ytRec.cancel; i++) {
+      const it = items[i];
+      st.textContent = `🎥 Grabando corte ${i + 1} de ${items.length}: "${it.title}" (${Math.max(3, it.e - it.s)} s en tiempo real). No cierres ni minimices la ventana.`;
+      const clip = await recordYtOne(stream, fr, player, it, fmt);
+      if (clip) { addYtClip(clip); ok++; } else if (!ytRec.cancel) showToast(`El corte "${it.title}" no se pudo grabar (el video no arrancó)`, 'warn');
+    }
+    st.textContent = ytRec.cancel ? 'Grabación detenida.' : `✅ ${ok} de ${items.length} cortes grabados. Los tienes abajo, listos para cargar en el editor.`;
+  } catch (err) {
+    st.textContent = `⚠️ No se pudo grabar: ${err && err.message ? err.message : err}`;
+  } finally {
+    if (stream) stream.getTracks().forEach(tr => tr.stop());
+    try { if (player && player.pauseVideo) player.pauseVideo(); } catch (_) {}
+    ytRec.busy = false; ytRec.finishNow = null; ytRec.onState = null;
+    $('ytRecStopBtn').style.display = 'none';
+  }
+}
+$('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytRec.finishNow) ytRec.finishNow(); });
 
 // ==================== YOUTUBE DIRECTO ====================
   $('toggleYtBtn').addEventListener('click', () => {
