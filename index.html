@@ -540,6 +540,18 @@
       background: #0b1222; border: 1px solid var(--border);
       display: flex; flex-direction: column; gap: 6px;
     }
+  
+    .tg-box {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(14, 165, 233, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.32);
+    }
+    .btn-tg {
+      background: linear-gradient(135deg, #229ED9, #0284c7);
+      border: none; color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -691,6 +703,42 @@
           <button type="button" class="emo-pill active" data-emo="reflexion">🧠 Reflexión</button>
         </div>
         <div class="muted" id="liveRadarStatus" style="margin-top:6px; font-size:0.78rem;">Activa las emociones que quieras cazar. Se aplican al directo en vivo, a enlaces de YouTube y al Auto-Análisis IA.</div>
+
+        <!-- Configuración de envío automático a Telegram con subtítulos -->
+        <div class="tg-box">
+          <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+            <strong style="font-size:0.84rem;">✈️ Envío a Telegram (con Subtítulos)</strong>
+            <span class="badge" id="tgBadge">Sin configurar</span>
+          </div>
+          <div class="form-grid-2" style="margin-bottom:8px;">
+            <div class="input-group">
+              <input type="password" id="tgBotTokenInput" placeholder="Bot Token (de @BotFather)" autocomplete="off" />
+              <button type="button" class="btn btn-sm" data-toggle-vis="tgBotTokenInput" title="Mostrar u ocultar">👁️</button>
+            </div>
+            <input type="text" id="tgChatIdInput" placeholder="Chat ID o @canal (ej. 123456789)" />
+          </div>
+          <div class="row" style="justify-content:space-between; gap:8px;">
+            <div class="row" style="gap:10px;">
+              <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; color:var(--text);">
+                <input type="checkbox" id="tgAutoSendCheck" checked style="width:auto;" />
+                Auto-enviar épicos
+              </label>
+              <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; color:var(--text);">
+                <input type="checkbox" id="tgBurnSubsCheck" checked style="width:auto;" />
+                Quemar subtítulos en video
+              </label>
+              <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; color:var(--text);">
+                <input type="checkbox" id="tgSendSrtCheck" style="width:auto;" />
+                Adjuntar .SRT
+              </label>
+            </div>
+            <div class="row" style="gap:6px;">
+              <button type="button" class="btn btn-sm" id="tgTestBtn">⚡ Probar</button>
+              <button type="button" class="btn btn-sm btn-tg" id="tgSaveBtn">💾 Guardar Telegram</button>
+            </div>
+          </div>
+          <div class="muted" id="tgStatusText" style="margin-top:6px; font-size:0.77rem;">Crea un bot gratis en @BotFather, obtén tu Chat ID con @userinfobot (o añade el bot como admin de tu canal) y guárdalo aquí.</div>
+        </div>
       </div>
 
       <details style="margin-top:8px;">
@@ -1351,6 +1399,7 @@
     <video id="exportedVideoPreview" controls style="width:100%; max-height:360px; border-radius:12px; display:none; background:#000;"></video>
     <div class="row" style="margin-top:14px; justify-content:flex-end;">
       <button type="button" class="btn" id="closeExportModal">Seguir Editando</button>
+      <button type="button" class="btn btn-tg" id="sendExportToTgBtn" style="display:none;">✈️ Enviar a Telegram</button>
       <a class="btn btn-green" id="downloadExportBtn" style="display:none; text-decoration:none;" download="cliphub_corte.webm">⬇️ Descargar Video</a>
     </div>
   </div>
@@ -4220,6 +4269,7 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
     $('exportModal').classList.add('open');
     $('exportedVideoPreview').style.display = 'none';
     $('downloadExportBtn').style.display = 'none';
+    if ($('sendExportToTgBtn')) $('sendExportToTgBtn').style.display = 'none';
     if ($('exportTabWarn')) $('exportTabWarn').style.display = 'block';
     $('exportProgress').style.width = '5%';
     $('exportStatus').textContent = `Renderizando corte en ${chosenFmt.label} con subtítulos, filtros, PNG y audio...`;
@@ -4292,6 +4342,7 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
       $('downloadExportBtn').download = `${state.videoName}_corte.${chosenFmt.ext}`;
       $('downloadExportBtn').textContent = `⬇️ Descargar Video (${chosenFmt.ext.toUpperCase()})`;
       $('downloadExportBtn').style.display = 'inline-flex';
+      if ($('sendExportToTgBtn')) $('sendExportToTgBtn').style.display = 'inline-flex';
     } catch (err) {
       $('exportStatus').textContent = `⚠️ Error al renderizar el clip: ${err.message}`;
     } finally {
@@ -4834,7 +4885,9 @@ function startLiveEpicRadar() {
         const form = new FormData();
         form.append('file', blob, `live.${ext}`);
         form.append('model', 'whisper-large-v3-turbo');
-        form.append('response_format', 'json');
+        form.append('response_format', 'verbose_json');
+        form.append('timestamp_granularities[]', 'segment');
+        form.append('timestamp_granularities[]', 'word');
         const proxy = getActiveProxy();
         const endpoint = proxy ? `${proxy}/api/transcribe` : 'https://api.groq.com/openai/v1/audio/transcriptions';
         const headers = proxy ? getProxyHeaders() : { Authorization: `Bearer ${(state.ai.groqKey || '').trim()}` };
@@ -4872,7 +4925,11 @@ Responde SOLO JSON válido:
             emotion: emo || 'feliz',
             title: String(parsed.title || 'Momento épico en vivo'),
             reason: String(parsed.reason || transcript.slice(0, 90)),
-            score
+            score,
+            transcript,
+            windowSecs: secInterval,
+            rawSegments: Array.isArray(wData.segments) ? wData.segments : [],
+            rawWords: Array.isArray(wData.words) ? wData.words : []
           });
           if ($('liveRadarStatus')) $('liveRadarStatus').textContent = `🔥 ¡Detectado [${emotionLabel(emo)}]: "${parsed.title}" (Score ${score})!`;
         } else {
@@ -4929,14 +4986,38 @@ function liveCutNow(secs, auto, epicMeta = null) {
   const blob = new Blob(r.chunks, { type: (r.fmt.mime || 'video/webm').split(';')[0] });
   const timeTag = new Date().toLocaleTimeString();
   const name = epicMeta?.title ? epicMeta.title : `Directo ${timeTag}`;
-  liveCapture.clips.unshift({
+  const cutStart = Math.max(0, dur - n);
+  const cutEnd = dur;
+  const winSec = Number(epicMeta?.windowSecs) || n;
+  const chunkOffset = Math.max(cutStart, cutEnd - winSec);
+  const mappedSegments = (epicMeta?.rawSegments || [])
+    .map(seg => ({
+      start: Math.max(cutStart, Number(seg.start || 0) + chunkOffset),
+      end: Math.min(cutEnd, Number(seg.end || 0) + chunkOffset),
+      text: String(seg.text || '').trim()
+    }))
+    .filter(seg => seg.text && seg.end > seg.start);
+  const mappedWords = (epicMeta?.rawWords || [])
+    .map(w => ({
+      start: Math.max(cutStart, Number(w.start || 0) + chunkOffset),
+      end: Math.min(cutEnd, Number(w.end || 0) + chunkOffset),
+      word: String(w.word || '').trim()
+    }))
+    .filter(w => w.word);
+
+  const clipObj = {
     ext: r.fmt.ext, name, timeTag, blob, dur,
-    start: Math.max(0, dur - n), end: dur, n,
+    start: cutStart, end: cutEnd, n,
     emotion: epicMeta?.emotion || '',
     reason: epicMeta?.reason || '',
     score: epicMeta?.score || 0,
+    transcript: epicMeta?.transcript || '',
+    subtitles: mappedSegments,
+    words: mappedWords,
+    tgStatus: '',
     creator: getCreator(), src: $('ytUrlInput').value.trim()
-  });
+  };
+  liveCapture.clips.unshift(clipObj);
   liveCapture.clips = liveCapture.clips.slice(0, 12);
   const box = $('liveClips');
   box.textContent = '';
@@ -4976,15 +5057,26 @@ function liveCutNow(secs, auto, epicMeta = null) {
         loadVideoSrc(URL.createObjectURL(c.blob), c.name, c.dur);
         state.sourceCredit = creatorCredit(c.creator, c.src || (c.creator && c.creator.url) || '');
       }),
+      mkBtn('✈️ Enviar a Telegram', () => enqueueTelegramLiveClip(c)),
       mkBtn(`⬇️ Descargar (${c.dur} s)`, () => {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(c.blob); a.download = `${c.name.replace(/[^\w-]+/g, '_')}.${c.ext}`;
         a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
       })
     );
+    if (c.tgStatus) {
+      const tgTag = document.createElement('span');
+      tgTag.className = 'muted';
+      tgTag.style.fontSize = '0.76rem';
+      tgTag.textContent = c.tgStatus;
+      actions.appendChild(tgTag);
+    }
     card.appendChild(actions);
     box.appendChild(card);
   });
+  if (auto && epicMeta && isTelegramConfigured() && $('tgAutoSendCheck')?.checked) {
+    enqueueTelegramLiveClip(clipObj);
+  }
   showToast(
     epicMeta?.emotion ? `${emotionLabel(epicMeta.emotion)} detectado y guardado (${n}s)` : (auto ? `Corte automático de ${n} s guardado` : `Corte de ${n} s listo`),
     'ok'
@@ -6253,6 +6345,450 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
 
   // Evitar que el botón "Verificar Conexiones" abra/cierre el acordeón <details>
   $('verifyAllAccountsBtn')?.addEventListener('click', e => e.preventDefault());
+
+
+  // ==================== MÓDULO TELEGRAM (ENVÍO DE CORTES ÉPICOS CON SUBTÍTULOS) ====================
+  function loadTelegramConfig() {
+    try {
+      const saved = JSON.parse(safeGet('cliphub_telegram', 'null'));
+      if (saved && typeof saved === 'object') return saved;
+    } catch (_) {}
+    return { botToken: '', chatId: '646422028', autoSend: true, burnSubs: true, sendSrt: false };
+  }
+
+  state.telegram = loadTelegramConfig();
+  const tgQueue = [];
+  let tgSending = false;
+
+  function isTelegramConfigured() {
+    return Boolean((state.telegram?.botToken || '').trim() && (state.telegram?.chatId || '').trim());
+  }
+
+  function refreshTelegramUI() {
+    const ok = isTelegramConfigured();
+    if ($('tgBotTokenInput')) $('tgBotTokenInput').value = state.telegram.botToken || '';
+    if ($('tgChatIdInput')) $('tgChatIdInput').value = state.telegram.chatId || '';
+    if ($('tgAutoSendCheck')) $('tgAutoSendCheck').checked = state.telegram.autoSend !== false;
+    if ($('tgBurnSubsCheck')) $('tgBurnSubsCheck').checked = state.telegram.burnSubs !== false;
+    if ($('tgSendSrtCheck')) $('tgSendSrtCheck').checked = Boolean(state.telegram.sendSrt);
+    if ($('tgBadge')) {
+      $('tgBadge').textContent = ok ? '✓ Conectado' : 'Sin configurar';
+      $('tgBadge').className = ok ? 'badge green' : 'badge';
+    }
+  }
+
+  function saveTelegramConfigFromUI(silent = false) {
+    state.telegram = {
+      botToken: ($('tgBotTokenInput')?.value || '').trim(),
+      chatId: ($('tgChatIdInput')?.value || '').trim(),
+      autoSend: Boolean($('tgAutoSendCheck')?.checked),
+      burnSubs: Boolean($('tgBurnSubsCheck')?.checked),
+      sendSrt: Boolean($('tgSendSrtCheck')?.checked)
+    };
+    safeSet('cliphub_telegram', JSON.stringify(state.telegram));
+    refreshTelegramUI();
+    if (!silent) {
+      showToast(isTelegramConfigured() ? 'Telegram configurado y guardado' : 'Configuración de Telegram guardada', 'ok');
+    }
+  }
+
+  $('tgSaveBtn')?.addEventListener('click', () => saveTelegramConfigFromUI(false));
+  ['tgAutoSendCheck', 'tgBurnSubsCheck', 'tgSendSrtCheck'].forEach(id => {
+    $(id)?.addEventListener('change', () => saveTelegramConfigFromUI(true));
+  });
+
+  $('tgTestBtn')?.addEventListener('click', async () => {
+    saveTelegramConfigFromUI(true);
+    if (!isTelegramConfigured()) {
+      showToast('Ingresa tu Bot Token y Chat ID primero', 'warn');
+      return;
+    }
+    const { botToken, chatId } = state.telegram;
+    if ($('tgStatusText')) $('tgStatusText').textContent = '⏳ Probando conexión con Telegram...';
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${encodeURIComponent(botToken)}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: '✅ ClipHub Studio Pro conectado. Aquí recibirás tus cortes épicos con subtítulos incluidos.'
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.description || `HTTP ${res.status}`);
+      if ($('tgStatusText')) $('tgStatusText').textContent = '✅ Mensaje de prueba enviado correctamente a tu Telegram.';
+      showToast('Telegram conectado correctamente', 'ok');
+    } catch (err) {
+      if ($('tgStatusText')) $('tgStatusText').textContent = `❌ Error Telegram: ${err.message}. (Asegúrate de haber iniciado tu bot con /start o añadirlo como admin del canal).`;
+      showToast(`Error Telegram: ${err.message}`, 'warn');
+    }
+  });
+
+  function fmtSrtTime(sec) {
+    sec = Math.max(0, Number(sec) || 0);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    const ms = Math.round((sec - Math.floor(sec)) * 1000);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
+  }
+
+  function buildSrtContent(segments, offsetStart = 0) {
+    const clean = (segments || []).filter(s => s && String(s.text || '').trim());
+    if (!clean.length) return '';
+    return clean.map((s, idx) => {
+      const st = Math.max(0, Number(s.start) - offsetStart);
+      const en = Math.max(st + 0.4, Number(s.end) - offsetStart);
+      return `${idx + 1}\n${fmtSrtTime(st)} --> ${fmtSrtTime(en)}\n${String(s.text).trim()}`;
+    }).join('\n\n') + '\n';
+  }
+
+  // Dibuja subtítulos para un clip offscreen (reutiliza exactamente el mismo estilo visual del Estudio)
+  function drawOffscreenSubtitles(c, w, h, now, subsList, wordsList, style, aspect) {
+    if (!subsList || !subsList.length) return;
+    const active = subsList.find(s => now >= s.start && now <= s.end);
+    if (!active) return;
+
+    if (style === 'word') {
+      let ws = (wordsList || []).filter(x => x.start >= active.start - 0.15 && x.end <= active.end + 0.15 && String(x.word).trim());
+      if (!ws.length) {
+        const parts = String(active.text || '').trim().split(/\s+/).filter(Boolean);
+        const step = Math.max(0.2, (active.end - active.start) / Math.max(1, parts.length));
+        ws = parts.map((p, i) => ({ word: p, start: active.start + i * step, end: active.start + (i + 1) * step }));
+      }
+      if (!ws.length) return;
+      let idx = 0;
+      for (let i = 0; i < ws.length; i++) { if (ws[i].start <= now) idx = i; }
+      const G = 3, g = Math.floor(idx / G);
+      const txt = ws.slice(g * G, g * G + G).map(x => String(x.word).trim().toUpperCase());
+      let fs = aspect === '9:16' ? 38 : 42;
+      c.save();
+      c.textAlign = 'left';
+      c.lineJoin = 'round';
+      let widths, sp, total;
+      const measure = () => {
+        c.font = `900 ${fs}px Segoe UI, Impact, sans-serif`;
+        sp = c.measureText(' ').width;
+        widths = txt.map(t => c.measureText(t).width);
+        total = widths.reduce((a, b) => a + b, 0) + sp * (txt.length - 1);
+      };
+      measure();
+      if (total > w * 0.92) { fs = Math.floor(fs * (w * 0.92) / total); measure(); }
+      let x = (w - total) / 2;
+      const y = h * 0.80;
+      txt.forEach((t, i) => {
+        c.lineWidth = 9;
+        c.strokeStyle = '#050811';
+        c.strokeText(t, x, y);
+        c.fillStyle = (g * G + i) === idx ? '#fde047' : '#ffffff';
+        c.fillText(t, x, y);
+        x += widths[i] + sp;
+      });
+      c.restore();
+      return;
+    }
+
+    const fontSize = aspect === '9:16' ? 32 : 36;
+    c.save();
+    c.font = `900 ${fontSize}px Segoe UI, Impact, sans-serif`;
+    c.textAlign = 'center';
+    const lines = wrapText(c, active.text.toUpperCase(), w * 0.86);
+    const lineH = fontSize * 1.24;
+    const baseY = h * 0.80 - ((lines.length - 1) * lineH) / 2;
+    lines.forEach((line, idx) => {
+      const y = baseY + idx * lineH;
+      if (style === 'box') {
+        const tw = c.measureText(line).width + 28;
+        c.fillStyle = 'rgba(255,255,255,0.95)';
+        drawRoundRect(c, w / 2 - tw / 2, y - fontSize * 0.85, tw, fontSize * 1.15, 10);
+        c.fill();
+        c.fillStyle = '#090d16';
+        c.fillText(line, w / 2, y);
+      } else {
+        c.lineWidth = 8;
+        c.strokeStyle = '#050811';
+        c.strokeText(line, w / 2, y);
+        c.fillStyle = style === 'viral' ? '#fde047' : style === 'neon' ? '#38bdf8' : '#ffffff';
+        c.fillText(line, w / 2, y);
+      }
+    });
+    c.restore();
+  }
+
+  // Renderiza en segundo plano (sin eco de audio) un clip con subtítulos incrustados en MP4/WebM
+  async function renderOffscreenClipWithSubtitles(clipObj) {
+    const offVideo = document.createElement('video');
+    offVideo.playsInline = true;
+    offVideo.preload = 'auto';
+    offVideo.style.cssText = 'position:fixed;bottom:0;right:0;width:160px;height:90px;opacity:0.001;pointer-events:none;z-index:-2;';
+    document.body.appendChild(offVideo);
+
+    const srcUrl = URL.createObjectURL(clipObj.blob);
+    let ac = null;
+    try {
+      await new Promise((res, rej) => {
+        offVideo.onloadeddata = () => res();
+        offVideo.onerror = () => rej(new Error('No se pudo leer el clip para incrustar subtítulos'));
+        setTimeout(() => res(), 4000);
+        offVideo.src = srcUrl;
+        offVideo.load();
+      });
+
+      const aspect = state.aspect || '9:16';
+      const dims = aspect === '16:9' ? { w: 960, h: 540 }
+        : aspect === '1:1' ? { w: 720, h: 720 }
+        : { w: 540, h: 960 };
+
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = dims.w;
+      offCanvas.height = dims.h;
+      const g = offCanvas.getContext('2d');
+
+      const vStream = offCanvas.captureStream(30);
+      const tracks = [...vStream.getVideoTracks()];
+
+      // Captura el audio del clip en silencio (sin sonar por los altavoces) usando Web Audio API
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          ac = new AudioCtx();
+          const source = ac.createMediaElementSource(offVideo);
+          const dest = ac.createMediaStreamDestination();
+          source.connect(dest); // Solo al grabador, NO a ac.destination (evita eco con el directo)
+          if (dest.stream.getAudioTracks().length) {
+            tracks.push(...dest.stream.getAudioTracks());
+          }
+        }
+      } catch (_) {}
+
+      const formats = [
+        { mime: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', ext: 'mp4' },
+        { mime: 'video/mp4', ext: 'mp4' },
+        { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
+        { mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
+        { mime: 'video/webm', ext: 'webm' }
+      ];
+      const chosen = formats.find(f => {
+        try { return typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(f.mime); }
+        catch (_) { return false; }
+      }) || { mime: '', ext: 'webm' };
+
+      const combined = new MediaStream(tracks);
+      const rec = new MediaRecorder(
+        combined,
+        chosen.mime ? { mimeType: chosen.mime, videoBitsPerSecond: 2600000 } : { videoBitsPerSecond: 2600000 }
+      );
+      const chunks = [];
+      rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+
+      const startT = Math.max(0, Number(clipObj.start) || 0);
+      const endT = Math.max(startT + 2, Number(clipObj.end) || Number(clipObj.dur) || 30);
+      const clipMs = Math.min(60000, Math.max(2000, (endT - startT) * 1000));
+
+      let subs = Array.isArray(clipObj.subtitles) && clipObj.subtitles.length
+        ? clipObj.subtitles
+        : (clipObj.transcript ? buildTimedSubtitles(clipObj.transcript.split(/(?<=[.!?])\s+/), startT, endT) : []);
+      if (!subs.length && clipObj.name) {
+        subs = [{ start: startT, end: endT, text: clipObj.name }];
+      }
+      const words = Array.isArray(clipObj.words) ? clipObj.words : [];
+      const subStyle = state.subStyle || 'word';
+
+      let running = true;
+      const drawLoop = () => {
+        if (!running) return;
+        g.fillStyle = '#050811';
+        g.fillRect(0, 0, dims.w, dims.h);
+        if (offVideo.readyState >= 2 && offVideo.videoWidth > 0) {
+          const vr = offVideo.videoWidth / offVideo.videoHeight;
+          const cr = dims.w / dims.h;
+          let sx = 0, sy = 0, sw = offVideo.videoWidth, sh = offVideo.videoHeight;
+          if (vr > cr) { sw = offVideo.videoHeight * cr; sx = (offVideo.videoWidth - sw) / 2; }
+          else { sh = offVideo.videoWidth / cr; sy = (offVideo.videoHeight - sh) / 2; }
+          g.drawImage(offVideo, sx, sy, sw, sh, 0, 0, dims.w, dims.h);
+        }
+        drawOffscreenSubtitles(g, dims.w, dims.h, offVideo.currentTime || startT, subs, words, subStyle, aspect);
+        requestAnimationFrame(drawLoop);
+      };
+
+      offVideo.currentTime = startT;
+      if (ac && ac.state === 'suspended') { await ac.resume().catch(() => {}); }
+      await offVideo.play().catch(() => {});
+      requestAnimationFrame(drawLoop);
+      rec.start(500);
+
+      await new Promise(r => setTimeout(r, clipMs));
+      running = false;
+      offVideo.pause();
+      if (rec.state !== 'inactive') rec.stop();
+      await new Promise(r => { rec.onstop = r; });
+
+      const mimeClean = (chosen.mime || 'video/webm').split(';')[0];
+      return { blob: new Blob(chunks, { type: mimeClean }), ext: chosen.ext, subs };
+    } finally {
+      if (ac) { try { await ac.close(); } catch (_) {} }
+      try { offVideo.pause(); offVideo.src = ''; offVideo.remove(); } catch (_) {}
+      try { URL.revokeObjectURL(srcUrl); } catch (_) {}
+    }
+  }
+
+  async function sendBlobToTelegram({ blob, ext, title, emotion, reason, score, transcript, subs, startOffset, credit }) {
+    if (!isTelegramConfigured()) {
+      throw new Error('Configura tu Bot Token y Chat ID de Telegram primero');
+    }
+    if (blob.size > 49 * 1024 * 1024) {
+      throw new Error('El clip supera el límite de 50 MB de Telegram Bot API');
+    }
+    const { botToken, chatId, sendSrt } = state.telegram;
+    const emoTag = emotion ? `[${emotionLabel(emotion)}] ` : '';
+    const lines = [
+      `🔥 ${emoTag}${title || 'Corte Épico'}${score ? ` (⭐ ${score}/100)` : ''}`
+    ];
+    if (reason) lines.push(`💡 ${reason}`);
+    if (transcript) lines.push(`💬 Subtítulos:\n"${transcript.slice(0, 520)}"`);
+    if (credit) lines.push(credit.trim());
+    const caption = lines.join('\n\n').slice(0, 1020);
+
+    const safeName = String(title || 'cliphub_epico').replace(/[^\w-]+/g, '_').slice(0, 40) || 'cliphub_epico';
+    const fd = new FormData();
+    fd.append('chat_id', chatId);
+    fd.append('video', blob, `${safeName}.${ext || 'mp4'}`);
+    fd.append('caption', caption);
+    fd.append('supports_streaming', 'true');
+
+    const res = await fetch(`https://api.telegram.org/bot${encodeURIComponent(botToken)}/sendVideo`, {
+      method: 'POST',
+      body: fd
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.description || `Telegram HTTP ${res.status}`);
+    }
+
+    // Enviar archivo .SRT adjunto si está activado y hay subtítulos
+    if (sendSrt && Array.isArray(subs) && subs.length) {
+      const srtText = buildSrtContent(subs, startOffset || 0);
+      if (srtText) {
+        const srtFd = new FormData();
+        srtFd.append('chat_id', chatId);
+        srtFd.append('document', new Blob([srtText], { type: 'application/x-subrip' }), `${safeName}.srt`);
+        srtFd.append('caption', `📝 Subtítulos SRT — ${title || 'Corte Épico'}`.slice(0, 1000));
+        await fetch(`https://api.telegram.org/bot${encodeURIComponent(botToken)}/sendDocument`, {
+          method: 'POST',
+          body: srtFd
+        }).catch(() => {});
+      }
+    }
+    return data;
+  }
+
+  async function processTelegramQueue() {
+    if (tgSending || !tgQueue.length) return;
+    tgSending = true;
+    while (tgQueue.length) {
+      const c = tgQueue.shift();
+      try {
+        let finalBlob = c.blob;
+        let finalExt = c.ext || 'mp4';
+        let finalSubs = c.subtitles || [];
+
+        // Si el clip aún no tiene transcripción pero el usuario tiene Groq Whisper, transcribirlo rápido
+        if (!finalSubs.length && c.blob && ((state.ai.groqKey || '').trim() || hasProxy())) {
+          if ($('tgStatusText')) $('tgStatusText').textContent = `🎙️ Transcribiendo subtítulos de "${c.name}"...`;
+          try {
+            const tr = await transcribeVideoWithGroqWhisper(c.blob);
+            if (tr?.segments?.length) {
+              c.transcript = tr.text || '';
+              c.subtitles = tr.segments.filter(s => s.end >= c.start && s.start <= c.end);
+              c.words = (tr.words || []).filter(w => w.end >= c.start && w.start <= c.end);
+              finalSubs = c.subtitles;
+            }
+          } catch (_) {}
+        }
+
+        if (state.telegram.burnSubs !== false) {
+          if ($('tgStatusText')) $('tgStatusText').textContent = `🎬 Renderizando subtítulos en "${c.name}" para Telegram (${tgQueue.length} en cola)...`;
+          const rendered = await renderOffscreenClipWithSubtitles(c);
+          finalBlob = rendered.blob;
+          finalExt = rendered.ext;
+          finalSubs = rendered.subs;
+        }
+
+        if ($('tgStatusText')) $('tgStatusText').textContent = `✈️ Enviando "${c.name}" a Telegram...`;
+        await sendBlobToTelegram({
+          blob: finalBlob,
+          ext: finalExt,
+          title: c.name,
+          emotion: c.emotion,
+          reason: c.reason,
+          score: c.score,
+          transcript: c.transcript || finalSubs.map(s => s.text).join(' '),
+          subs: finalSubs,
+          startOffset: c.start || 0,
+          credit: creatorCredit(c.creator, c.src || (c.creator && c.creator.url) || '')
+        });
+        c.tgStatus = '✅ Enviado a Telegram';
+        if ($('tgStatusText')) $('tgStatusText').textContent = `✅ "${c.name}" enviado a Telegram con subtítulos.`;
+        showToast(`✈️ "${c.name}" enviado a Telegram`, 'ok');
+      } catch (err) {
+        c.tgStatus = `❌ Error TG`;
+        if ($('tgStatusText')) $('tgStatusText').textContent = `❌ No se pudo enviar "${c.name}" a Telegram: ${err.message}`;
+        showToast(`Error Telegram: ${err.message}`, 'warn');
+      }
+    }
+    tgSending = false;
+  }
+
+  function enqueueTelegramLiveClip(clipObj) {
+    saveTelegramConfigFromUI(true);
+    if (!isTelegramConfigured()) {
+      showToast('Configura tu Bot Token y Chat ID de Telegram en el Radar Épico', 'warn');
+      return;
+    }
+    tgQueue.push(clipObj);
+    if ($('tgStatusText')) $('tgStatusText').textContent = `📥 "${clipObj.name}" añadido a la cola de envío a Telegram...`;
+    processTelegramQueue();
+  }
+
+  // Botón "Enviar a Telegram" dentro del Modal de Exportación (el video YA tiene subtítulos, filtros y PNG quemados)
+  $('sendExportToTgBtn')?.addEventListener('click', async () => {
+    saveTelegramConfigFromUI(true);
+    if (!isTelegramConfigured()) {
+      showToast('Configura primero tu Bot Token y Chat ID de Telegram en el panel YouTube / En Directo', 'warn');
+      return;
+    }
+    if (!state.lastExport?.blob) {
+      showToast('Primero renderiza el clip para enviarlo', 'warn');
+      return;
+    }
+    const btn = $('sendExportToTgBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando...';
+    try {
+      const cut = state.cuts[state.activeCutIdx] || {};
+      const transcript = (state.subtitles || []).map(s => s.text).join(' ');
+      await sendBlobToTelegram({
+        blob: state.lastExport.blob,
+        ext: state.lastExport.ext || 'mp4',
+        title: cut.title || state.videoName || 'Clip ClipHub',
+        emotion: cut.emotion || '',
+        reason: cut.reason || '',
+        score: cut.score || 0,
+        transcript,
+        subs: state.subtitles || [],
+        startOffset: state.startTime || 0,
+        credit: state.sourceCredit || ''
+      });
+      showToast('✈️ Clip enviado a Telegram con subtítulos incluidos', 'ok');
+    } catch (err) {
+      showToast(`Error al enviar a Telegram: ${err.message}`, 'warn');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '✈️ Enviar a Telegram';
+    }
+  });
+
+  refreshTelegramUI();
 
 })();
 </script>
