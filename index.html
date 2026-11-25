@@ -865,7 +865,10 @@
             </div>
             <div class="row" style="width:100%;">
               <button type="button" class="btn btn-primary" id="exportClipBtn" style="flex:1; justify-content:center;">⬇️ Descargar Clip</button>
-              <button type="button" class="btn" id="sendCutToSchedBtn" style="flex:1; justify-content:center;">📅 Programar</button>
+              <button type="button" class="btn btn-tg" id="studioSendTgBtn" style="flex:1; justify-content:center;">✈️ Enviar a Telegram</button>
+            </div>
+            <div class="row" style="width:100%;">
+              <button type="button" class="btn btn-sm" id="sendCutToSchedBtn" style="flex:1; justify-content:center;">📅 Programar</button>
             </div>
             <button type="button" class="btn btn-sm" id="openEditorFromStudioBtn" style="width:100%; justify-content:center;">🎬 Abrir en Editor Avanzado</button>
           </div>
@@ -1078,6 +1081,10 @@
               <option value="box">Caja Blanca</option>
               <option value="clean">Cine Limpio</option>
             </select>
+            <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; color:var(--text);">
+              <input type="checkbox" id="ytAutoTgCheck" style="width:auto;" />
+              ✈️ Auto-enviar a Telegram
+            </label>
             <span class="muted" style="font-size:0.76rem; margin-left:auto;">Tramo opcional: min</span>
             <input type="number" id="ytFromMin" min="0" placeholder="0" style="width:68px;" />
             <span class="muted" style="font-size:0.76rem;">a</span>
@@ -1239,6 +1246,7 @@
         <span class="kbd-pill" title="Atajos activos en Estudio y Editor">⌨️ <kbd>Espacio</kbd> Play · <kbd>I</kbd>/<kbd>O</kbd> Corte · <kbd>←</kbd><kbd>→</kbd> ±1s · <kbd>S</kbd> Dividir · <kbd>K</kbd> En Vivo</span>
         <button type="button" class="btn btn-sm btn-green" id="edSaveBrandBtn" title="Guarda tu marca de agua, estilo de subtítulos, formato y color para futuras sesiones">💾 Guardar Plantilla</button>
         <button type="button" class="btn btn-sm" id="edResetBtn">🔄 Restablecer</button>
+        <button type="button" class="btn btn-sm btn-tg" id="edSendTgBtn">✈️ Enviar a Telegram</button>
         <button type="button" class="btn btn-sm btn-primary" id="edExportBtn">⬇️ Exportar Video Editado</button>
       </div>
     </div>
@@ -1532,6 +1540,7 @@
       </div>
       <div class="row">
         <input type="file" id="viewerLocalFileInput" accept="video/*" multiple hidden />
+        <button type="button" class="btn btn-sm btn-tg" id="viewerTopSendTgBtn">✈️ Enviar a Telegram</button>
         <button type="button" class="btn btn-sm btn-primary" id="viewerAddLocalBtn">📁 Abrir video local</button>
         <button type="button" class="btn btn-sm btn-danger" id="viewerClearAllBtn">🗑️ Vaciar lista</button>
       </div>
@@ -4699,7 +4708,7 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
   bindPngDrag(editorCanvas);
 
   // ==================== EXPORTAR Y PREVISUALIZAR CLIP LOCAL ($0 TOKENS) ====================
-  async function exportCurrentClip() {
+  async function exportCurrentClip(autoSendToTelegram = false) {
     if (!video.src) {
       showToast('Primero carga un video para exportar', 'warn');
       return;
@@ -4825,6 +4834,35 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
         words: [],
         credit: state.sourceCredit || ''
       });
+      if (autoSendToTelegram === true) {
+        saveTelegramConfigFromUI(true);
+        if (!isTelegramConfigured()) {
+          $('exportStatus').textContent = '⚠️ Clip listo, pero falta configurar tu Bot Token y Chat ID en En Vivo & Radar → Radar & Telegram.';
+          showToast('Configura tu Bot Token y Chat ID de Telegram primero', 'warn');
+        } else {
+          $('exportStatus').textContent = '✈️ Enviando clip renderizado a Telegram con subtítulos y audio...';
+          try {
+            await sendBlobToTelegram({
+              blob,
+              ext: chosenFmt.ext || 'mp4',
+              title: activeCutObj.title || state.videoName || 'Clip ClipHub',
+              emotion: activeCutObj.emotion || '',
+              reason: activeCutObj.reason || '',
+              score: activeCutObj.score || 0,
+              transcript: (state.subtitles || []).map(s => s.text).join(' '),
+              subs: state.subtitles || [],
+              startOffset: state.startTime || 0,
+              credit: state.sourceCredit || ''
+            });
+            pushTelegramHistory({ ok: true, title: activeCutObj.title || state.videoName || 'Clip', emotion: activeCutObj.emotion || '', time: new Date().toLocaleTimeString() });
+            $('exportStatus').textContent = `✅ Clip renderizado en ${chosenFmt.label} y enviado a Telegram con éxito.`;
+            showToast('✈️ Clip enviado a Telegram con subtítulos y audio', 'ok');
+          } catch (tgErr) {
+            $('exportStatus').textContent = `⚠️ Clip listo, pero Telegram devolvió error: ${tgErr.message}`;
+            showToast(`Error Telegram: ${tgErr.message}`, 'warn');
+          }
+        }
+      }
     } catch (err) {
       $('exportStatus').textContent = `⚠️ Error al renderizar el clip: ${err.message}`;
     } finally {
@@ -4834,8 +4872,10 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
     }
   }
 
-  $('exportClipBtn').addEventListener('click', exportCurrentClip);
-  $('edExportBtn').addEventListener('click', exportCurrentClip);
+  $('exportClipBtn').addEventListener('click', () => exportCurrentClip(false));
+  $('edExportBtn').addEventListener('click', () => exportCurrentClip(false));
+  $('studioSendTgBtn')?.addEventListener('click', () => exportCurrentClip(true));
+  $('edSendTgBtn')?.addEventListener('click', () => exportCurrentClip(true));
   $('closeExportModal').addEventListener('click', () => $('exportModal').classList.remove('open'));
 
   
@@ -5093,6 +5133,7 @@ async function generateYtCuts() {
           $('ytCutPreviewWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }),
         mkBtn('🎥 Grabar este corte como video', () => recordYtClips([mk()])),
+        mkBtn('✈️ Grabar y enviar a Telegram', () => recordYtClips([mk()], { autoTg: true })),
         mkBtn('↗ Abrir en YouTube', () => window.open(link(), '_blank', 'noopener')),
         mkBtn('🔗 Copiar enlace con tiempo', () => { copyTextSafe(link()); showToast('Enlace copiado', 'ok'); }),
         mkBtn('📋 Copiar descripción con créditos', () => { copyTextSafe(descr()); showToast('Descripción copiada', 'ok'); })
@@ -6029,7 +6070,7 @@ function verifyClip(blob) {
   });
 }
 
-async function recordYtClips(items) {
+async function recordYtClips(items, recOpts = {}) {
   if (ytRec.busy) { showToast('Ya hay una grabación en curso', 'warn'); return; }
   if (!items.length) { showToast('Marca al menos un corte como "Aprobar"', 'warn'); return; }
   if (liveCapture.stream) { showToast('Detén primero la captura del directo', 'warn'); return; }
@@ -6155,6 +6196,33 @@ async function recordYtClips(items) {
 
         clip.ok ? ok++ : bad++;
         addYtClip(clip);
+        const shouldSendYtTg = Boolean(recOpts.autoTg || $('ytAutoTgCheck')?.checked);
+        if (clip.ok && shouldSendYtTg && !ytRec.cancel) {
+          saveTelegramConfigFromUI(true);
+          if (!isTelegramConfigured()) {
+            showToast('Configura tu Bot Token y Chat ID en Radar & Telegram para auto-enviar', 'warn');
+          } else {
+            st.textContent = `✈️ Enviando corte ${i + 1} ("${it.title}") a Telegram...`;
+            try {
+              await sendBlobToTelegram({
+                blob: clip.blob,
+                ext: clip.ext || 'mp4',
+                title: it.title,
+                emotion: it.emotion || '',
+                reason: it.reason || '',
+                score: it.score || 0,
+                transcript: clip.transcript || (clip.subtitles || []).map(s => s.text).join(' '),
+                subs: clip.subtitles || [],
+                startOffset: 0,
+                credit: creatorCredit(it.creator, it.link)
+              });
+              pushTelegramHistory({ ok: true, title: it.title, emotion: it.emotion || '', time: new Date().toLocaleTimeString() });
+              showToast(`✈️ "${it.title}" enviado a Telegram`, 'ok');
+            } catch (tgErr) {
+              showToast(`Error Telegram: ${tgErr.message}`, 'warn');
+            }
+          }
+        }
       } else if (!ytRec.cancel) showToast(`El corte "${it.title}" no se pudo grabar (el video no arrancó)`, 'warn');
     }
     st.textContent = ytRec.cancel ? 'Grabación detenida.' : `✅ ${ok} cortes verificados${bad ? `, ⚠️ ${bad} con posible daño (cambia el "Formato" y repite)` : ''}. Los tienes abajo.`;
@@ -7937,7 +8005,8 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       res: $('ytResSelect')?.value || 'sd',
       dur: Number($('ytCutDurInput')?.value) || 45,
       burnSubs: Boolean($('ytBurnSubsCheck')?.checked),
-      subStyle: $('ytSubStyleSelect')?.value || 'word'
+      subStyle: $('ytSubStyleSelect')?.value || 'word',
+      autoTg: Boolean($('ytAutoTgCheck')?.checked)
     }));
   }
   function syncYtDurPills(val) {
@@ -7955,7 +8024,7 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
     });
   });
   $('ytCutDurInput')?.addEventListener('input', e => { syncYtDurPills(e.target.value); saveYtCutPrefs(); });
-  ['ytAspectSelect', 'ytResSelect', 'ytBurnSubsCheck', 'ytSubStyleSelect'].forEach(id => {
+  ['ytAspectSelect', 'ytResSelect', 'ytBurnSubsCheck', 'ytSubStyleSelect', 'ytAutoTgCheck'].forEach(id => {
     $(id)?.addEventListener('change', saveYtCutPrefs);
   });
   try {
@@ -7966,6 +8035,7 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       if (yp.dur && $('ytCutDurInput')) { $('ytCutDurInput').value = String(yp.dur); syncYtDurPills(yp.dur); }
       if (typeof yp.burnSubs === 'boolean' && $('ytBurnSubsCheck')) $('ytBurnSubsCheck').checked = yp.burnSubs;
       if (yp.subStyle && $('ytSubStyleSelect')) $('ytSubStyleSelect').value = yp.subStyle;
+      if (typeof yp.autoTg === 'boolean' && $('ytAutoTgCheck')) $('ytAutoTgCheck').checked = yp.autoTg;
     }
   } catch (_) {}
 
@@ -8144,15 +8214,20 @@ ${txt}`;
       const item = document.createElement('div');
       item.className = 'viewer-item' + (c.id === viewerState.activeId ? ' active' : '');
       item.innerHTML = `
-        <div class="row" style="justify-content:space-between; gap:6px;">
-          <strong style="font-size:0.86rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:210px;">🎬 ${escapeHtml(c.title)}</strong>
+        <div class="row" style="justify-content:space-between; gap:6px; flex-wrap:nowrap;">
+          <strong style="font-size:0.86rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">🎬 ${escapeHtml(c.title)}</strong>
           <span class="badge">${escapeHtml(c.aspect)}</span>
+          <button type="button" class="btn btn-sm btn-tg" data-viewer-tg="${c.id}" title="Enviar este corte a Telegram" style="padding:3px 7px; font-size:0.74rem;">✈️</button>
         </div>
         <div class="row" style="justify-content:space-between; font-size:0.75rem;">
           <span class="muted">${escapeHtml(sourceTagLabel(c.source))}${c.hasSubs ? ' · 💬 Subs' : ''}</span>
           <span class="muted">${Math.max(1, Math.round(c.dur))}s · ${(c.blob.size / 1048576).toFixed(1)} MB</span>
         </div>
       `;
+      item.querySelector('[data-viewer-tg]')?.addEventListener('click', ev => {
+        ev.stopPropagation();
+        sendViewerClipToTelegram(c, ev.currentTarget);
+      });
       item.addEventListener('click', () => selectViewerClip(c.id, true));
       box.appendChild(item);
     });
@@ -8206,16 +8281,40 @@ ${txt}`;
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   });
 
-  $('viewerSendTgBtn')?.addEventListener('click', async () => {
-    const clip = viewerState.clips.find(c => c.id === viewerState.activeId);
-    if (!clip) return;
+  async function sendViewerClipToTelegram(clip, btnEl = null) {
+    if (!clip) {
+      showToast('Selecciona un corte primero para enviarlo a Telegram', 'warn');
+      return;
+    }
     saveTelegramConfigFromUI(true);
     if (!isTelegramConfigured()) {
       showToast('Configura tu Bot Token y Chat ID en En Vivo & Radar → Radar & Telegram', 'warn');
       return;
     }
-    const btn = $('viewerSendTgBtn');
-    btn.disabled = true; btn.textContent = '⏳ Enviando...';
+    // Si es un clip crudo de directo y el usuario tiene activado quemar subtítulos, usar la cola que recorta y quema subtítulos
+    if (clip.source === 'live' && state.telegram.burnSubs !== false) {
+      enqueueTelegramLiveClip({
+        name: clip.title,
+        blob: clip.blob,
+        ext: clip.ext,
+        start: clip.start,
+        end: clip.end,
+        dur: clip.dur,
+        emotion: clip.emotion,
+        reason: clip.reason,
+        score: clip.score,
+        transcript: clip.transcript,
+        subtitles: clip.subtitles,
+        words: clip.words,
+        creator: null,
+        src: ''
+      });
+      showToast(`📥 "${clip.title}" procesándose con subtítulos para Telegram...`, 'ok');
+      return;
+    }
+
+    const origText = btnEl ? btnEl.textContent : '';
+    if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳'; }
     try {
       await sendBlobToTelegram({
         blob: clip.blob,
@@ -8234,8 +8333,17 @@ ${txt}`;
     } catch (err) {
       showToast(`Error Telegram: ${err.message}`, 'warn');
     } finally {
-      btn.disabled = false; btn.textContent = '✈️ Enviar a Telegram';
+      if (btnEl) { btnEl.disabled = false; btnEl.textContent = origText; }
     }
+  }
+
+  $('viewerSendTgBtn')?.addEventListener('click', () => {
+    const clip = viewerState.clips.find(c => c.id === viewerState.activeId);
+    sendViewerClipToTelegram(clip, $('viewerSendTgBtn'));
+  });
+  $('viewerTopSendTgBtn')?.addEventListener('click', () => {
+    const clip = viewerState.clips.find(c => c.id === viewerState.activeId) || viewerState.clips[0];
+    sendViewerClipToTelegram(clip, $('viewerTopSendTgBtn'));
   });
 
   $('viewerLoadStudioBtn')?.addEventListener('click', () => {
