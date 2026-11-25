@@ -620,76 +620,44 @@
       border-radius: 4px; font-family: monospace; font-size: 0.72rem; border: 1px solid var(--border);
     }
 
-    /* ==================== v14: VISUALIZADOR UNIFICADO DE CORTES ==================== */
-    .viewer-layout {
+    /* ==================== v17: VISUALIZADOR ESTILO YOUTUBE (GRILLA 3 COLUMNAS + REPRODUCTOR TEATRO) ==================== */
+    .viewer-theater {
+      display: none;
+      background: #060a14;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 18px;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+    }
+    .viewer-theater.open { display: block; }
+    .viewer-theater-grid {
       display: grid;
-      grid-template-columns: minmax(340px, 1.35fr) minmax(290px, 0.9fr);
+      grid-template-columns: minmax(320px, 1.45fr) minmax(260px, 0.85fr);
       gap: 16px;
       align-items: start;
     }
-    @media (max-width: 960px) {
-      .viewer-layout { grid-template-columns: 1fr; }
-    }
-    .viewer-stage {
-      background: #040710;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
+    @media (max-width: 920px) { .viewer-theater-grid { grid-template-columns: 1fr; } }
     .viewer-video-box {
       width: 100%;
-      min-height: 360px;
-      max-height: 560px;
+      min-height: 320px;
+      max-height: 520px;
       background: #000;
-      border-radius: 12px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
       position: relative;
-      border: 1px solid rgba(56, 189, 248, 0.2);
+      border: 1px solid rgba(56, 189, 248, 0.18);
     }
     .viewer-video {
       max-width: 100%;
-      max-height: 550px;
+      max-height: 510px;
       width: auto;
       height: auto;
       display: block;
       background: #000;
-    }
-    .viewer-empty-stage {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--muted);
-    }
-    .viewer-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 610px;
-      overflow-y: auto;
-      padding-right: 4px;
-    }
-    .viewer-item {
-      background: #0b1222;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 12px;
-      cursor: pointer;
-      transition: .18s;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    .viewer-item:hover { border-color: var(--accent); background: #101b33; }
-    .viewer-item.active {
-      border-color: var(--accent);
-      background: linear-gradient(135deg, rgba(14,165,233,0.16), rgba(99,102,241,0.16));
-      box-shadow: 0 0 14px rgba(56, 189, 248, 0.16);
     }
     .viewer-subs-box {
       width: 100%;
@@ -699,10 +667,157 @@
       padding: 10px 12px;
       font-size: 0.82rem;
       color: #cbd5e1;
-      max-height: 120px;
+      max-height: 150px;
       overflow-y: auto;
       line-height: 1.45;
       white-space: pre-wrap;
+    }
+
+    /* Grilla de tarjetas estilo YouTube (3 columnas en escritorio, 2 en tablet, 1 en móvil) */
+    .yt-gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px 16px;
+      align-items: start;
+    }
+    @media (max-width: 1060px) { .yt-gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 640px) { .yt-gallery-grid { grid-template-columns: 1fr; } }
+
+    .yt-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      cursor: pointer;
+      border-radius: 14px;
+      padding: 6px;
+      transition: background .18s, transform .18s, border-color .18s;
+      border: 1px solid transparent;
+    }
+    .yt-card:hover {
+      background: rgba(255, 255, 255, 0.04);
+      transform: translateY(-2px);
+    }
+    .yt-card.active {
+      background: rgba(56, 189, 248, 0.09);
+      border-color: rgba(56, 189, 248, 0.45);
+    }
+    .yt-thumb-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 12px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0f172a, #1e1b4b);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .yt-thumb-box img,
+    .yt-thumb-box video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform .25s ease;
+    }
+    .yt-card:hover .yt-thumb-box img { transform: scale(1.03); }
+    .yt-thumb-play {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(0, 0, 0, 0.25);
+      opacity: 0;
+      transition: opacity .18s;
+      font-size: 2.2rem;
+      color: #fff;
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.8);
+    }
+    .yt-card:hover .yt-thumb-play { opacity: 1; }
+    .yt-thumb-dur {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.84);
+      color: #fff;
+      font-size: 0.74rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 5px;
+      letter-spacing: 0.02em;
+    }
+    .yt-thumb-dur.live-pill {
+      background: #dc2626;
+    }
+    .yt-thumb-top-badges {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .yt-thumb-top-badges .badge {
+      background: rgba(7, 11, 20, 0.82);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+    .yt-card-body {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 0 4px;
+    }
+    .yt-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid var(--border);
+      display: grid;
+      place-items: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .yt-meta-col {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .yt-title {
+      font-size: 0.94rem;
+      font-weight: 700;
+      color: #f8fafc;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .yt-submeta {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .yt-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 0 4px 4px 50px;
+    }
+    .yt-card-actions .btn-sm {
+      padding: 4px 8px;
+      font-size: 0.74rem;
+    }
+    .viewer-empty-grid {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 56px 20px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      color: var(--muted);
     }
   </style>
 </head>
@@ -1547,12 +1662,18 @@
     </div>
   </section>
 
-  <!-- ==================== TAB VISUALIZADOR DE CORTES (GALERÍA + MONITOR GRANDE) ==================== -->
+  <!-- ==================== TAB VISUALIZADOR DE CORTES (ESTILO YOUTUBE 3 COLUMNAS) ==================== -->
   <section id="tab-viewer" class="view">
     <div class="ux-ws-toolbar">
-      <div class="row">
+      <div class="row" style="gap:10px;">
         <strong style="font-size:1rem;">📺 Visualizador de Cortes</strong>
-        <span class="muted">Reproduce en grande todos los cortes que hagas en Directo, desde Enlaces de YouTube o Exportados.</span>
+        <span class="badge" id="viewerCountBadge">0 clips</span>
+        <div class="row" id="viewerFilterPills" style="gap:5px;">
+          <button type="button" class="dur-pill active" data-vfilter="all">Todos</button>
+          <button type="button" class="dur-pill" data-vfilter="live">🔴 En Vivo</button>
+          <button type="button" class="dur-pill" data-vfilter="yt">🔗 YouTube</button>
+          <button type="button" class="dur-pill" data-vfilter="studio">✂️ Exportados</button>
+        </div>
       </div>
       <div class="row">
         <input type="file" id="viewerLocalFileInput" accept="video/*" multiple hidden />
@@ -1562,68 +1683,61 @@
       </div>
     </div>
 
-    <div class="viewer-layout">
-      <!-- IZQUIERDA: MONITOR GRANDE DE REPRODUCCIÓN -->
-      <div class="viewer-stage">
-        <div class="viewer-video-box" id="viewerVideoBox">
-          <div id="viewerEmptyStage" class="viewer-empty-stage">
-            <div style="font-size:2.4rem; margin-bottom:8px;">📺</div>
-            <strong style="color:var(--text); font-size:1rem;">Aún no tienes cortes para visualizar</strong>
-            <div class="muted" style="margin-top:6px;">Cuando saques un corte en <strong>En Vivo</strong>, grabes un corte de <strong>YouTube</strong> o exportes un clip del <strong>Estudio</strong>, aparecerá aquí automáticamente.</div>
+    <!-- REPRODUCTOR TEATRO (se despliega arriba al hacer clic en cualquier tarjeta) -->
+    <div id="viewerTheater" class="viewer-theater">
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <div class="row" style="gap:8px;">
+          <strong id="viewerClipTitle" style="font-size:1rem;">Título del corte</strong>
+          <div class="row" id="viewerClipBadges" style="gap:5px;"></div>
+        </div>
+        <button type="button" class="btn btn-sm" id="viewerCloseTheaterBtn">✕ Cerrar reproductor</button>
+      </div>
+
+      <div class="viewer-theater-grid">
+        <div>
+          <div class="viewer-video-box" id="viewerVideoBox">
+            <div id="viewerEmptyStage" class="viewer-empty-stage" style="display:none;"></div>
+            <video id="viewerVideo" class="viewer-video" controls playsinline></video>
           </div>
-          <video id="viewerVideo" class="viewer-video" controls playsinline style="display:none;"></video>
+          <div class="row" style="justify-content:space-between; margin-top:10px;">
+            <div class="row" style="gap:6px;">
+              <button type="button" class="btn btn-sm" id="viewerPrevBtn" title="Corte anterior">⏮️ Anterior</button>
+              <button type="button" class="btn btn-sm btn-primary" id="viewerPlayBtn">▶ Reproducir</button>
+              <button type="button" class="btn btn-sm" id="viewerNextBtn" title="Siguiente corte">Siguiente ⏭️</button>
+            </div>
+            <div class="row" style="gap:6px;">
+              <button type="button" class="btn btn-sm" id="viewerLoopBtn" style="border-color:var(--green);">🔁 Bucle</button>
+              <select id="viewerSpeedSelect" style="width:auto; padding:5px 8px;">
+                <option value="0.75">0.75x</option>
+                <option value="1" selected>1.0x</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.5">1.5x</option>
+              </select>
+            </div>
+          </div>
         </div>
 
-        <!-- Controles de navegación y reproducción -->
-        <div class="row" style="width:100%; justify-content:space-between;">
-          <div class="row" style="gap:6px;">
-            <button type="button" class="btn btn-sm" id="viewerPrevBtn" title="Corte anterior">⏮️ Anterior</button>
-            <button type="button" class="btn btn-sm btn-primary" id="viewerPlayBtn">▶ Reproducir</button>
-            <button type="button" class="btn btn-sm" id="viewerNextBtn" title="Siguiente corte">Siguiente ⏭️</button>
+        <div id="viewerMetaCard" style="display:flex; flex-direction:column; gap:10px; background:#0b1222; border:1px solid var(--border); border-radius:12px; padding:12px;">
+          <div class="muted" id="viewerClipInfo" style="font-size:0.82rem; line-height:1.45;"></div>
+          <div id="viewerClipSubs" class="viewer-subs-box" style="display:none;"></div>
+          <div class="row" style="gap:8px; margin-top:auto;">
+            <button type="button" class="btn btn-sm btn-tg" id="viewerSendTgBtn" style="flex:1; justify-content:center;">✈️ Enviar a Telegram</button>
+            <button type="button" class="btn btn-sm btn-green" id="viewerDownloadBtn" style="flex:1; justify-content:center;">⬇️ Descargar</button>
           </div>
-          <div class="row" style="gap:6px;">
-            <button type="button" class="btn btn-sm" id="viewerLoopBtn" style="border-color:var(--green);">🔁 Bucle</button>
-            <select id="viewerSpeedSelect" style="width:auto; padding:5px 8px;">
-              <option value="0.75">0.75x</option>
-              <option value="1" selected>1.0x</option>
-              <option value="1.25">1.25x</option>
-              <option value="1.5">1.5x</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Detalles del corte seleccionado -->
-        <div id="viewerMetaCard" style="width:100%; display:none; background:#0b1222; border:1px solid var(--border); border-radius:12px; padding:12px;">
-          <div class="row" style="justify-content:space-between; margin-bottom:6px;">
-            <strong id="viewerClipTitle" style="font-size:0.98rem;">Título del corte</strong>
-            <div class="row" id="viewerClipBadges" style="gap:5px;"></div>
-          </div>
-          <div class="muted" id="viewerClipInfo" style="font-size:0.8rem; margin-bottom:8px;"></div>
-          <div id="viewerClipSubs" class="viewer-subs-box" style="display:none; margin-bottom:10px;"></div>
           <div class="row" style="gap:8px;">
-            <button type="button" class="btn btn-sm btn-green" id="viewerDownloadBtn">⬇️ Descargar</button>
-            <button type="button" class="btn btn-sm btn-tg" id="viewerSendTgBtn">✈️ Enviar a Telegram</button>
-            <button type="button" class="btn btn-sm btn-primary" id="viewerLoadStudioBtn">✂️ Abrir en Estudio</button>
-            <button type="button" class="btn btn-sm btn-danger" id="viewerDeleteOneBtn" style="margin-left:auto;">🗑️ Eliminar</button>
+            <button type="button" class="btn btn-sm btn-primary" id="viewerLoadStudioBtn" style="flex:1; justify-content:center;">✂️ Abrir en Estudio</button>
+            <button type="button" class="btn btn-sm btn-danger" id="viewerDeleteOneBtn">🗑️ Eliminar</button>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- DERECHA: BIBLIOTECA DE CORTES -->
-      <div class="ux-col-card">
-        <div class="row" style="justify-content:space-between;">
-          <h2 style="margin:0; font-size:0.96rem;">🎞️ Mis Cortes Realizados</h2>
-          <span class="badge" id="viewerCountBadge">0 clips</span>
-        </div>
-        <div class="row" id="viewerFilterPills" style="gap:6px;">
-          <button type="button" class="dur-pill active" data-vfilter="all">Todos</button>
-          <button type="button" class="dur-pill" data-vfilter="live">🔴 En Vivo</button>
-          <button type="button" class="dur-pill" data-vfilter="yt">🔗 YouTube</button>
-          <button type="button" class="dur-pill" data-vfilter="studio">✂️ Exportados</button>
-        </div>
-        <div id="viewerClipsList" class="viewer-list">
-          <div class="muted">Tus cortes aparecerán aquí automáticamente listos para revisar.</div>
-        </div>
+    <!-- GRILLA ESTILO YOUTUBE (3 COLUMNAS) -->
+    <div id="viewerClipsList" class="yt-gallery-grid">
+      <div class="viewer-empty-grid">
+        <div style="font-size:2.4rem; margin-bottom:8px;">📺</div>
+        <strong style="color:var(--text); font-size:1rem;">Aún no tienes cortes para visualizar</strong>
+        <div class="muted" style="margin-top:6px;">Cuando saques un corte en <strong>En Vivo</strong>, generes uno desde un enlace de <strong>YouTube</strong> o exportes desde el <strong>Estudio</strong>, aparecerá aquí con su miniatura listo para ver y enviar a Telegram.</div>
       </div>
     </div>
   </section>
@@ -7543,19 +7657,32 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       const vStream = offCanvas.captureStream(24);
       const tracks = [...vStream.getVideoTracks()];
 
-      // Captura de audio robusta: usa AudioContext desbloqueado + ganancia casi 0 a destination (obliga a Chrome a bombear audio sin eco)
+      // Captura de audio continua (evita que Chrome corte el audio a los 20-30 s por ahorro de energía)
       let audioAdded = false;
+      let keepAliveOsc = null;
+      let keepAliveGain = null;
+      const acRef = getUnlockedAudioCtx();
       try {
-        const ac = getUnlockedAudioCtx();
-        if (ac) {
-          if (ac.state === 'suspended') await ac.resume().catch(() => {});
-          sourceNode = ac.createMediaElementSource(offVideo);
-          destNode = ac.createMediaStreamDestination();
-          silentGain = ac.createGain();
-          silentGain.gain.value = 0.00001; // Inaudible por altavoces, pero mantiene vivo el hilo de audio en Chrome
+        if (acRef) {
+          if (acRef.state === 'suspended') await acRef.resume().catch(() => {});
+          sourceNode = acRef.createMediaElementSource(offVideo);
+          destNode = acRef.createMediaStreamDestination();
+          silentGain = acRef.createGain();
+          silentGain.gain.value = 0.0002; // Inaudible, pero por encima del umbral de suspensión de Chrome
           sourceNode.connect(destNode);
           sourceNode.connect(silentGain);
-          silentGain.connect(ac.destination);
+          silentGain.connect(acRef.destination);
+
+          // Oscilador inaudible de 1 Hz para mantener vivo el reloj de audio durante todo el clip (incluso > 2 min)
+          keepAliveOsc = acRef.createOscillator();
+          keepAliveOsc.frequency.value = 1;
+          keepAliveGain = acRef.createGain();
+          keepAliveGain.gain.value = 0.00005;
+          keepAliveOsc.connect(keepAliveGain);
+          keepAliveGain.connect(destNode);
+          keepAliveGain.connect(acRef.destination);
+          keepAliveOsc.start();
+
           const aTracks = destNode.stream.getAudioTracks();
           if (aTracks.length) {
             tracks.push(...aTracks);
@@ -7615,7 +7742,10 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       const words = burnSubs && Array.isArray(clipObj.words) ? clipObj.words : [];
       const subStyle = opts.subStyle || state.subStyle || 'word';
 
+      let recStartedAt = 0;
+      let realStartBase = startT;
       const drawFrame = () => {
+        if (acRef && acRef.state === 'suspended') { acRef.resume().catch(() => {}); }
         g.fillStyle = '#050811';
         g.fillRect(0, 0, dims.w, dims.h);
         if (offVideo.readyState >= 2 && offVideo.videoWidth > 0) {
@@ -7626,7 +7756,11 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
           else { sh = offVideo.videoWidth / cr; sy = (offVideo.videoHeight - sh) / 2; }
           g.drawImage(offVideo, sx, sy, sw, sh, 0, 0, dims.w, dims.h);
         }
-        drawOffscreenSubtitles(g, dims.w, dims.h, offVideo.currentTime || startT, subs, words, subStyle, aspect);
+        // Reloj confiable de subtítulos: usa tiempo real del video o tiempo transcurrido si WebM no reporta currentTime exacto
+        const elapsed = recStartedAt ? (performance.now() - recStartedAt) / 1000 : 0;
+        const vidNow = Number(offVideo.currentTime);
+        const subClock = (isFinite(vidNow) && vidNow > 0.05) ? vidNow : (realStartBase + elapsed);
+        drawOffscreenSubtitles(g, dims.w, dims.h, subClock, subs, words, subStyle, aspect);
       };
 
       // Esperar a que offVideo complete el salto (seeked) a un fotograma limpio antes de empezar a grabar
@@ -7640,22 +7774,26 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
         });
       }
       await offVideo.play().catch(() => {});
-      // Si el WebM del directo no permitió saltar a startT y se quedó en ~0s, alinear los subtítulos al tiempo real del video
-      const realStartNow = Number(offVideo.currentTime) || 0;
-      if (!clipObj.subsFromFullBlob && startT > 3 && Math.abs(realStartNow - startT) > 3 && subs.length) {
-        const shift = realStartNow - startT;
+      realStartBase = Number(offVideo.currentTime) || 0;
+      // Si el WebM no saltó a startT (quedó en ~0s) pero los subtítulos empiezan en startT, desplazarlos al tiempo real
+      if (!clipObj.subsFromFullBlob && startT > 2 && Math.abs(realStartBase - startT) > 2 && subs.length) {
+        const shift = realStartBase - startT;
         subs = subs.map(s => ({ ...s, start: Math.max(0, s.start + shift), end: Math.max(0.5, s.end + shift) }));
         for (let i = 0; i < words.length; i++) {
           words[i] = { ...words[i], start: Math.max(0, words[i].start + shift), end: Math.max(0.1, words[i].end + shift) };
         }
       }
+      recStartedAt = performance.now();
       drawFrame();
       // 24 fps con setInterval: mitad de carga de CPU que requestAnimationFrame y nunca se pausa en segundo plano ligero
       drawTimer = setInterval(drawFrame, 42);
       await new Promise(r => setTimeout(r, 120));
       rec.start(500);
 
-      await new Promise(r => setTimeout(r, clipMs));
+      await new Promise(resolve => {
+        const endTimer = setTimeout(resolve, clipMs);
+        offVideo.onended = () => { clearTimeout(endTimer); resolve(); };
+      });
       clearInterval(drawTimer);
       drawTimer = null;
       offVideo.pause();
@@ -7666,6 +7804,8 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       return { blob: new Blob(chunks, { type: mimeClean }), ext: chosen.ext, subs };
     } finally {
       if (drawTimer) clearInterval(drawTimer);
+      try { if (keepAliveOsc) { keepAliveOsc.stop(); keepAliveOsc.disconnect(); } } catch (_) {}
+      try { if (keepAliveGain) keepAliveGain.disconnect(); } catch (_) {}
       try { if (sourceNode) sourceNode.disconnect(); } catch (_) {}
       try { if (silentGain) silentGain.disconnect(); } catch (_) {}
       try { offVideo.pause(); offVideo.src = ''; offVideo.remove(); } catch (_) {}
@@ -8079,7 +8219,7 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
     }]);
   });
 
-  // ==================== v14: CONTROLADOR DEL VISUALIZADOR DE CORTES ====================
+  // ==================== v17: CONTROLADOR DEL VISUALIZADOR ESTILO YOUTUBE (GRILLA 3 COLUMNAS + MINIATURAS REALES) ====================
   const viewerState = {
     clips: [],
     activeId: null,
@@ -8097,6 +8237,62 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
     const n = viewerState.clips.length;
     if ($('viewerNavBtn')) $('viewerNavBtn').textContent = `📺 Visualizador (${n})`;
     if ($('viewerCountBadge')) $('viewerCountBadge').textContent = `${n} clip${n === 1 ? '' : 's'}`;
+  }
+
+  // Extrae una miniatura real 16:9 desde el video Blob para mostrar en la tarjeta estilo YouTube
+  function captureViewerThumbnail(entry) {
+    if (!entry || !entry.blob || entry.thumbUrl) return;
+    const v = document.createElement('video');
+    const url = URL.createObjectURL(entry.blob);
+    v.muted = true;
+    v.playsInline = true;
+    v.preload = 'metadata';
+    let finished = false;
+    const cleanup = () => {
+      if (finished) return;
+      finished = true;
+      try { v.pause(); v.src = ''; } catch (_) {}
+      try { URL.revokeObjectURL(url); } catch (_) {}
+    };
+    const grab = () => {
+      if (finished) return;
+      try {
+        if (v.videoWidth > 0 && v.videoHeight > 0) {
+          const c = document.createElement('canvas');
+          c.width = 480;
+          c.height = 270;
+          const g = c.getContext('2d');
+          const vr = v.videoWidth / v.videoHeight;
+          const cr = c.width / c.height;
+          let sx = 0, sy = 0, sw = v.videoWidth, sh = v.videoHeight;
+          if (vr > cr) { sw = v.videoHeight * cr; sx = (v.videoWidth - sw) / 2; }
+          else { sh = v.videoWidth / cr; sy = (v.videoHeight - sh) / 2; }
+          g.drawImage(v, sx, sy, sw, sh, 0, 0, c.width, c.height);
+          entry.thumbUrl = c.toDataURL('image/jpeg', 0.8);
+          if (!entry.dur && isFinite(v.duration) && v.duration > 0) {
+            entry.dur = v.duration;
+          }
+          renderViewerList();
+        }
+      } catch (_) {}
+      cleanup();
+    };
+    v.onloadeddata = () => {
+      const seekTarget = (entry.source === 'live' && entry.start > 0.5)
+        ? entry.start + 1
+        : (isFinite(v.duration) && v.duration > 2 ? Math.min(2, v.duration * 0.2) : 0.2);
+      if (seekTarget > 0.25) {
+        v.onseeked = grab;
+        try { v.currentTime = seekTarget; } catch (_) { grab(); }
+        setTimeout(grab, 1400);
+      } else {
+        grab();
+      }
+    };
+    v.onerror = cleanup;
+    setTimeout(cleanup, 5000);
+    v.src = url;
+    v.load();
   }
 
   function registerViewerClip(meta) {
@@ -8119,6 +8315,7 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       subtitles: Array.isArray(meta.subtitles) ? meta.subtitles : [],
       words: Array.isArray(meta.words) ? meta.words : [],
       credit: meta.credit || '',
+      thumbUrl: '',
       createdAt: new Date().toLocaleTimeString()
     };
     viewerState.clips.unshift(entry);
@@ -8127,9 +8324,7 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
     }
     updateViewerNavBadge();
     renderViewerList();
-    if (!viewerState.activeId) {
-      selectViewerClip(id, false);
-    }
+    captureViewerThumbnail(entry);
     return id;
   }
 
@@ -8139,24 +8334,37 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
   }
 
   function sourceTagLabel(src) {
-    if (src === 'live') return '🔴 En Vivo';
-    if (src === 'yt') return '🔗 YouTube';
-    if (src === 'local') return '📁 Local';
-    return '✂️ Exportado';
+    if (src === 'live') return 'En Vivo';
+    if (src === 'yt') return 'YouTube';
+    if (src === 'local') return 'Archivo Local';
+    return 'Estudio';
   }
+
+  function sourceAvatarIcon(src) {
+    if (src === 'live') return '🔴';
+    if (src === 'yt') return '▶️';
+    if (src === 'local') return '📁';
+    return '✂️';
+  }
+
+  function closeViewerTheater() {
+    const theater = $('viewerTheater');
+    const vEl = $('viewerVideo');
+    if (vEl) { try { vEl.pause(); vEl.src = ''; } catch (_) {} }
+    if (viewerState.activeUrl) { try { URL.revokeObjectURL(viewerState.activeUrl); } catch (_) {} viewerState.activeUrl = null; }
+    if (theater) theater.classList.remove('open');
+    viewerState.activeId = null;
+    renderViewerList();
+  }
+
+  $('viewerCloseTheaterBtn')?.addEventListener('click', closeViewerTheater);
 
   function selectViewerClip(id, autoPlay = true) {
     const clip = viewerState.clips.find(c => c.id === id);
+    const theater = $('viewerTheater');
     const vEl = $('viewerVideo');
-    const emptyEl = $('viewerEmptyStage');
-    const metaCard = $('viewerMetaCard');
     if (!clip || !vEl) {
-      viewerState.activeId = null;
-      if (vEl) { try { vEl.pause(); vEl.src = ''; } catch (_) {} vEl.style.display = 'none'; }
-      if (emptyEl) emptyEl.style.display = 'block';
-      if (metaCard) metaCard.style.display = 'none';
-      if (viewerState.activeUrl) { try { URL.revokeObjectURL(viewerState.activeUrl); } catch (_) {} viewerState.activeUrl = null; }
-      renderViewerList();
+      closeViewerTheater();
       return;
     }
 
@@ -8164,8 +8372,7 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
     if (viewerState.activeUrl) { try { URL.revokeObjectURL(viewerState.activeUrl); } catch (_) {} }
     viewerState.activeUrl = URL.createObjectURL(clip.blob);
 
-    if (emptyEl) emptyEl.style.display = 'none';
-    vEl.style.display = 'block';
+    if (theater) theater.classList.add('open');
     vEl.src = viewerState.activeUrl;
     vEl.loop = viewerState.loop;
     vEl.playbackRate = Number($('viewerSpeedSelect')?.value) || 1;
@@ -8185,11 +8392,10 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       }
     };
 
-    if (metaCard) metaCard.style.display = 'block';
     if ($('viewerClipTitle')) $('viewerClipTitle').textContent = clip.title;
     if ($('viewerClipBadges')) {
       const badges = [];
-      badges.push(`<span class="badge">${escapeHtml(sourceTagLabel(clip.source))}</span>`);
+      badges.push(`<span class="badge">${escapeHtml(sourceAvatarIcon(clip.source) + ' ' + sourceTagLabel(clip.source))}</span>`);
       badges.push(`<span class="badge purple">${escapeHtml(clip.aspect)}</span>`);
       if (clip.hasSubs) badges.push('<span class="badge green">💬 Subtítulos</span>');
       if (clip.emotion) badges.push(`<span class="badge emo-${escapeHtml(clip.emotion)}">${escapeHtml(emotionLabel(clip.emotion))}</span>`);
@@ -8197,7 +8403,8 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
     }
     if ($('viewerClipInfo')) {
       const sizeMb = (clip.blob.size / 1048576).toFixed(1);
-      $('viewerClipInfo').textContent = `${clip.createdAt} · ${Math.max(1, Math.round(clip.dur))} s · ${sizeMb} MB${clip.score ? ` · ⭐ ${clip.score}/100` : ''}${clip.reason ? ` · 💡 ${clip.reason}` : ''}`;
+      $('viewerClipInfo').textContent = `${clip.createdAt} · ${fmtT(clip.dur)} · ${sizeMb} MB${clip.score ? ` · ⭐ ${clip.score}/100` : ''}${clip.reason ? `
+💡 ${clip.reason}` : ''}`;
     }
     if ($('viewerClipSubs')) {
       const txt = (clip.transcript || (clip.subtitles || []).map(s => s.text).join(' ')).trim();
@@ -8210,6 +8417,7 @@ ${txt}`;
       }
     }
     renderViewerList();
+    theater?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function openClipInViewer(id) {
@@ -8223,31 +8431,95 @@ ${txt}`;
     if (!box) return;
     const list = getFilteredViewerClips();
     if (!list.length) {
-      box.innerHTML = '<div class="muted">No hay cortes en esta categoría todavía.</div>';
+      box.innerHTML = `
+        <div class="viewer-empty-grid">
+          <div style="font-size:2.4rem; margin-bottom:8px;">📺</div>
+          <strong style="color:var(--text); font-size:1rem;">No hay cortes en esta categoría todavía</strong>
+          <div class="muted" style="margin-top:6px;">Cuando saques un corte en <strong>En Vivo</strong>, generes uno desde <strong>YouTube</strong> o exportes desde el <strong>Estudio</strong>, aparecerá aquí con su miniatura.</div>
+        </div>
+      `;
       return;
     }
     box.textContent = '';
     list.forEach(c => {
-      const item = document.createElement('div');
-      item.className = 'viewer-item' + (c.id === viewerState.activeId ? ' active' : '');
-      item.innerHTML = `
-        <div class="row" style="justify-content:space-between; gap:6px; flex-wrap:nowrap;">
-          <strong style="font-size:0.86rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">🎬 ${escapeHtml(c.title)}</strong>
-          <span class="badge">${escapeHtml(c.aspect)}</span>
-          <button type="button" class="btn btn-sm btn-tg" data-viewer-tg="${c.id}" title="Enviar este corte a Telegram" style="padding:3px 7px; font-size:0.74rem;">✈️</button>
+      const card = document.createElement('div');
+      card.className = 'yt-card' + (c.id === viewerState.activeId ? ' active' : '');
+      const durText = c.dur > 0 ? fmtT(c.dur) : 'CLIP';
+      const sizeMb = (c.blob.size / 1048576).toFixed(1);
+      const topBadges = [];
+      if (c.hasSubs) topBadges.push('<span class="badge green">💬 SUBS</span>');
+      if (c.emotion) topBadges.push(`<span class="badge emo-${escapeHtml(c.emotion)}">${escapeHtml(emotionLabel(c.emotion))}</span>`);
+      topBadges.push(`<span class="badge">${escapeHtml(c.aspect)}</span>`);
+
+      card.innerHTML = `
+        <div class="yt-thumb-box">
+          ${c.thumbUrl ? `<img src="${c.thumbUrl}" alt="${escapeHtml(c.title)}" />` : `<div style="width:100%;height:100%;display:grid;place-items:center;font-size:2rem;color:#475569;">🎬</div>`}
+          <div class="yt-thumb-play">▶</div>
+          <div class="yt-thumb-top-badges">${topBadges.join('')}</div>
+          <span class="yt-thumb-dur ${c.source === 'live' ? 'live-pill' : ''}">${c.source === 'live' ? '🔴 ' : ''}${escapeHtml(durText)}</span>
         </div>
-        <div class="row" style="justify-content:space-between; font-size:0.75rem;">
-          <span class="muted">${escapeHtml(sourceTagLabel(c.source))}${c.hasSubs ? ' · 💬 Subs' : ''}</span>
-          <span class="muted">${Math.max(1, Math.round(c.dur))}s · ${(c.blob.size / 1048576).toFixed(1)} MB</span>
+        <div class="yt-card-body">
+          <div class="yt-avatar" title="${escapeHtml(sourceTagLabel(c.source))}">${sourceAvatarIcon(c.source)}</div>
+          <div class="yt-meta-col">
+            <div class="yt-title" title="${escapeHtml(c.title)}">${escapeHtml(c.title)}</div>
+            <div class="yt-submeta">${escapeHtml(sourceTagLabel(c.source))} · ${sizeMb} MB · ${escapeHtml(c.createdAt)}</div>
+          </div>
+        </div>
+        <div class="yt-card-actions">
+          <button type="button" class="btn btn-sm btn-tg" data-v-tg="${c.id}">✈️ Telegram</button>
+          <button type="button" class="btn btn-sm btn-green" data-v-dl="${c.id}">⬇️ Bajar</button>
+          <button type="button" class="btn btn-sm" data-v-st="${c.id}">✂️ Estudio</button>
+          <button type="button" class="btn btn-sm btn-danger" data-v-del="${c.id}" title="Eliminar">🗑️</button>
         </div>
       `;
-      item.querySelector('[data-viewer-tg]')?.addEventListener('click', ev => {
+
+      card.addEventListener('click', () => selectViewerClip(c.id, true));
+      card.querySelector('[data-v-tg]')?.addEventListener('click', ev => {
         ev.stopPropagation();
         sendViewerClipToTelegram(c, ev.currentTarget);
       });
-      item.addEventListener('click', () => selectViewerClip(c.id, true));
-      box.appendChild(item);
+      card.querySelector('[data-v-dl]')?.addEventListener('click', ev => {
+        ev.stopPropagation();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(c.blob);
+        a.download = `${String(c.title).replace(/[^\w-]+/g, '_')}_${c.aspect.replace(':', 'x')}.${c.ext}`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      });
+      card.querySelector('[data-v-st]')?.addEventListener('click', ev => {
+        ev.stopPropagation();
+        loadViewerClipToStudio(c);
+      });
+      card.querySelector('[data-v-del]')?.addEventListener('click', ev => {
+        ev.stopPropagation();
+        viewerState.clips = viewerState.clips.filter(x => x.id !== c.id);
+        if (viewerState.activeId === c.id) closeViewerTheater();
+        updateViewerNavBadge();
+        renderViewerList();
+        showToast('Corte eliminado del visualizador', '');
+      });
+
+      box.appendChild(card);
     });
+  }
+
+  function loadViewerClipToStudio(clip) {
+    if (!clip) return;
+    if (vVideoEl) vVideoEl.pause();
+    pendingWindow = { start: clip.source === 'live' ? clip.start : 0, end: clip.source === 'live' ? clip.end : clip.dur };
+    pendingLiveSubs = {
+      name: clip.title,
+      emotion: clip.emotion,
+      reason: clip.reason,
+      score: clip.score || 92,
+      transcript: clip.transcript,
+      subtitles: clip.subtitles,
+      words: clip.words
+    };
+    state.videoBlob = clip.blob;
+    loadVideoSrc(URL.createObjectURL(clip.blob), clip.title, clip.dur);
+    state.sourceCredit = clip.credit || '';
+    document.querySelector('[data-tab="studio"]')?.click();
   }
 
   // Controles del Visualizador
@@ -8308,7 +8580,6 @@ ${txt}`;
       showToast('Configura tu Bot Token y Chat ID en En Vivo & Radar → Radar & Telegram', 'warn');
       return;
     }
-    // Si es un clip crudo de directo y el usuario tiene activado quemar subtítulos, usar la cola que recorta y quema subtítulos
     if (clip.source === 'live' && state.telegram.burnSubs !== false) {
       enqueueTelegramLiveClip({
         name: clip.title,
@@ -8365,37 +8636,21 @@ ${txt}`;
 
   $('viewerLoadStudioBtn')?.addEventListener('click', () => {
     const clip = viewerState.clips.find(c => c.id === viewerState.activeId);
-    if (!clip) return;
-    if (vVideoEl) vVideoEl.pause();
-    pendingWindow = { start: clip.source === 'live' ? clip.start : 0, end: clip.source === 'live' ? clip.end : clip.dur };
-    pendingLiveSubs = {
-      name: clip.title,
-      emotion: clip.emotion,
-      reason: clip.reason,
-      score: clip.score || 92,
-      transcript: clip.transcript,
-      subtitles: clip.subtitles,
-      words: clip.words
-    };
-    state.videoBlob = clip.blob;
-    loadVideoSrc(URL.createObjectURL(clip.blob), clip.title, clip.dur);
-    state.sourceCredit = clip.credit || '';
-    document.querySelector('[data-tab="studio"]')?.click();
+    loadViewerClipToStudio(clip);
   });
 
   $('viewerDeleteOneBtn')?.addEventListener('click', () => {
     if (!viewerState.activeId) return;
     viewerState.clips = viewerState.clips.filter(c => c.id !== viewerState.activeId);
     updateViewerNavBadge();
-    const next = getFilteredViewerClips()[0];
-    selectViewerClip(next ? next.id : null, false);
+    closeViewerTheater();
     showToast('Corte eliminado del visualizador', '');
   });
 
   $('viewerClearAllBtn')?.addEventListener('click', () => {
     viewerState.clips = [];
     updateViewerNavBadge();
-    selectViewerClip(null, false);
+    closeViewerTheater();
     showToast('Visualizador vaciado', '');
   });
 
@@ -8573,6 +8828,9 @@ ${txt}`;
 
         addYtClip(clip);
         doneCount++;
+        if (data.subsWarning) {
+          showToast(`⚠️ Subtítulos: ${data.subsWarning}`, 'warn');
+        }
 
         // Solo envía a Telegram si el usuario marcó "Auto-enviar" o lo pidió explícitamente
         if (shouldAutoTg) {
