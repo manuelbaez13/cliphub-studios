@@ -619,6 +619,91 @@
       background: var(--panel-2); color: var(--text); padding: 1px 5px;
       border-radius: 4px; font-family: monospace; font-size: 0.72rem; border: 1px solid var(--border);
     }
+
+    /* ==================== v14: VISUALIZADOR UNIFICADO DE CORTES ==================== */
+    .viewer-layout {
+      display: grid;
+      grid-template-columns: minmax(340px, 1.35fr) minmax(290px, 0.9fr);
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .viewer-layout { grid-template-columns: 1fr; }
+    }
+    .viewer-stage {
+      background: #040710;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .viewer-video-box {
+      width: 100%;
+      min-height: 360px;
+      max-height: 560px;
+      background: #000;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+    .viewer-video {
+      max-width: 100%;
+      max-height: 550px;
+      width: auto;
+      height: auto;
+      display: block;
+      background: #000;
+    }
+    .viewer-empty-stage {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+    .viewer-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 610px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .viewer-item {
+      background: #0b1222;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: .18s;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .viewer-item:hover { border-color: var(--accent); background: #101b33; }
+    .viewer-item.active {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, rgba(14,165,233,0.16), rgba(99,102,241,0.16));
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.16);
+    }
+    .viewer-subs-box {
+      width: 100%;
+      background: #091020;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      max-height: 120px;
+      overflow-y: auto;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
@@ -632,6 +717,7 @@
   <nav>
     <button type="button" class="tab-btn active" data-tab="studio">✂️ Estudio de Cortes</button>
     <button type="button" class="tab-btn" data-tab="live">🔴 En Vivo &amp; Radar</button>
+    <button type="button" class="tab-btn" data-tab="viewer" id="viewerNavBtn">📺 Visualizador (0)</button>
     <button type="button" class="tab-btn" data-tab="editor">🎬 Editor de Video</button>
     <button type="button" class="tab-btn" data-tab="thumbs">🖼️ Miniaturas IA</button>
     <button type="button" class="tab-btn" data-tab="social">📅 Redes &amp; Calendario</button>
@@ -1009,6 +1095,14 @@
             <button type="button" class="btn btn-sm" id="creatorAddBtn">➕ Añadir</button>
           </div>
         </details>
+
+        <div id="ytCutPreviewWrap" style="margin-top:10px; display:none; background:#050811; border:1px solid var(--border); border-radius:12px; padding:10px;">
+          <div class="row" style="justify-content:space-between; margin-bottom:6px;">
+            <strong id="ytCutPreviewTitle" style="font-size:0.85rem;">▶ Vista previa del corte en YouTube</strong>
+            <button type="button" class="btn btn-sm" id="closeYtCutPreviewBtn">✕ Cerrar vista previa</button>
+          </div>
+          <iframe id="ytCutPreviewIframe" width="100%" height="300" style="border-radius:10px; border:1px solid var(--border);" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
 
         <div id="ytCutsList" style="margin-top:10px; display:grid; gap:8px;"></div>
 
@@ -1428,6 +1522,86 @@
       </div>
     </div>
   </section>
+
+  <!-- ==================== TAB VISUALIZADOR DE CORTES (GALERÍA + MONITOR GRANDE) ==================== -->
+  <section id="tab-viewer" class="view">
+    <div class="ux-ws-toolbar">
+      <div class="row">
+        <strong style="font-size:1rem;">📺 Visualizador de Cortes</strong>
+        <span class="muted">Reproduce en grande todos los cortes que hagas en Directo, desde Enlaces de YouTube o Exportados.</span>
+      </div>
+      <div class="row">
+        <input type="file" id="viewerLocalFileInput" accept="video/*" multiple hidden />
+        <button type="button" class="btn btn-sm btn-primary" id="viewerAddLocalBtn">📁 Abrir video local</button>
+        <button type="button" class="btn btn-sm btn-danger" id="viewerClearAllBtn">🗑️ Vaciar lista</button>
+      </div>
+    </div>
+
+    <div class="viewer-layout">
+      <!-- IZQUIERDA: MONITOR GRANDE DE REPRODUCCIÓN -->
+      <div class="viewer-stage">
+        <div class="viewer-video-box" id="viewerVideoBox">
+          <div id="viewerEmptyStage" class="viewer-empty-stage">
+            <div style="font-size:2.4rem; margin-bottom:8px;">📺</div>
+            <strong style="color:var(--text); font-size:1rem;">Aún no tienes cortes para visualizar</strong>
+            <div class="muted" style="margin-top:6px;">Cuando saques un corte en <strong>En Vivo</strong>, grabes un corte de <strong>YouTube</strong> o exportes un clip del <strong>Estudio</strong>, aparecerá aquí automáticamente.</div>
+          </div>
+          <video id="viewerVideo" class="viewer-video" controls playsinline style="display:none;"></video>
+        </div>
+
+        <!-- Controles de navegación y reproducción -->
+        <div class="row" style="width:100%; justify-content:space-between;">
+          <div class="row" style="gap:6px;">
+            <button type="button" class="btn btn-sm" id="viewerPrevBtn" title="Corte anterior">⏮️ Anterior</button>
+            <button type="button" class="btn btn-sm btn-primary" id="viewerPlayBtn">▶ Reproducir</button>
+            <button type="button" class="btn btn-sm" id="viewerNextBtn" title="Siguiente corte">Siguiente ⏭️</button>
+          </div>
+          <div class="row" style="gap:6px;">
+            <button type="button" class="btn btn-sm" id="viewerLoopBtn" style="border-color:var(--green);">🔁 Bucle</button>
+            <select id="viewerSpeedSelect" style="width:auto; padding:5px 8px;">
+              <option value="0.75">0.75x</option>
+              <option value="1" selected>1.0x</option>
+              <option value="1.25">1.25x</option>
+              <option value="1.5">1.5x</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Detalles del corte seleccionado -->
+        <div id="viewerMetaCard" style="width:100%; display:none; background:#0b1222; border:1px solid var(--border); border-radius:12px; padding:12px;">
+          <div class="row" style="justify-content:space-between; margin-bottom:6px;">
+            <strong id="viewerClipTitle" style="font-size:0.98rem;">Título del corte</strong>
+            <div class="row" id="viewerClipBadges" style="gap:5px;"></div>
+          </div>
+          <div class="muted" id="viewerClipInfo" style="font-size:0.8rem; margin-bottom:8px;"></div>
+          <div id="viewerClipSubs" class="viewer-subs-box" style="display:none; margin-bottom:10px;"></div>
+          <div class="row" style="gap:8px;">
+            <button type="button" class="btn btn-sm btn-green" id="viewerDownloadBtn">⬇️ Descargar</button>
+            <button type="button" class="btn btn-sm btn-tg" id="viewerSendTgBtn">✈️ Enviar a Telegram</button>
+            <button type="button" class="btn btn-sm btn-primary" id="viewerLoadStudioBtn">✂️ Abrir en Estudio</button>
+            <button type="button" class="btn btn-sm btn-danger" id="viewerDeleteOneBtn" style="margin-left:auto;">🗑️ Eliminar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DERECHA: BIBLIOTECA DE CORTES -->
+      <div class="ux-col-card">
+        <div class="row" style="justify-content:space-between;">
+          <h2 style="margin:0; font-size:0.96rem;">🎞️ Mis Cortes Realizados</h2>
+          <span class="badge" id="viewerCountBadge">0 clips</span>
+        </div>
+        <div class="row" id="viewerFilterPills" style="gap:6px;">
+          <button type="button" class="dur-pill active" data-vfilter="all">Todos</button>
+          <button type="button" class="dur-pill" data-vfilter="live">🔴 En Vivo</button>
+          <button type="button" class="dur-pill" data-vfilter="yt">🔗 YouTube</button>
+          <button type="button" class="dur-pill" data-vfilter="studio">✂️ Exportados</button>
+        </div>
+        <div id="viewerClipsList" class="viewer-list">
+          <div class="muted">Tus cortes aparecerán aquí automáticamente listos para revisar.</div>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <!-- Toast de mensajes -->
@@ -1606,6 +1780,7 @@
     <video id="exportedVideoPreview" controls style="width:100%; max-height:360px; border-radius:12px; display:none; background:#000;"></video>
     <div class="row" style="margin-top:14px; justify-content:flex-end;">
       <button type="button" class="btn" id="closeExportModal">Seguir Editando</button>
+      <button type="button" class="btn btn-primary" id="openExportInViewerBtn" style="display:none;">📺 Ver en Visualizador</button>
       <button type="button" class="btn btn-tg" id="sendExportToTgBtn" style="display:none;">✈️ Enviar a Telegram</button>
       <a class="btn btn-green" id="downloadExportBtn" style="display:none; text-decoration:none;" download="cliphub_corte.webm">⬇️ Descargar Video</a>
     </div>
@@ -4549,6 +4724,7 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
     $('exportedVideoPreview').style.display = 'none';
     $('downloadExportBtn').style.display = 'none';
     if ($('sendExportToTgBtn')) $('sendExportToTgBtn').style.display = 'none';
+    if ($('openExportInViewerBtn')) $('openExportInViewerBtn').style.display = 'none';
     if ($('exportTabWarn')) $('exportTabWarn').style.display = 'block';
     $('exportProgress').style.width = '5%';
     $('exportStatus').textContent = `Renderizando corte en ${chosenFmt.label} con subtítulos, filtros, PNG y audio...`;
@@ -4629,6 +4805,26 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
       $('downloadExportBtn').textContent = `⬇️ Descargar Video (${chosenFmt.ext.toUpperCase()})`;
       $('downloadExportBtn').style.display = 'inline-flex';
       if ($('sendExportToTgBtn')) $('sendExportToTgBtn').style.display = 'inline-flex';
+      if ($('openExportInViewerBtn')) $('openExportInViewerBtn').style.display = 'inline-flex';
+      const activeCutObj = state.cuts[state.activeCutIdx] || {};
+      registerViewerClip({
+        source: 'studio',
+        title: activeCutObj.title || `${state.videoName} (Exportado)`,
+        blob,
+        ext: chosenFmt.ext,
+        dur: clipSecs,
+        start: 0,
+        end: clipSecs,
+        aspect: state.aspect || '9:16',
+        emotion: activeCutObj.emotion || '',
+        reason: activeCutObj.reason || '',
+        score: activeCutObj.score || 0,
+        hasSubs: Boolean(state.showSubs && state.subtitles.length),
+        transcript: (state.subtitles || []).map(s => s.text).join(' '),
+        subtitles: state.subtitles || [],
+        words: [],
+        credit: state.sourceCredit || ''
+      });
     } catch (err) {
       $('exportStatus').textContent = `⚠️ Error al renderizar el clip: ${err.message}`;
     } finally {
@@ -4890,8 +5086,11 @@ async function generateYtCuts() {
       row.append(
         mkBtn('▶ Previsualizar', () => {
           const t2 = cur();
-          $('ytIframe').src = `https://www.youtube.com/embed/${id}?start=${t2.s}&end=${t2.e}&autoplay=1`;
-          $('ytEmbedWrap').style.display = 'block';
+          const originP = location.protocol !== 'file:' ? `&origin=${encodeURIComponent(location.origin)}` : '';
+          $('ytCutPreviewIframe').src = `https://www.youtube.com/embed/${id}?start=${t2.s}&end=${t2.e}&autoplay=1&rel=0${originP}`;
+          if ($('ytCutPreviewTitle')) $('ytCutPreviewTitle').textContent = `▶ Vista previa: ${c.title} (${fmtT(t2.s)} → ${fmtT(t2.e)})`;
+          $('ytCutPreviewWrap').style.display = 'block';
+          $('ytCutPreviewWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }),
         mkBtn('🎥 Grabar este corte como video', () => recordYtClips([mk()])),
         mkBtn('↗ Abrir en YouTube', () => window.open(link(), '_blank', 'noopener')),
@@ -5483,6 +5682,7 @@ function renderLiveClips() {
     actions.className = 'row';
     actions.append(
       previewBtn,
+      mkBtn('📺 Visualizador', () => openClipInViewer(c.viewerId)),
       mkBtn('✂️ Cargar en el Estudio', () => {
         pendingWindow = { start: c.start, end: c.end };
         pendingLiveSubs = {
@@ -5568,6 +5768,24 @@ function liveCutNow(secs, auto, epicMeta = null) {
   };
   liveCapture.clips.unshift(clipObj);
   liveCapture.clips = liveCapture.clips.slice(0, 6);
+  clipObj.viewerId = registerViewerClip({
+    source: 'live',
+    title: clipObj.name,
+    blob: clipObj.blob,
+    ext: clipObj.ext,
+    dur: clipObj.n,
+    start: clipObj.start,
+    end: clipObj.end,
+    aspect: state.aspect || '9:16',
+    emotion: clipObj.emotion,
+    reason: clipObj.reason,
+    score: clipObj.score,
+    hasSubs: Boolean(clipObj.subtitles && clipObj.subtitles.length),
+    transcript: clipObj.transcript,
+    subtitles: clipObj.subtitles,
+    words: clipObj.words,
+    credit: creatorCredit(clipObj.creator, clipObj.src || (clipObj.creator && clipObj.creator.url) || '')
+  });
   renderLiveClips();
   if (auto && epicMeta && isTelegramConfigured() && $('tgAutoSendCheck')?.checked) {
     enqueueTelegramLiveClip(clipObj);
@@ -5710,6 +5928,7 @@ function renderYtClips() {
     actions.className = 'row';
     actions.append(
       previewBtn,
+      mkBtn('📺 Visualizador', () => openClipInViewer(x.viewerId)),
       mkBtn('✂️ Cargar en el Estudio', () => {
         pendingWindow = { start: 0, end: x.dur };
         pendingLiveSubs = {
@@ -5763,6 +5982,24 @@ function renderYtClips() {
 function addYtClip(c) {
   ytRec.clips.unshift(c);
   ytRec.clips = ytRec.clips.slice(0, 8);
+  c.viewerId = registerViewerClip({
+    source: 'yt',
+    title: c.it.title,
+    blob: c.blob,
+    ext: c.ext || 'mp4',
+    dur: c.dur,
+    start: 0,
+    end: c.dur,
+    aspect: c.aspect || '9:16',
+    emotion: c.it.emotion || '',
+    reason: c.it.reason || '',
+    score: c.it.score || 0,
+    hasSubs: Boolean(c.hasSubs),
+    transcript: c.transcript || '',
+    subtitles: c.subtitles || [],
+    words: c.words || [],
+    credit: creatorCredit(c.it.creator, c.it.link)
+  });
   renderYtClips();
 }
 
@@ -7753,6 +7990,332 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       link,
       creator: getCreator()
     }]);
+  });
+
+  // ==================== v14: CONTROLADOR DEL VISUALIZADOR DE CORTES ====================
+  const viewerState = {
+    clips: [],
+    activeId: null,
+    filter: 'all',
+    loop: true,
+    activeUrl: null
+  };
+
+  $('closeYtCutPreviewBtn')?.addEventListener('click', () => {
+    if ($('ytCutPreviewIframe')) $('ytCutPreviewIframe').src = '';
+    if ($('ytCutPreviewWrap')) $('ytCutPreviewWrap').style.display = 'none';
+  });
+
+  function updateViewerNavBadge() {
+    const n = viewerState.clips.length;
+    if ($('viewerNavBtn')) $('viewerNavBtn').textContent = `📺 Visualizador (${n})`;
+    if ($('viewerCountBadge')) $('viewerCountBadge').textContent = `${n} clip${n === 1 ? '' : 's'}`;
+  }
+
+  function registerViewerClip(meta) {
+    const id = 'vc_' + Date.now() + '_' + Math.random().toString(16).slice(2, 6);
+    const entry = {
+      id,
+      source: meta.source || 'studio',
+      title: meta.title || 'Corte sin título',
+      blob: meta.blob,
+      ext: meta.ext || 'mp4',
+      dur: Number(meta.dur) || 0,
+      start: Number(meta.start) || 0,
+      end: Number(meta.end) || Number(meta.dur) || 0,
+      aspect: meta.aspect || '9:16',
+      emotion: meta.emotion || '',
+      reason: meta.reason || '',
+      score: Number(meta.score) || 0,
+      hasSubs: Boolean(meta.hasSubs),
+      transcript: meta.transcript || '',
+      subtitles: Array.isArray(meta.subtitles) ? meta.subtitles : [],
+      words: Array.isArray(meta.words) ? meta.words : [],
+      credit: meta.credit || '',
+      createdAt: new Date().toLocaleTimeString()
+    };
+    viewerState.clips.unshift(entry);
+    if (viewerState.clips.length > 24) {
+      viewerState.clips = viewerState.clips.slice(0, 24);
+    }
+    updateViewerNavBadge();
+    renderViewerList();
+    if (!viewerState.activeId) {
+      selectViewerClip(id, false);
+    }
+    return id;
+  }
+
+  function getFilteredViewerClips() {
+    if (viewerState.filter === 'all') return viewerState.clips;
+    return viewerState.clips.filter(c => c.source === viewerState.filter);
+  }
+
+  function sourceTagLabel(src) {
+    if (src === 'live') return '🔴 En Vivo';
+    if (src === 'yt') return '🔗 YouTube';
+    if (src === 'local') return '📁 Local';
+    return '✂️ Exportado';
+  }
+
+  function selectViewerClip(id, autoPlay = true) {
+    const clip = viewerState.clips.find(c => c.id === id);
+    const vEl = $('viewerVideo');
+    const emptyEl = $('viewerEmptyStage');
+    const metaCard = $('viewerMetaCard');
+    if (!clip || !vEl) {
+      viewerState.activeId = null;
+      if (vEl) { try { vEl.pause(); vEl.src = ''; } catch (_) {} vEl.style.display = 'none'; }
+      if (emptyEl) emptyEl.style.display = 'block';
+      if (metaCard) metaCard.style.display = 'none';
+      if (viewerState.activeUrl) { try { URL.revokeObjectURL(viewerState.activeUrl); } catch (_) {} viewerState.activeUrl = null; }
+      renderViewerList();
+      return;
+    }
+
+    viewerState.activeId = clip.id;
+    if (viewerState.activeUrl) { try { URL.revokeObjectURL(viewerState.activeUrl); } catch (_) {} }
+    viewerState.activeUrl = URL.createObjectURL(clip.blob);
+
+    if (emptyEl) emptyEl.style.display = 'none';
+    vEl.style.display = 'block';
+    vEl.src = viewerState.activeUrl;
+    vEl.loop = viewerState.loop;
+    vEl.playbackRate = Number($('viewerSpeedSelect')?.value) || 1;
+    vEl.onloadedmetadata = () => {
+      if (clip.source === 'live' && clip.start > 0.2 && isFinite(vEl.duration) && clip.start < vEl.duration - 1) {
+        try { vEl.currentTime = clip.start; } catch (_) {}
+      }
+      if (autoPlay) {
+        vEl.play().then(() => {
+          if ($('viewerPlayBtn')) $('viewerPlayBtn').textContent = '⏸ Pausar';
+        }).catch(() => {});
+      }
+    };
+    vEl.ontimeupdate = () => {
+      if (clip.source === 'live' && viewerState.loop && clip.end > clip.start + 1 && vEl.currentTime >= clip.end) {
+        vEl.currentTime = clip.start;
+      }
+    };
+
+    if (metaCard) metaCard.style.display = 'block';
+    if ($('viewerClipTitle')) $('viewerClipTitle').textContent = clip.title;
+    if ($('viewerClipBadges')) {
+      const badges = [];
+      badges.push(`<span class="badge">${escapeHtml(sourceTagLabel(clip.source))}</span>`);
+      badges.push(`<span class="badge purple">${escapeHtml(clip.aspect)}</span>`);
+      if (clip.hasSubs) badges.push('<span class="badge green">💬 Subtítulos</span>');
+      if (clip.emotion) badges.push(`<span class="badge emo-${escapeHtml(clip.emotion)}">${escapeHtml(emotionLabel(clip.emotion))}</span>`);
+      $('viewerClipBadges').innerHTML = badges.join('');
+    }
+    if ($('viewerClipInfo')) {
+      const sizeMb = (clip.blob.size / 1048576).toFixed(1);
+      $('viewerClipInfo').textContent = `${clip.createdAt} · ${Math.max(1, Math.round(clip.dur))} s · ${sizeMb} MB${clip.score ? ` · ⭐ ${clip.score}/100` : ''}${clip.reason ? ` · 💡 ${clip.reason}` : ''}`;
+    }
+    if ($('viewerClipSubs')) {
+      const txt = (clip.transcript || (clip.subtitles || []).map(s => s.text).join(' ')).trim();
+      if (txt) {
+        $('viewerClipSubs').textContent = `💬 Subtítulos:
+${txt}`;
+        $('viewerClipSubs').style.display = 'block';
+      } else {
+        $('viewerClipSubs').style.display = 'none';
+      }
+    }
+    renderViewerList();
+  }
+
+  function openClipInViewer(id) {
+    document.querySelector('[data-tab="viewer"]')?.click();
+    if (id) selectViewerClip(id, true);
+    else if (viewerState.clips.length) selectViewerClip(viewerState.clips[0].id, true);
+  }
+
+  function renderViewerList() {
+    const box = $('viewerClipsList');
+    if (!box) return;
+    const list = getFilteredViewerClips();
+    if (!list.length) {
+      box.innerHTML = '<div class="muted">No hay cortes en esta categoría todavía.</div>';
+      return;
+    }
+    box.textContent = '';
+    list.forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'viewer-item' + (c.id === viewerState.activeId ? ' active' : '');
+      item.innerHTML = `
+        <div class="row" style="justify-content:space-between; gap:6px;">
+          <strong style="font-size:0.86rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:210px;">🎬 ${escapeHtml(c.title)}</strong>
+          <span class="badge">${escapeHtml(c.aspect)}</span>
+        </div>
+        <div class="row" style="justify-content:space-between; font-size:0.75rem;">
+          <span class="muted">${escapeHtml(sourceTagLabel(c.source))}${c.hasSubs ? ' · 💬 Subs' : ''}</span>
+          <span class="muted">${Math.max(1, Math.round(c.dur))}s · ${(c.blob.size / 1048576).toFixed(1)} MB</span>
+        </div>
+      `;
+      item.addEventListener('click', () => selectViewerClip(c.id, true));
+      box.appendChild(item);
+    });
+  }
+
+  // Controles del Visualizador
+  const vVideoEl = $('viewerVideo');
+  vVideoEl?.addEventListener('play', () => { if ($('viewerPlayBtn')) $('viewerPlayBtn').textContent = '⏸ Pausar'; });
+  vVideoEl?.addEventListener('pause', () => { if ($('viewerPlayBtn')) $('viewerPlayBtn').textContent = '▶ Reproducir'; });
+
+  $('viewerPlayBtn')?.addEventListener('click', () => {
+    if (!vVideoEl || !vVideoEl.src) return;
+    if (vVideoEl.paused) vVideoEl.play().catch(() => {});
+    else vVideoEl.pause();
+  });
+
+  $('viewerLoopBtn')?.addEventListener('click', () => {
+    viewerState.loop = !viewerState.loop;
+    if (vVideoEl) vVideoEl.loop = viewerState.loop;
+    if ($('viewerLoopBtn')) $('viewerLoopBtn').style.borderColor = viewerState.loop ? 'var(--green)' : 'var(--border)';
+    showToast(viewerState.loop ? 'Bucle activado en visualizador' : 'Bucle desactivado', '');
+  });
+
+  $('viewerSpeedSelect')?.addEventListener('change', e => {
+    if (vVideoEl) vVideoEl.playbackRate = Number(e.target.value) || 1;
+  });
+
+  $('viewerPrevBtn')?.addEventListener('click', () => {
+    const list = getFilteredViewerClips();
+    if (!list.length) return;
+    const idx = list.findIndex(c => c.id === viewerState.activeId);
+    const prevIdx = idx <= 0 ? list.length - 1 : idx - 1;
+    selectViewerClip(list[prevIdx].id, true);
+  });
+
+  $('viewerNextBtn')?.addEventListener('click', () => {
+    const list = getFilteredViewerClips();
+    if (!list.length) return;
+    const idx = list.findIndex(c => c.id === viewerState.activeId);
+    const nextIdx = (idx + 1) % list.length;
+    selectViewerClip(list[nextIdx].id, true);
+  });
+
+  $('viewerDownloadBtn')?.addEventListener('click', () => {
+    const clip = viewerState.clips.find(c => c.id === viewerState.activeId);
+    if (!clip) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(clip.blob);
+    a.download = `${String(clip.title).replace(/[^\w-]+/g, '_')}_${clip.aspect.replace(':', 'x')}.${clip.ext}`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  });
+
+  $('viewerSendTgBtn')?.addEventListener('click', async () => {
+    const clip = viewerState.clips.find(c => c.id === viewerState.activeId);
+    if (!clip) return;
+    saveTelegramConfigFromUI(true);
+    if (!isTelegramConfigured()) {
+      showToast('Configura tu Bot Token y Chat ID en En Vivo & Radar → Radar & Telegram', 'warn');
+      return;
+    }
+    const btn = $('viewerSendTgBtn');
+    btn.disabled = true; btn.textContent = '⏳ Enviando...';
+    try {
+      await sendBlobToTelegram({
+        blob: clip.blob,
+        ext: clip.ext,
+        title: clip.title,
+        emotion: clip.emotion,
+        reason: clip.reason,
+        score: clip.score,
+        transcript: clip.transcript || (clip.subtitles || []).map(s => s.text).join(' '),
+        subs: clip.subtitles || [],
+        startOffset: clip.start || 0,
+        credit: clip.credit || ''
+      });
+      pushTelegramHistory({ ok: true, title: clip.title, emotion: clip.emotion, time: new Date().toLocaleTimeString() });
+      showToast(`✈️ "${clip.title}" enviado a Telegram`, 'ok');
+    } catch (err) {
+      showToast(`Error Telegram: ${err.message}`, 'warn');
+    } finally {
+      btn.disabled = false; btn.textContent = '✈️ Enviar a Telegram';
+    }
+  });
+
+  $('viewerLoadStudioBtn')?.addEventListener('click', () => {
+    const clip = viewerState.clips.find(c => c.id === viewerState.activeId);
+    if (!clip) return;
+    if (vVideoEl) vVideoEl.pause();
+    pendingWindow = { start: clip.source === 'live' ? clip.start : 0, end: clip.source === 'live' ? clip.end : clip.dur };
+    pendingLiveSubs = {
+      name: clip.title,
+      emotion: clip.emotion,
+      reason: clip.reason,
+      score: clip.score || 92,
+      transcript: clip.transcript,
+      subtitles: clip.subtitles,
+      words: clip.words
+    };
+    state.videoBlob = clip.blob;
+    loadVideoSrc(URL.createObjectURL(clip.blob), clip.title, clip.dur);
+    state.sourceCredit = clip.credit || '';
+    document.querySelector('[data-tab="studio"]')?.click();
+  });
+
+  $('viewerDeleteOneBtn')?.addEventListener('click', () => {
+    if (!viewerState.activeId) return;
+    viewerState.clips = viewerState.clips.filter(c => c.id !== viewerState.activeId);
+    updateViewerNavBadge();
+    const next = getFilteredViewerClips()[0];
+    selectViewerClip(next ? next.id : null, false);
+    showToast('Corte eliminado del visualizador', '');
+  });
+
+  $('viewerClearAllBtn')?.addEventListener('click', () => {
+    viewerState.clips = [];
+    updateViewerNavBadge();
+    selectViewerClip(null, false);
+    showToast('Visualizador vaciado', '');
+  });
+
+  document.querySelectorAll('#viewerFilterPills [data-vfilter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      viewerState.filter = btn.dataset.vfilter;
+      document.querySelectorAll('#viewerFilterPills [data-vfilter]').forEach(b => b.classList.toggle('active', b === btn));
+      renderViewerList();
+    });
+  });
+
+  $('viewerAddLocalBtn')?.addEventListener('click', () => $('viewerLocalFileInput')?.click());
+  $('viewerLocalFileInput')?.addEventListener('change', e => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    let firstId = null;
+    files.forEach(file => {
+      const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+      const id = registerViewerClip({
+        source: 'local',
+        title: file.name.replace(/\.[^.]+$/, ''),
+        blob: file,
+        ext,
+        dur: 0,
+        aspect: 'Original',
+        hasSubs: false
+      });
+      if (!firstId) firstId = id;
+    });
+    if (firstId) selectViewerClip(firstId, true);
+    e.target.value = '';
+  });
+
+  $('openExportInViewerBtn')?.addEventListener('click', () => {
+    $('exportModal')?.classList.remove('open');
+    openClipInViewer(viewerState.clips[0]?.id);
+  });
+
+  // Pausar el visualizador si el usuario cambia a otra pestaña
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.tab !== 'viewer' && vVideoEl && !vVideoEl.paused) {
+        vVideoEl.pause();
+      }
+    });
   });
 
   // 5. Atajos de teclado globales (ignorados cuando se escribe en campos de texto)
