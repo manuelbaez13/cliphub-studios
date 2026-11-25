@@ -720,11 +720,12 @@
         <div class="row">
           <label class="muted" style="margin:0;">Duración:</label>
           <select id="quickDurSelect" style="width:auto; padding:6px 10px;">
-            <option value="10">10s</option>
-            <option value="15" selected>15s</option>
+            <option value="15">15s</option>
             <option value="30">30s</option>
-            <option value="45">45s</option>
+            <option value="45" selected>45s</option>
             <option value="60">60s</option>
+            <option value="90">90s</option>
+            <option value="120">2m</option>
           </select>
           <button type="button" class="btn btn-sm btn-amber" id="addManualCutBtn">➕ Corte Aquí</button>
           <button type="button" class="btn btn-sm" id="togglePipelineBtn" title="Ver progreso del análisis IA">📊 Progreso</button>
@@ -865,17 +866,17 @@
             <div class="field-block">
               <label>Duración rápida por corte</label>
               <div class="chip-row">
-                <button type="button" class="dur-pill" data-dur="10">10s</button>
-                <button type="button" class="dur-pill active" data-dur="15">15s</button>
+                <button type="button" class="dur-pill" data-dur="15">15s</button>
                 <button type="button" class="dur-pill" data-dur="30">30s</button>
-                <button type="button" class="dur-pill" data-dur="45">45s</button>
+                <button type="button" class="dur-pill active" data-dur="45">45s</button>
                 <button type="button" class="dur-pill" data-dur="60">60s</button>
+                <button type="button" class="dur-pill" data-dur="90">90s</button>
               </div>
             </div>
             <div class="field-block">
               <label>Duración personalizada (segundos)</label>
               <div class="row" style="flex-wrap:nowrap;">
-                <input type="number" id="cutDurationInput" value="15" min="3" max="300" step="1" />
+                <input type="number" id="cutDurationInput" value="45" min="3" max="300" step="1" />
                 <button type="button" class="btn btn-sm btn-primary" id="applyCutDurationBtn">Aplicar</button>
               </div>
             </div>
@@ -914,7 +915,7 @@
           <button type="button" class="btn btn-danger" id="liveHereBtn">🔴 Capturar directo del enlace</button>
           <button type="button" class="btn" id="liveStartBtn">Capturar otra pestaña</button>
           <label class="muted" style="margin:0;">Últimos</label>
-          <select id="liveSecs" style="width:auto;"><option value="30">30 s</option><option value="60" selected>60 s</option><option value="90">90 s</option><option value="180">3 min</option></select>
+          <select id="liveSecs" style="width:auto;"><option value="45">45 s</option><option value="60">60 s</option><option value="75">75 s</option><option value="90" selected>90 s</option><option value="120">2 min</option><option value="180">3 min</option></select>
           <label class="muted" style="margin:0;">Auto:</label>
           <select id="liveAuto" style="width:auto;"><option value="0">Desactivado</option><option value="60">Cada 60 s</option><option value="120">Cada 2 min</option><option value="300">Cada 5 min</option></select>
           <label class="muted" style="margin:0;">Formato:</label>
@@ -1150,11 +1151,11 @@
           <div class="field-block">
             <label>Duración rápida del corte (segundos)</label>
             <div class="chip-row">
-              <button type="button" class="dur-pill" data-dur="10">10s</button>
-              <button type="button" class="dur-pill active" data-dur="15">15s</button>
+              <button type="button" class="dur-pill" data-dur="15">15s</button>
               <button type="button" class="dur-pill" data-dur="30">30s</button>
-              <button type="button" class="dur-pill" data-dur="45">45s</button>
+              <button type="button" class="dur-pill active" data-dur="45">45s</button>
               <button type="button" class="dur-pill" data-dur="60">60s</button>
+              <button type="button" class="dur-pill" data-dur="90">90s</button>
             </div>
           </div>
           <div class="field-block">
@@ -1932,7 +1933,7 @@
     transcript: null,       // { text, segments: [{start, end, text}], words: [] }
     proxyHealth: null,      // Estado devuelto por GET /health del Cloudflare Worker
     duration: 0,
-    cutDuration: 15,
+    cutDuration: 45,
     frames: [],
     cuts: [],
     activeCutIdx: -1,
@@ -3993,7 +3994,22 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
     drawSubtitleOverlay(targetCtx, w, h, video.currentTime || 0);
   }
 
-  function renderFrameLoop() {
+  let lastIdleDraw = 0;
+  function renderFrameLoop(ts) {
+    const onCanvasTab = (state.activeTab === 'studio' || state.activeTab === 'editor');
+    const isActiveMotion = (!video.paused && video.readyState >= 2) || state.draggingPng || state.draggingTimeline || state.isExporting;
+
+    // Ahorro de CPU/GPU: si estás en "En Vivo", "Miniaturas" o "Redes", o el video está pausado, no redibuja a 60fps
+    if (!onCanvasTab) {
+      setTimeout(() => requestAnimationFrame(renderFrameLoop), 350);
+      return;
+    }
+    if (!isActiveMotion && (ts - lastIdleDraw) < 220) {
+      requestAnimationFrame(renderFrameLoop);
+      return;
+    }
+    lastIdleDraw = ts || performance.now();
+
     if (video.readyState >= 2) {
       if (!video.paused && state.loopCut && !state.isExporting && video.currentTime >= state.endTime) {
         video.currentTime = state.startTime;
@@ -4006,7 +4022,9 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
       updateTimelineUI();
     }
 
-    drawSceneToCanvas(ctx, canvas.width, canvas.height);
+    if (state.activeTab === 'studio' || state.isExporting) {
+      drawSceneToCanvas(ctx, canvas.width, canvas.height);
+    }
     if (state.activeTab === 'editor') {
       drawSceneToCanvas(editorCtx, editorCanvas.width, editorCanvas.height);
     }
@@ -4465,7 +4483,7 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
       rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
 
       const clipSecs = Math.max(1.2, (state.endTime - state.startTime) / Math.max(0.5, state.edit.speed));
-      const durMs = Math.min(45000, clipSecs * 1000);
+      const durMs = Math.min(120000, clipSecs * 1000);
       await new Promise(resolve => {
         let done = false;
         const fin = () => { if (!done) { done = true; resolve(); } };
@@ -4894,13 +4912,21 @@ function liveSpawnRecorder() {
   const stream = liveCapture.stream;
   if (!stream) return;
   const fmt = LIVE_FORMATS.find(f => f.id === $('liveFormat').value) || LIVE_FORMATS[0];
-  const rec = new MediaRecorder(stream, fmt.mime ? { mimeType: fmt.mime, videoBitsPerSecond: 4500000 } : { videoBitsPerSecond: 4500000 });
+  // 2.4 Mbps + 128 kbps audio: imagen nítida con la mitad de RAM/CPU y clips de 90s seguros para Telegram (<50 MB)
+  const opts = fmt.mime
+    ? { mimeType: fmt.mime, videoBitsPerSecond: 2400000, audioBitsPerSecond: 128000 }
+    : { videoBitsPerSecond: 2400000, audioBitsPerSecond: 128000 };
+  const rec = new MediaRecorder(stream, opts);
   const r = { rec, chunks: [], t0: Date.now(), fmt };
   rec.ondataavailable = e => { if (e.data && e.data.size) r.chunks.push(e.data); };
   rec.start(1000);
   liveCapture.recs.push(r);
   liveCapture.recs = liveCapture.recs.filter(x => {
-    if (Date.now() - x.t0 > 360000 && liveCapture.recs.length > 1) { try { x.rec.stop(); } catch (_) {} return false; }
+    if (Date.now() - x.t0 > 300000 && liveCapture.recs.length > 1) {
+      try { x.rec.stop(); } catch (_) {}
+      x.chunks = [];
+      return false;
+    }
     return true;
   });
 }
@@ -4944,7 +4970,7 @@ async function liveStart(here) {
     liveCapture.recs = [];
     stream.getVideoTracks()[0].addEventListener('ended', liveStop);
     liveSpawnRecorder();
-    liveCapture.rotTimer = setInterval(liveSpawnRecorder, 180000);
+    liveCapture.rotTimer = setInterval(liveSpawnRecorder, 150000);
     $('liveStartBtn').style.display = 'none';
     $('liveHereBtn').style.display = 'none';
     $('liveStopBtn').style.display = 'inline-flex';
@@ -4987,7 +5013,7 @@ function findMatchedKeywords(text) {
 }
 
 function stopLiveEpicRadar() {
-  if (liveCapture.meterRaf) cancelAnimationFrame(liveCapture.meterRaf);
+  if (liveCapture.meterRaf) clearInterval(liveCapture.meterRaf);
   clearInterval(liveCapture.epicTimer);
   clearTimeout(liveCapture.postRollTimer);
   try { if (liveCapture.epicAudioRec && liveCapture.epicAudioRec.state !== 'inactive') liveCapture.epicAudioRec.stop(); } catch (_) {}
@@ -5084,9 +5110,9 @@ function startLiveEpicRadar() {
           liveCapture.peakStartAt = 0;
         }
       }
-      liveCapture.meterRaf = requestAnimationFrame(tickMeter);
     };
-    liveCapture.meterRaf = requestAnimationFrame(tickMeter);
+    // 10 fps (cada 100 ms) en vez de 60 fps: reduce en ~80% el uso de CPU del medidor de voz
+    liveCapture.meterRaf = setInterval(tickMeter, 100);
   } catch (e) {
     console.warn('No se pudo iniciar el medidor de audio:', e);
   }
@@ -5196,11 +5222,16 @@ Responde SOLO JSON válido:
 
         if (parsed.isEpic && score >= minScore && (!emo || selectedEmotions.has(emo)) && !blockedByCooldown) {
           liveCapture.lastAutoCutAt = Date.now();
-          const cStart = isFinite(Number(parsed.clipStart)) ? Math.max(0, Number(parsed.clipStart) - 2) : 0;
-          const cEnd = isFinite(Number(parsed.clipEnd)) ? Math.min(secInterval, Number(parsed.clipEnd) + 3) : secInterval;
-          const exactRange = (cEnd - cStart >= 6) ? { relStart: cStart, relEnd: cEnd } : null;
+          const desiredSecs = Math.max(45, Number($('liveSecs')?.value) || 90);
+          const rawStart = isFinite(Number(parsed.clipStart)) ? Number(parsed.clipStart) : 0;
+          const rawEnd = isFinite(Number(parsed.clipEnd)) ? Number(parsed.clipEnd) : secInterval;
+          // Incluir contexto previo (pre-roll) para que el corte sea más largo y completo (45s - 90s)
+          const cEnd = Math.min(secInterval, rawEnd + 4);
+          const preRollNeeded = Math.max(18, desiredSecs - Math.max(10, cEnd - rawStart));
+          const cStart = rawStart - preRollNeeded; // puede ser negativo: liveCutNow retrocede en el búfer
+          const exactRange = { relStart: cStart, relEnd: cEnd };
 
-          liveCutNow(Number($('liveSecs').value) || 60, true, {
+          liveCutNow(desiredSecs, true, {
             emotion: emo || 'feliz',
             title: String(parsed.title || 'Momento épico en vivo'),
             reason: String(parsed.reason || transcript.slice(0, 90)) + (matchedKws.length ? ` · Gatillo: ${matchedKws.join(', ')}` : ''),
@@ -5387,9 +5418,9 @@ function liveCutNow(secs, auto, epicMeta = null) {
   const winOrigin = Math.max(0, dur - winSec);
   let cutStart = Math.max(0, dur - defaultN);
   let cutEnd = dur;
-  if (epicMeta?.exactRange && dur >= winSec) {
-    cutStart = Math.max(0, Math.min(dur - 4, winOrigin + epicMeta.exactRange.relStart));
-    cutEnd = Math.max(cutStart + 4, Math.min(dur, winOrigin + epicMeta.exactRange.relEnd));
+  if (epicMeta?.exactRange && dur >= 10) {
+    cutEnd = Math.min(dur, Math.max(10, winOrigin + epicMeta.exactRange.relEnd));
+    cutStart = Math.max(0, Math.min(cutEnd - 15, winOrigin + epicMeta.exactRange.relStart));
   }
   const n = Math.max(1, Math.round(cutEnd - cutStart));
   const chunkOffset = winOrigin;
@@ -5421,7 +5452,7 @@ function liveCutNow(secs, auto, epicMeta = null) {
     creator: getCreator(), src: $('ytUrlInput').value.trim()
   };
   liveCapture.clips.unshift(clipObj);
-  liveCapture.clips = liveCapture.clips.slice(0, 12);
+  liveCapture.clips = liveCapture.clips.slice(0, 6);
   renderLiveClips();
   if (auto && epicMeta && isTelegramConfigured() && $('tgAutoSendCheck')?.checked) {
     enqueueTelegramLiveClip(clipObj);
@@ -6866,16 +6897,38 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
     c.restore();
   }
 
-  // Renderiza en segundo plano (sin eco de audio) un clip con subtítulos incrustados en MP4/WebM
+  // AudioContext compartido y desbloqueado con interacción del usuario (evita videos mudos en Telegram)
+  let sharedTgAudioCtx = null;
+  function getUnlockedAudioCtx() {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return null;
+    if (!sharedTgAudioCtx || sharedTgAudioCtx.state === 'closed') {
+      sharedTgAudioCtx = new AudioCtx();
+    }
+    if (sharedTgAudioCtx.state === 'suspended') {
+      sharedTgAudioCtx.resume().catch(() => {});
+    }
+    return sharedTgAudioCtx;
+  }
+  ['click', 'keydown', 'touchstart'].forEach(ev => {
+    window.addEventListener(ev, () => { getUnlockedAudioCtx(); }, { once: true, passive: true });
+  });
+
+  // Renderiza en segundo plano (sin eco y CON AUDIO GARANTIZADO) un clip con subtítulos incrustados
   async function renderOffscreenClipWithSubtitles(clipObj) {
     const offVideo = document.createElement('video');
     offVideo.playsInline = true;
+    offVideo.muted = false;
+    offVideo.volume = 1;
     offVideo.preload = 'auto';
     offVideo.style.cssText = 'position:fixed;bottom:0;right:0;width:320px;height:180px;opacity:0.001;pointer-events:none;z-index:-2;';
     document.body.appendChild(offVideo);
 
     const srcUrl = URL.createObjectURL(clipObj.blob);
-    let ac = null;
+    let drawTimer = null;
+    let sourceNode = null;
+    let silentGain = null;
+    let destNode = null;
     try {
       await new Promise((res, rej) => {
         offVideo.onloadeddata = () => res();
@@ -6895,29 +6948,51 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       offCanvas.height = dims.h;
       const g = offCanvas.getContext('2d');
 
-      const vStream = offCanvas.captureStream(30);
+      const vStream = offCanvas.captureStream(24);
       const tracks = [...vStream.getVideoTracks()];
 
-      // Captura el audio del clip en silencio (sin sonar por los altavoces) usando Web Audio API
+      // Captura de audio robusta: usa AudioContext desbloqueado + ganancia casi 0 a destination (obliga a Chrome a bombear audio sin eco)
+      let audioAdded = false;
       try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (AudioCtx) {
-          ac = new AudioCtx();
-          const source = ac.createMediaElementSource(offVideo);
-          const dest = ac.createMediaStreamDestination();
-          source.connect(dest); // Solo al grabador, NO a ac.destination (evita eco con el directo)
-          if (dest.stream.getAudioTracks().length) {
-            tracks.push(...dest.stream.getAudioTracks());
+        const ac = getUnlockedAudioCtx();
+        if (ac) {
+          if (ac.state === 'suspended') await ac.resume().catch(() => {});
+          sourceNode = ac.createMediaElementSource(offVideo);
+          destNode = ac.createMediaStreamDestination();
+          silentGain = ac.createGain();
+          silentGain.gain.value = 0.00001; // Inaudible por altavoces, pero mantiene vivo el hilo de audio en Chrome
+          sourceNode.connect(destNode);
+          sourceNode.connect(silentGain);
+          silentGain.connect(ac.destination);
+          const aTracks = destNode.stream.getAudioTracks();
+          if (aTracks.length) {
+            tracks.push(...aTracks);
+            audioAdded = true;
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        console.warn('WebAudio offscreen fallback:', e);
+      }
 
+      // Respaldo con captureStream() si WebAudio no logró enganchar la pista
+      if (!audioAdded) {
+        try {
+          const cap = offVideo.captureStream ? offVideo.captureStream() : (offVideo.mozCaptureStream ? offVideo.mozCaptureStream() : null);
+          if (cap && cap.getAudioTracks().length) {
+            tracks.push(...cap.getAudioTracks());
+            audioAdded = true;
+          }
+        } catch (_) {}
+      }
+
+      // Priorizar códecs con audio explícito compatible con Telegram (MP4+AAC primero, luego WebM+Opus)
       const formats = [
         { mime: 'video/mp4;codecs=avc1.4D4028,mp4a.40.2', ext: 'mp4' },
         { mime: 'video/mp4;codecs=avc1.640028,mp4a.40.2', ext: 'mp4' },
-        { mime: 'video/mp4', ext: 'mp4' },
-        { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
+        { mime: 'video/mp4;codecs=avc1,mp4a.40.2', ext: 'mp4' },
         { mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
+        { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
+        { mime: 'video/mp4', ext: 'mp4' },
         { mime: 'video/webm', ext: 'webm' }
       ];
       const chosen = formats.find(f => {
@@ -6926,16 +7001,16 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       }) || { mime: '', ext: 'webm' };
 
       const combined = new MediaStream(tracks);
-      const rec = new MediaRecorder(
-        combined,
-        chosen.mime ? { mimeType: chosen.mime, videoBitsPerSecond: 3800000 } : { videoBitsPerSecond: 3800000 }
-      );
+      const recOpts = chosen.mime
+        ? { mimeType: chosen.mime, videoBitsPerSecond: 2400000, audioBitsPerSecond: 128000 }
+        : { videoBitsPerSecond: 2400000, audioBitsPerSecond: 128000 };
+      const rec = new MediaRecorder(combined, recOpts);
       const chunks = [];
       rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
 
       const startT = Math.max(0, Number(clipObj.start) || 0);
-      const endT = Math.max(startT + 2, Number(clipObj.end) || Number(clipObj.dur) || 30);
-      const clipMs = Math.min(60000, Math.max(2000, (endT - startT) * 1000));
+      const endT = Math.max(startT + 2, Number(clipObj.end) || Number(clipObj.dur) || 60);
+      const clipMs = Math.min(120000, Math.max(2000, (endT - startT) * 1000));
 
       let subs = Array.isArray(clipObj.subtitles) && clipObj.subtitles.length
         ? clipObj.subtitles
@@ -6946,9 +7021,7 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       const words = Array.isArray(clipObj.words) ? clipObj.words : [];
       const subStyle = state.subStyle || 'word';
 
-      let running = true;
-      const drawLoop = () => {
-        if (!running) return;
+      const drawFrame = () => {
         g.fillStyle = '#050811';
         g.fillRect(0, 0, dims.w, dims.h);
         if (offVideo.readyState >= 2 && offVideo.videoWidth > 0) {
@@ -6960,7 +7033,6 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
           g.drawImage(offVideo, sx, sy, sw, sh, 0, 0, dims.w, dims.h);
         }
         drawOffscreenSubtitles(g, dims.w, dims.h, offVideo.currentTime || startT, subs, words, subStyle, aspect);
-        requestAnimationFrame(drawLoop);
       };
 
       // Esperar a que offVideo complete el salto (seeked) a un fotograma limpio antes de empezar a grabar
@@ -6973,14 +7045,16 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
           setTimeout(fin, 1800);
         });
       }
-      if (ac && ac.state === 'suspended') { await ac.resume().catch(() => {}); }
       await offVideo.play().catch(() => {});
-      requestAnimationFrame(drawLoop);
-      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      drawFrame();
+      // 24 fps con setInterval: mitad de carga de CPU que requestAnimationFrame y nunca se pausa en segundo plano ligero
+      drawTimer = setInterval(drawFrame, 42);
+      await new Promise(r => setTimeout(r, 120));
       rec.start(500);
 
       await new Promise(r => setTimeout(r, clipMs));
-      running = false;
+      clearInterval(drawTimer);
+      drawTimer = null;
       offVideo.pause();
       if (rec.state !== 'inactive') rec.stop();
       await new Promise(r => { rec.onstop = r; });
@@ -6988,7 +7062,9 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
       const mimeClean = (chosen.mime || 'video/webm').split(';')[0];
       return { blob: new Blob(chunks, { type: mimeClean }), ext: chosen.ext, subs };
     } finally {
-      if (ac) { try { await ac.close(); } catch (_) {} }
+      if (drawTimer) clearInterval(drawTimer);
+      try { if (sourceNode) sourceNode.disconnect(); } catch (_) {}
+      try { if (silentGain) silentGain.disconnect(); } catch (_) {}
       try { offVideo.pause(); offVideo.src = ''; offVideo.remove(); } catch (_) {}
       try { URL.revokeObjectURL(srcUrl); } catch (_) {}
     }
