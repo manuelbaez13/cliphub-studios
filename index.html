@@ -1034,6 +1034,21 @@
 
       <!-- SUB-PESTAÑA 2: CORTES DE ENLACE YT (CON SUBTÍTULOS, TAMAÑO Y TIEMPO PERSONALIZADOS) -->
       <div class="live-subpane" id="livePane-yt">
+        <!-- Barra de conexión al Servidor Automático (yt-dlp + FFmpeg) -->
+        <div class="tg-box" style="margin-top:0; margin-bottom:10px;">
+          <div class="row" style="justify-content:space-between; gap:8px;">
+            <div class="row" style="gap:8px; flex:1; min-width:240px;">
+              <strong style="font-size:0.84rem; white-space:nowrap;">⚡ Motor Automático (Descarga + Corte + Subtítulos):</strong>
+              <input type="url" id="ytBackendUrlInput" value="http://localhost:8000" placeholder="http://localhost:8000 o https://tu-servidor.onrender.com" style="flex:1; min-width:190px;" />
+            </div>
+            <div class="row" style="gap:6px;">
+              <span class="badge" id="ytBackendBadge">Sin probar</span>
+              <button type="button" class="btn btn-sm btn-primary" id="ytBackendCheckBtn">🔄 Probar Motor</button>
+            </div>
+          </div>
+          <div class="muted" id="ytBackendStatusText" style="margin-top:5px; font-size:0.75rem;">Ejecuta <code>python server.py</code> en tu PC (o súbelo a Render/Railway) para descargar y cortar directo sin abrir ventanas ni grabar pantalla.</div>
+        </div>
+
         <div class="row">
           <input type="url" id="ytLinkInput2" placeholder="Pega aquí el enlace de YouTube (ej. https://www.youtube.com/watch?v=...)" style="flex:1; min-width:240px;" />
           <input type="password" id="ytGeminiKeyInput" placeholder="Clave Gemini (AIza...)" autocomplete="off" style="width:210px;" />
@@ -1116,7 +1131,8 @@
         <div class="row" style="margin-top:10px; align-items:center;">
           <label class="muted" style="margin:0;">Grabar en:</label>
           <select id="ytRecMode" style="width:auto;"><option value="popup">Ventana nueva (mejor calidad)</option><option value="page">Esta página</option></select>
-          <button type="button" class="btn btn-sm btn-amber" id="ytManualRecBtn" title="Graba un corte exacto del enlace usando el tramo y tiempo elegidos">✂️ Grabar corte manual</button>
+          <button type="button" class="btn btn-sm btn-green" id="ytAutoManualCutBtn" title="Descarga, corta y subtitula automáticamente usando el servidor">⚡ Cortar y Subtitular (Auto)</button>
+          <button type="button" class="btn btn-sm btn-amber" id="ytManualRecBtn" title="Respaldo sin servidor: graba en tiempo real desde la pantalla">🎥 Grabar pantalla manual</button>
           <span id="ytRecStatus" class="muted"></span>
           <button type="button" class="btn" id="ytRecStopBtn" style="display:none;">⏹ Detener grabación</button>
         </div>
@@ -5132,8 +5148,8 @@ async function generateYtCuts() {
           $('ytCutPreviewWrap').style.display = 'block';
           $('ytCutPreviewWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }),
-        mkBtn('🎥 Grabar este corte como video', () => recordYtClips([mk()])),
-        mkBtn('✈️ Grabar y enviar a Telegram', () => recordYtClips([mk()], { autoTg: true })),
+        mkBtn('⚡ Descargar, Cortar y Subtitular', () => processYtClipsViaBackend([mk()], { autoTg: false })),
+        mkBtn('🎥 Grabar pantalla', () => recordYtClips([mk()])),
         mkBtn('↗ Abrir en YouTube', () => window.open(link(), '_blank', 'noopener')),
         mkBtn('🔗 Copiar enlace con tiempo', () => { copyTextSafe(link()); showToast('Enlace copiado', 'ok'); }),
         mkBtn('📋 Copiar descripción con créditos', () => { copyTextSafe(descr()); showToast('Descripción copiada', 'ok'); })
@@ -5148,7 +5164,8 @@ async function generateYtCuts() {
       copyTextSafe(sel.map((x, n) => `${n + 1}. ${fmtT(x.cur().s)}–${fmtT(x.cur().e)}  ${x.link()}\n${x.descr()}`).join('\n\n-----\n\n'));
       showToast(`${sel.length} cortes aprobados copiados`, 'ok');
     }));
-    list.appendChild(mkBtn('🎥 Grabar los aprobados como video', () => recordYtClips(rows.filter(x => x.ok.checked).map(x => x.mk()))));
+    list.appendChild(mkBtn('⚡ Descargar y Cortar todos los aprobados (Auto)', () => processYtClipsViaBackend(rows.filter(x => x.ok.checked).map(x => x.mk()), { autoTg: false })));
+    list.appendChild(mkBtn('🎥 Grabar aprobados en pantalla', () => recordYtClips(rows.filter(x => x.ok.checked).map(x => x.mk()))));
     showToast(`${cuts.length} cortes generados desde el enlace`, 'ok');
   } catch (err) {
     fail(`Error inesperado: ${err && err.message ? err.message : err}`);
@@ -8424,6 +8441,197 @@ ${txt}`;
         vVideoEl.pause();
       }
     });
+  });
+
+  // ==================== v16: MOTOR BACKEND AUTOMÁTICO (DESCARGA + CORTE + SUBTÍTULOS + ENVÍO BAJO ORDEN) ====================
+  function getYtBackendUrl() {
+    return String($('ytBackendUrlInput')?.value || '').trim().replace(/\/+$/, '');
+  }
+
+  async function checkYtBackendHealth(silent = false) {
+    const base = getYtBackendUrl();
+    const badge = $('ytBackendBadge');
+    const st = $('ytBackendStatusText');
+    if (!base) {
+      if (badge) { badge.textContent = 'Sin URL'; badge.className = 'badge'; }
+      return false;
+    }
+    safeSet('cliphub_yt_backend_url', base);
+    if (!silent && st) st.textContent = '⏳ Comprobando conexión con el motor automático...';
+    try {
+      const res = await fetch(`${base}/health`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(`HTTP ${res.status}`);
+      const ready = Boolean(data.ffmpeg && data.ytdlp);
+      if (badge) {
+        badge.textContent = ready ? '🟢 Conectado' : '⚠️ Falta FFmpeg/yt-dlp';
+        badge.className = ready ? 'badge green' : 'badge amber';
+      }
+      if (st) {
+        st.textContent = ready
+          ? `✅ Motor listo en ${base} (yt-dlp + FFmpeg activos). Ya puedes descargar, cortar y subtitular automáticamente.`
+          : `⚠️ Servidor activo pero falta instalar: ${!data.ytdlp ? 'yt-dlp ' : ''}${!data.ffmpeg ? 'FFmpeg' : ''}.`;
+      }
+      if (!silent) showToast(ready ? 'Motor automático conectado' : 'Falta yt-dlp o FFmpeg en el servidor', ready ? 'ok' : 'warn');
+      return ready;
+    } catch (err) {
+      if (badge) { badge.textContent = '🔴 Desconectado'; badge.className = 'badge amber'; }
+      if (!silent && st) {
+        st.textContent = `❌ No se pudo conectar a ${base}. Ejecuta "python server.py" en tu PC o pega la URL de tu servidor en la nube.`;
+      }
+      if (!silent) showToast('No se pudo conectar al servidor automático', 'warn');
+      return false;
+    }
+  }
+
+  const savedBackendUrl = safeGet('cliphub_yt_backend_url', '');
+  if (savedBackendUrl && $('ytBackendUrlInput')) {
+    $('ytBackendUrlInput').value = savedBackendUrl;
+  }
+  $('ytBackendUrlInput')?.addEventListener('change', () => safeSet('cliphub_yt_backend_url', getYtBackendUrl()));
+  $('ytBackendCheckBtn')?.addEventListener('click', () => checkYtBackendHealth(false));
+  // Comprobación silenciosa al iniciar
+  checkYtBackendHealth(true);
+
+  let backendBusy = false;
+  async function processYtClipsViaBackend(items, opts = {}) {
+    if (backendBusy) {
+      showToast('Ya se está procesando un corte en el servidor, espera un momento', 'warn');
+      return;
+    }
+    if (!items || !items.length) {
+      showToast('Marca al menos un corte como "Aprobar" o usa el botón de corte manual', 'warn');
+      return;
+    }
+    const base = getYtBackendUrl();
+    if (!base) {
+      showToast('Ingresa la URL del Motor Automático (ej. http://localhost:8000)', 'warn');
+      return;
+    }
+
+    const st = $('ytRecStatus');
+    const ytAspect = $('ytAspectSelect')?.value || '9:16';
+    const ytRes = $('ytResSelect')?.value || 'sd';
+    const ytBurnSubs = Boolean($('ytBurnSubsCheck')?.checked);
+    const ytSubStyle = $('ytSubStyleSelect')?.value || state.subStyle || 'word';
+    const shouldAutoTg = Boolean(opts.autoTg || $('ytAutoTgCheck')?.checked);
+    const groqKey = (state.ai.groqKey || '').trim();
+
+    backendBusy = true;
+    let doneCount = 0;
+    try {
+      const online = await checkYtBackendHealth(true);
+      if (!online) {
+        throw new Error(`El servidor en ${base} no responde. Ejecuta "python server.py" primero.`);
+      }
+
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        const ytUrl = `https://www.youtube.com/watch?v=${it.id}`;
+        if (st) st.textContent = `⚡ [${i + 1}/${items.length}] Descargando, cortando (${ytAspect}) y subtitulando "${it.title}"...`;
+        showToast(`⚡ Procesando "${it.title}" en el servidor...`, '');
+
+        const res = await fetch(`${base}/api/yt-cut`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: ytUrl,
+            start: Number(it.s) || 0,
+            end: Number(it.e) || 45,
+            aspect: ytAspect,
+            res: ytRes,
+            burnSubs: ytBurnSubs,
+            subStyle: ytSubStyle,
+            groqKey,
+            title: it.title
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          throw new Error(data.detail || `Error del servidor HTTP ${res.status}`);
+        }
+
+        if (st) st.textContent = `📥 [${i + 1}/${items.length}] Cargando video final en el Visualizador...`;
+        const fileRes = await fetch(`${base}${data.downloadUrl}`);
+        if (!fileRes.ok) throw new Error(`No se pudo bajar el clip generado (HTTP ${fileRes.status})`);
+        const blob = await fileRes.blob();
+
+        const clip = {
+          blob,
+          ext: 'mp4',
+          dur: Number(data.duration) || Math.max(3, (it.e || 45) - (it.s || 0)),
+          it,
+          precise: true,
+          ok: true,
+          aspect: data.aspect || ytAspect,
+          hasSubs: Boolean(data.hasSubs),
+          transcript: data.transcript || '',
+          subtitles: Array.isArray(data.segments) ? data.segments : [],
+          words: Array.isArray(data.words) ? data.words : [],
+          backendClipId: data.clipId
+        };
+
+        addYtClip(clip);
+        doneCount++;
+
+        // Solo envía a Telegram si el usuario marcó "Auto-enviar" o lo pidió explícitamente
+        if (shouldAutoTg) {
+          saveTelegramConfigFromUI(true);
+          if (!isTelegramConfigured()) {
+            showToast('Clip listo, pero falta configurar tu Bot Token y Chat ID en Radar & Telegram', 'warn');
+          } else {
+            if (st) st.textContent = `✈️ [${i + 1}/${items.length}] Enviando "${it.title}" a Telegram...`;
+            await sendBlobToTelegram({
+              blob: clip.blob,
+              ext: 'mp4',
+              title: it.title,
+              emotion: it.emotion || '',
+              reason: it.reason || '',
+              score: it.score || 0,
+              transcript: clip.transcript || (clip.subtitles || []).map(s => s.text).join(' '),
+              subs: clip.subtitles || [],
+              startOffset: 0,
+              credit: creatorCredit(it.creator, it.link)
+            });
+            pushTelegramHistory({ ok: true, title: it.title, emotion: it.emotion || '', time: new Date().toLocaleTimeString() });
+            showToast(`✈️ "${it.title}" enviado a Telegram`, 'ok');
+          }
+        }
+      }
+
+      if (st) {
+        st.textContent = `✅ ${doneCount} corte(s) listo(s) con subtítulos en ${ytAspect}. Revísalos abajo o en 📺 Visualizador y envíalos a Telegram cuando quieras.`;
+      }
+      showToast(`✅ ${doneCount} corte(s) listos en el Visualizador`, 'ok');
+    } catch (err) {
+      if (st) st.textContent = `❌ ${err.message}`;
+      showToast(err.message, 'warn');
+    } finally {
+      backendBusy = false;
+    }
+  }
+
+  $('ytAutoManualCutBtn')?.addEventListener('click', () => {
+    const rawUrl = ($('ytLinkInput2')?.value || $('ytUrlInput')?.value || '').trim();
+    const id = ytId(rawUrl);
+    if (!id) { showToast('Pega primero un enlace válido de YouTube arriba', 'warn'); return; }
+    const fromMin = parseFloat($('ytFromMin')?.value);
+    const startSec = isFinite(fromMin) && fromMin > 0 ? Math.floor(fromMin * 60) : 0;
+    const durSec = Math.max(5, Math.min(180, Number($('ytCutDurInput')?.value) || 45));
+    const endSec = startSec + durSec;
+    const link = `https://youtu.be/${id}?t=${startSec}`;
+    processYtClipsViaBackend([{
+      id,
+      s: startSec,
+      e: endSec,
+      title: `Corte YouTube ${fmtT(startSec)}-${fmtT(endSec)}`,
+      emotion: '',
+      reason: `Corte automático de ${durSec} s en ${$('ytAspectSelect')?.value || '9:16'}`,
+      score: 0,
+      caption: '',
+      link,
+      creator: getCreator()
+    }], { autoTg: false });
   });
 
   // 5. Atajos de teclado globales (ignorados cuando se escribe en campos de texto)
