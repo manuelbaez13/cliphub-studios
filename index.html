@@ -3719,8 +3719,7 @@ Include bold Spanish headline text reading "${cut.hookText}" and a small badge "
 
   function drawSubtitleOverlay(c, w, h, now) {
     if (!state.showSubs || !state.subtitles.length) return;
-    const active = state.subtitles.find(s => now >= s.start && now <= s.end) ||
-                   (now >= state.startTime && now <= state.endTime ? state.subtitles[state.subtitles.length - 1] : null);
+    const active = state.subtitles.find(s => now >= (s.start - 0.12) && now <= (s.end + 0.18));
     if (!active) return;
     if (state.subStyle === 'word') { drawWordByWord(c, w, h, now, active); return; }
 
