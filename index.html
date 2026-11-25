@@ -943,35 +943,83 @@
         </div>
       </div>
 
-      <!-- SUB-PESTAÑA 2: CORTES DE ENLACE YT (SIN DESCARGAR) -->
+      <!-- SUB-PESTAÑA 2: CORTES DE ENLACE YT (CON SUBTÍTULOS, TAMAÑO Y TIEMPO PERSONALIZADOS) -->
       <div class="live-subpane" id="livePane-yt">
-        <div class="row" style="align-items:center;">
-          <label class="muted" style="margin:0;">Creador autorizado:</label>
-          <select id="ytCreatorSelect" style="width:auto; min-width:170px;"><option value="">— elige un creador —</option></select>
-          <button type="button" class="btn btn-sm" id="creatorDelBtn" title="Quitar de la lista">🗑</button>
-          <input type="text" id="creatorNameInput" placeholder="Nombre del creador" style="flex:1; min-width:140px;" />
-          <input type="text" id="creatorUrlInput" placeholder="Enlace a su canal" style="flex:1; min-width:160px;" />
-          <button type="button" class="btn btn-sm" id="creatorAddBtn">➕ Añadir</button>
+        <div class="row">
+          <input type="url" id="ytLinkInput2" placeholder="Pega aquí el enlace de YouTube (ej. https://www.youtube.com/watch?v=...)" style="flex:1; min-width:240px;" />
+          <input type="password" id="ytGeminiKeyInput" placeholder="Clave Gemini (AIza...)" autocomplete="off" style="width:210px;" />
+          <button type="button" class="btn btn-green" id="ytAiCutsBtn">✨ Generar cortes IA</button>
         </div>
-        <div class="row" style="margin-top:10px;">
-          <input type="password" id="ytGeminiKeyInput" placeholder="Clave de Gemini (AIza...) para analizar enlaces" autocomplete="off" style="flex:1; min-width:200px;" />
-          <button type="button" class="btn btn-green" id="ytAiCutsBtn">✨ Generar cortes del enlace con IA (sin descargar)</button>
+
+        <!-- Configuración de Tamaño, Tiempo y Subtítulos para los cortes de YouTube -->
+        <div class="dur-bar" style="margin-top:10px;">
+          <div class="row" style="gap:8px; width:100%;">
+            <label class="muted" style="margin:0;">📐 Tamaño:</label>
+            <select id="ytAspectSelect" style="width:auto;">
+              <option value="9:16" selected>9:16 Vertical (TikTok / Shorts / Reels)</option>
+              <option value="16:9">16:9 Horizontal (YouTube)</option>
+              <option value="1:1">1:1 Cuadrado (Instagram)</option>
+              <option value="4:5">4:5 Retrato (Feed)</option>
+            </select>
+
+            <label class="muted" style="margin:0;">🎞️ Calidad:</label>
+            <select id="ytResSelect" style="width:auto;">
+              <option value="sd" selected>Estándar (Rápida)</option>
+              <option value="hd">HD (Alta definición)</option>
+            </select>
+
+            <label class="muted" style="margin:0;">⏱️ Tiempo del corte (seg):</label>
+            <input type="number" id="ytCutDurInput" value="45" min="5" max="180" step="5" style="width:76px;" />
+            <div class="row" style="gap:4px;">
+              <button type="button" class="dur-pill yt-dur-pill" data-yt-dur="15">15s</button>
+              <button type="button" class="dur-pill yt-dur-pill" data-yt-dur="30">30s</button>
+              <button type="button" class="dur-pill yt-dur-pill active" data-yt-dur="45">45s</button>
+              <button type="button" class="dur-pill yt-dur-pill" data-yt-dur="60">60s</button>
+              <button type="button" class="dur-pill yt-dur-pill" data-yt-dur="90">90s</button>
+              <button type="button" class="dur-pill yt-dur-pill" data-yt-dur="120">2m</button>
+            </div>
+          </div>
+
+          <div class="row" style="gap:10px; width:100%; margin-top:4px;">
+            <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; color:var(--text);">
+              <input type="checkbox" id="ytBurnSubsCheck" checked style="width:auto;" />
+              💬 Incrustar subtítulos automáticamente (Whisper)
+            </label>
+            <select id="ytSubStyleSelect" style="width:auto;">
+              <option value="word" selected>Karaoke (Palabra por palabra)</option>
+              <option value="viral">Viral Amarillo</option>
+              <option value="neon">Neón Cian</option>
+              <option value="box">Caja Blanca</option>
+              <option value="clean">Cine Limpio</option>
+            </select>
+            <span class="muted" style="font-size:0.76rem; margin-left:auto;">Tramo opcional: min</span>
+            <input type="number" id="ytFromMin" min="0" placeholder="0" style="width:68px;" />
+            <span class="muted" style="font-size:0.76rem;">a</span>
+            <input type="number" id="ytToMin" min="1" placeholder="fin" style="width:68px;" />
+          </div>
         </div>
-        <div class="row" style="margin-top:8px; align-items:center;">
-          <label class="muted" style="margin:0;">Analizar solo (opcional): desde min</label>
-          <input type="number" id="ytFromMin" min="0" placeholder="0" style="width:78px;" />
-          <label class="muted" style="margin:0;">hasta min</label>
-          <input type="number" id="ytToMin" min="1" placeholder="fin" style="width:78px;" />
-          <span class="muted" style="margin-left:auto; font-size:0.78rem;">Usa el enlace pegado en "Capturar Directo"</span>
-        </div>
+
+        <details style="margin-top:8px;">
+          <summary class="muted" style="cursor:pointer;">👤 Creador autorizado / Créditos (opcional)</summary>
+          <div class="row" style="margin-top:8px; align-items:center;">
+            <select id="ytCreatorSelect" style="width:auto; min-width:170px;"><option value="">— sin créditos —</option></select>
+            <button type="button" class="btn btn-sm" id="creatorDelBtn" title="Quitar de la lista">🗑</button>
+            <input type="text" id="creatorNameInput" placeholder="Nombre del creador" style="flex:1; min-width:140px;" />
+            <input type="text" id="creatorUrlInput" placeholder="Enlace a su canal" style="flex:1; min-width:160px;" />
+            <button type="button" class="btn btn-sm" id="creatorAddBtn">➕ Añadir</button>
+          </div>
+        </details>
+
         <div id="ytCutsList" style="margin-top:10px; display:grid; gap:8px;"></div>
+
         <div class="row" style="margin-top:10px; align-items:center;">
           <label class="muted" style="margin:0;">Grabar en:</label>
           <select id="ytRecMode" style="width:auto;"><option value="popup">Ventana nueva (mejor calidad)</option><option value="page">Esta página</option></select>
+          <button type="button" class="btn btn-sm btn-amber" id="ytManualRecBtn" title="Graba un corte exacto del enlace usando el tramo y tiempo elegidos">✂️ Grabar corte manual</button>
           <span id="ytRecStatus" class="muted"></span>
           <button type="button" class="btn" id="ytRecStopBtn" style="display:none;">⏹ Detener grabación</button>
         </div>
-        <div id="ytClipFiles" style="margin-top:8px; display:grid; gap:6px;"></div>
+        <div id="ytClipFiles" style="margin-top:8px; display:grid; gap:8px;"></div>
       </div>
 
       <!-- SUB-PESTAÑA 3: AJUSTES DE RADAR & TELEGRAM -->
@@ -1677,6 +1725,7 @@
   // ==================== PERSISTENCIA LOCAL (IndexedDB: último proyecto) ====================
   let pendingRestore = null;
   let pendingWindow = null; // ventana inicio/fin a aplicar al cargar un corte de directo
+  let pendingLiveSubs = null; // subtítulos del corte en vivo al abrirlo en el Estudio
   const ProjectDB = {
     open() {
       return new Promise((res, rej) => {
@@ -2533,13 +2582,39 @@
       $('startInput').value = state.startTime.toFixed(1);
       $('endInput').value = state.endTime.toFixed(1);
       const liveWin = pendingWindow;
+      const liveSubsMeta = pendingLiveSubs;
       pendingWindow = null;
+      pendingLiveSubs = null;
       if (liveWin) {
         state.startTime = Math.max(0, Math.min(liveWin.start, state.duration - 1));
         state.endTime = Math.min(state.duration, liveWin.end);
         $('startInput').value = state.startTime.toFixed(1);
         $('endInput').value = state.endTime.toFixed(1);
         try { video.currentTime = state.startTime; } catch (_) {}
+        if (liveSubsMeta) {
+          const segs = liveSubsMeta.subtitles || [];
+          const lines = segs.length
+            ? segs.map(s => s.text)
+            : (liveSubsMeta.transcript ? liveSubsMeta.transcript.split(/(?<=[.!?])\s+/).filter(Boolean) : [liveSubsMeta.name]);
+          if (liveSubsMeta.words && liveSubsMeta.words.length) {
+            state.transcript = { text: liveSubsMeta.transcript, segments: segs, words: liveSubsMeta.words };
+          }
+          state.cuts = [{
+            title: liveSubsMeta.name,
+            hookText: liveSubsMeta.name.toUpperCase().slice(0, 26),
+            badge: 'EN VIVO',
+            emotion: liveSubsMeta.emotion,
+            score: liveSubsMeta.score,
+            reason: liveSubsMeta.reason,
+            start: state.startTime,
+            end: state.endTime,
+            frameIdx: 0,
+            lines,
+            timedSegments: segs,
+            thumbnailPrompt: ''
+          }];
+          loadCutIntoPlayer(0, false);
+        }
       }
       $('seekBar').max = state.duration;
       $('seekBar').value = 0;
@@ -2783,17 +2858,17 @@
    * Envía un bloque WAV ligero a Groq Whisper (`whisper-large-v3-turbo`, $0.04 USD/h)
    * o al Proxy URL configurado, devolviendo transcripción con marcas de tiempo exactas.
    */
-  async function transcribeWavChunkWithGroq(wavBlob) {
+  async function transcribeWavChunkWithGroq(mediaBlob, filename = 'audio.wav') {
     const groqKey = (state.ai.groqKey || '').trim();
     const proxy = getActiveProxy();
     if (!groqKey && !proxy) return null;
 
-    if (wavBlob.size > 24 * 1024 * 1024) {
-      throw new Error('El bloque de audio excede 24 MB.');
+    if (mediaBlob.size > 24 * 1024 * 1024) {
+      throw new Error('El archivo de audio/video excede 24 MB.');
     }
 
     const form = new FormData();
-    form.append('file', wavBlob, 'audio.wav');
+    form.append('file', mediaBlob, filename);
     form.append('model', 'whisper-large-v3-turbo');
     form.append('response_format', 'verbose_json');
     form.append('timestamp_granularities[]', 'segment');
@@ -2822,9 +2897,37 @@
 
   /**
    * Transcribe todos los bloques de audio y unifica los timestamps con el desplazamiento real.
+   * Si Chrome no puede decodificar WebM con decodeAudioData, envía el clip directo a Groq Whisper (nativo).
    */
   async function transcribeVideoWithGroqWhisper(videoBlob) {
-    const chunks = await extractMonoAudioChunks(videoBlob);
+    let chunks = null;
+    try {
+      chunks = await extractMonoAudioChunks(videoBlob);
+    } catch (decodeErr) {
+      console.warn('extractMonoAudioChunks falló, enviando blob directo a Groq Whisper:', decodeErr);
+      if (videoBlob && videoBlob.size <= 24 * 1024 * 1024) {
+        const mime = String(videoBlob.type || '').toLowerCase();
+        const ext = mime.includes('mp4') ? 'mp4' : mime.includes('ogg') ? 'ogg' : 'webm';
+        const direct = await transcribeWavChunkWithGroq(videoBlob, `clip.${ext}`);
+        if (direct) {
+          return {
+            text: direct.text || '',
+            segments: (direct.segments || []).map(seg => ({
+              start: Number(seg.start || 0),
+              end: Number(seg.end || 0),
+              text: String(seg.text || '').trim()
+            })).filter(s => s.text),
+            words: (direct.words || []).map(w => ({
+              start: Number(w.start || 0),
+              end: Number(w.end || 0),
+              word: String(w.word || '')
+            }))
+          };
+        }
+      }
+      throw decodeErr;
+    }
+
     const fullTextParts = [];
     const allSegments = [];
     const allWords = [];
@@ -2833,7 +2936,7 @@
       if (chunks.length > 1) {
         setStep(3, 'run', `Transcribiendo parte ${i + 1}/${chunks.length}...`);
       }
-      const part = await transcribeWavChunkWithGroq(chunks[i].wavBlob);
+      const part = await transcribeWavChunkWithGroq(chunks[i].wavBlob, 'audio.wav');
       if (!part) continue;
       if (part.text) fullTextParts.push(part.text.trim());
       const off = chunks[i].offsetSec;
@@ -4644,7 +4747,9 @@ async function callYtGemini(model, key, id, range, flags) {
     ? ' IMPORTANTE: solo ves un fragmento del video; da los tiempos en segundos RELATIVOS al inicio de ese fragmento (0 = inicio del fragmento).'
     : ' Usa tiempos EXACTOS en segundos desde el inicio del video.';
   const activeEmos = getSelectedEmotionsText();
-  const prompt = `Eres editor experto en retención para YouTube Shorts, Reels y TikTok. Mira este video y elige los 5 momentos más ÉPICOS (cada uno de ~${state.cutDuration} segundos, máximo 60), buscando específicamente: ${activeEmos}.${timeRule} Escribe "start" y "end" como números (segundos) y clasifica "emotion" usando una de estas claves: ${EMOTION_KEYS_STR}. Responde SOLO con JSON: {"cuts":[{"title":"título viral en español","hookText":"2-4 PALABRAS","emotion":"risa","score":95,"start":0,"end":30,"reason":"por qué atrapa","caption":"descripción corta con hashtags"}]}`;
+  const desiredDur = Math.max(5, Math.min(180, Number($('ytCutDurInput')?.value) || state.cutDuration || 45));
+  const maxDur = Math.min(180, desiredDur + 15);
+  const prompt = `Eres editor experto en retención para YouTube Shorts, Reels y TikTok. Mira este video y elige los 5 momentos más ÉPICOS, cada uno con una duración cercana a ${desiredDur} segundos (mínimo ${Math.max(5, desiredDur - 10)} s, máximo ${maxDur} s), buscando específicamente: ${activeEmos}.${timeRule} Escribe "start" y "end" como números (segundos) y clasifica "emotion" usando una de estas claves: ${EMOTION_KEYS_STR}. Responde SOLO con JSON: {"cuts":[{"title":"título viral en español","hookText":"2-4 PALABRAS","emotion":"risa","score":95,"start":0,"end":${desiredDur},"reason":"por qué atrapa","caption":"descripción corta con hashtags"}]}`;
   const gen = { responseMimeType: 'application/json' };
   if (flags.res) gen.mediaResolution = 'MEDIA_RESOLUTION_LOW';
   if (flags.schema) {
@@ -4675,8 +4780,9 @@ async function callYtGemini(model, key, id, range, flags) {
   return extractCuts(txt).map(c => {
     const s = parseTs(c.start != null ? c.start : (c.start_time != null ? c.start_time : c.startTime)) + off;
     let e = parseTs(c.end != null ? c.end : (c.end_time != null ? c.end_time : c.endTime)) + off;
-    if (isFinite(s) && (!isFinite(e) || e <= s)) e = s + (state.cutDuration || 30);
-    return { title: c.title || 'Corte', hookText: c.hookText || '', emotion: normalizeEmotion(c.emotion), score: Number(c.score) || 0, start: s, end: Math.min(e, s + 120), reason: c.reason || '', caption: c.caption || '' };
+    const ytDur = Math.max(5, Math.min(180, Number($('ytCutDurInput')?.value) || state.cutDuration || 45));
+    if (isFinite(s) && (!isFinite(e) || e <= s)) e = s + ytDur;
+    return { title: c.title || 'Corte', hookText: c.hookText || '', emotion: normalizeEmotion(c.emotion), score: Number(c.score) || 0, start: s, end: Math.min(e, s + 185), reason: c.reason || '', caption: c.caption || '' };
   }).filter(c => isFinite(c.start) && c.start >= 0 && c.end - c.start >= 3);
 }
 
@@ -4710,7 +4816,7 @@ async function generateYtCuts() {
   const list = $('ytCutsList');
   const fail = msg => { list.textContent = `⚠️ ${msg}`; showToast(msg.slice(0, 120), 'warn'); };
   if (!id) { fail('Pega un enlace válido de YouTube (watch?v=, youtu.be/, live/ o shorts/).'); return; }
-  if (!getCreator()) { fail('Primero elige (o añade) el creador autorizado de este contenido, para poner sus créditos en cada corte.'); return; }
+  // El creador es opcional: si eliges uno se añaden sus créditos automáticamente
   const key = getYtGeminiKey();
   if (!key) { fail('Falta la clave de Gemini: pégala en el campo de al lado del botón (se guarda en tu navegador). Se crea gratis en aistudio.google.com/apikey.'); return; }
   safeSet('cliphub_gemini_key', key);
@@ -4778,7 +4884,7 @@ async function generateYtCuts() {
       };
       const link = () => `https://youtu.be/${id}?t=${cur().s}`;
       const descr = () => `${c.title}\n\n${c.caption}${creatorCredit(creator, link())}`;
-      const mk = () => { const t2 = cur(); return { id, s: t2.s, e: t2.e, title: c.title, link: link(), creator }; };
+      const mk = () => { const t2 = cur(); return { id, s: t2.s, e: t2.e, title: c.title, emotion: c.emotion || '', reason: c.reason || '', score: c.score || 0, caption: c.caption || '', link: link(), creator }; };
       const row = document.createElement('div');
       row.className = 'row'; row.style.marginTop = '6px';
       row.append(
@@ -5379,6 +5485,15 @@ function renderLiveClips() {
       previewBtn,
       mkBtn('✂️ Cargar en el Estudio', () => {
         pendingWindow = { start: c.start, end: c.end };
+        pendingLiveSubs = {
+          name: c.name,
+          emotion: c.emotion || '',
+          reason: c.reason || '',
+          score: c.score || 92,
+          transcript: c.transcript || '',
+          subtitles: Array.isArray(c.subtitles) ? c.subtitles : [],
+          words: Array.isArray(c.words) ? c.words : []
+        };
         state.videoBlob = c.blob;
         loadVideoSrc(URL.createObjectURL(c.blob), c.name, c.dur);
         state.sourceCredit = creatorCredit(c.creator, c.src || (c.creator && c.creator.url) || '');
@@ -5521,31 +5636,134 @@ function recordYtOne(stream, fr, player, it, fmt) {
   });
 }
 
-function addYtClip(c) {
-  ytRec.clips.unshift(c);
-  ytRec.clips = ytRec.clips.slice(0, 12);
+function renderYtClips() {
   const box = $('ytClipFiles');
+  if (!box) return;
   box.textContent = '';
-  ytRec.clips.forEach(x => {
-    const row = document.createElement('div');
-    row.className = 'row'; row.style.alignItems = 'center';
-    const lbl = document.createElement('span');
-    lbl.textContent = `🎬 ${x.it.title} · ${Math.round(x.dur)} s · ${(x.blob.size / 1048576).toFixed(1)} MB${x.precise ? '' : ' (puede traer unos segundos de más al inicio)'}${x.ok === false ? ' ⚠️ posible archivo dañado: cambia el "Formato" y graba de nuevo' : ' ✅'}`;
-    row.append(
-      lbl,
-      mkBtn('Cargar en el editor', () => {
+  ytRec.clips.forEach((x, idx) => {
+    const card = document.createElement('div');
+    card.className = 'live-clip-card';
+
+    const top = document.createElement('div');
+    top.className = 'row'; top.style.justifyContent = 'space-between';
+    const left = document.createElement('div');
+    left.className = 'row'; left.style.gap = '6px';
+    if (x.it.emotion) {
+      const emoB = document.createElement('span');
+      emoB.className = `badge emo-${x.it.emotion}`;
+      emoB.textContent = emotionLabel(x.it.emotion);
+      left.appendChild(emoB);
+    }
+    const fmtB = document.createElement('span');
+    fmtB.className = 'badge';
+    fmtB.textContent = x.aspect || '16:9';
+    left.appendChild(fmtB);
+    if (x.hasSubs) {
+      const subB = document.createElement('span');
+      subB.className = 'badge green';
+      subB.textContent = '💬 Subtítulos';
+      left.appendChild(subB);
+    }
+    const titleEl = document.createElement('strong');
+    titleEl.textContent = `🎬 ${x.it.title}`;
+    left.appendChild(titleEl);
+
+    const metaEl = document.createElement('span');
+    metaEl.className = 'muted';
+    metaEl.textContent = `${Math.round(x.dur)} s · ${(x.blob.size / 1048576).toFixed(1)} MB${x.ok === false ? ' ⚠️ posible daño' : ' ✅'}`;
+    top.append(left, metaEl);
+    card.appendChild(top);
+
+    const previewWrap = document.createElement('div');
+    previewWrap.className = 'live-preview-wrap';
+    previewWrap.style.display = 'none';
+    let pvUrl = null;
+    const previewBtn = mkBtn('▶ Ver aquí', () => {
+      if (previewWrap.style.display === 'none') {
+        previewWrap.textContent = '';
+        pvUrl = URL.createObjectURL(x.blob);
+        const pv = document.createElement('video');
+        pv.className = 'live-preview-video';
+        pv.controls = true; pv.playsInline = true; pv.src = pvUrl;
+        previewWrap.appendChild(pv);
+        previewWrap.style.display = 'block';
+        pv.play().catch(() => {});
+        previewBtn.textContent = '✕ Ocultar';
+      } else {
+        const pv = previewWrap.querySelector('video');
+        if (pv) { try { pv.pause(); pv.src = ''; } catch (_) {} }
+        if (pvUrl) { try { URL.revokeObjectURL(pvUrl); } catch (_) {} pvUrl = null; }
+        previewWrap.textContent = '';
+        previewWrap.style.display = 'none';
+        previewBtn.textContent = '▶ Ver aquí';
+      }
+    });
+
+    const discardBtn = mkBtn('🗑️ Descartar', () => {
+      if (pvUrl) { try { URL.revokeObjectURL(pvUrl); } catch (_) {} }
+      ytRec.clips.splice(idx, 1);
+      renderYtClips();
+    });
+    discardBtn.classList.add('btn-danger');
+
+    const actions = document.createElement('div');
+    actions.className = 'row';
+    actions.append(
+      previewBtn,
+      mkBtn('✂️ Cargar en el Estudio', () => {
+        pendingWindow = { start: 0, end: x.dur };
+        pendingLiveSubs = {
+          name: x.it.title,
+          emotion: x.it.emotion || '',
+          reason: x.it.reason || '',
+          score: x.it.score || 92,
+          transcript: x.transcript || '',
+          subtitles: x.subtitles || [],
+          words: x.words || []
+        };
         state.videoBlob = x.blob;
         loadVideoSrc(URL.createObjectURL(x.blob), x.it.title, x.dur);
         state.sourceCredit = creatorCredit(x.it.creator, x.it.link);
+        document.querySelector('[data-tab="studio"]')?.click();
       }),
-      mkBtn('Descargar', () => {
+      mkBtn('✈️ Enviar a Telegram', async () => {
+        saveTelegramConfigFromUI(true);
+        if (!isTelegramConfigured()) { showToast('Configura tu Bot Token y Chat ID en Radar & Telegram', 'warn'); return; }
+        showToast(`✈️ Enviando "${x.it.title}" a Telegram...`, '');
+        try {
+          await sendBlobToTelegram({
+            blob: x.blob,
+            ext: x.ext || 'mp4',
+            title: x.it.title,
+            emotion: x.it.emotion || '',
+            reason: x.it.reason || '',
+            score: x.it.score || 0,
+            transcript: x.transcript || (x.subtitles || []).map(s => s.text).join(' '),
+            subs: x.subtitles || [],
+            startOffset: 0,
+            credit: creatorCredit(x.it.creator, x.it.link)
+          });
+          pushTelegramHistory({ ok: true, title: x.it.title, emotion: x.it.emotion || '', time: new Date().toLocaleTimeString() });
+          showToast(`✈️ "${x.it.title}" enviado a Telegram`, 'ok');
+        } catch (err) {
+          showToast(`Error Telegram: ${err.message}`, 'warn');
+        }
+      }),
+      mkBtn(`⬇️ Descargar (${(x.ext || 'mp4').toUpperCase()})`, () => {
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(x.blob); a.download = `${String(x.it.title).replace(/[^\w-]+/g, '_')}.${x.ext}`;
+        a.href = URL.createObjectURL(x.blob); a.download = `${String(x.it.title).replace(/[^\w-]+/g, '_')}_${(x.aspect || 'clip').replace(':','x')}.${x.ext}`;
         a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      })
+      }),
+      discardBtn
     );
-    box.appendChild(row);
+    card.append(actions, previewWrap);
+    box.appendChild(card);
   });
+}
+function addYtClip(c) {
+  ytRec.clips.unshift(c);
+  ytRec.clips = ytRec.clips.slice(0, 8);
+  renderYtClips();
 }
 
 function openYtPopup(id, useApi) {
@@ -5641,6 +5859,12 @@ async function recordYtClips(items) {
     if (!stream.getAudioTracks().length) showToast('No se capturó audio: marca "Compartir audio" al elegir la pestaña', 'warn');
     if (!player) showToast('Sin control exacto del reproductor: los clips pueden traer unos segundos de más al inicio (abre la página desde un servidor y no como archivo para mayor precisión)', 'warn');
     let ok = 0, bad = 0;
+    const ytAspect = $('ytAspectSelect')?.value || '9:16';
+    const ytRes = $('ytResSelect')?.value || 'sd';
+    const ytBurnSubs = Boolean($('ytBurnSubsCheck')?.checked);
+    const ytSubStyle = $('ytSubStyleSelect')?.value || state.subStyle || 'word';
+    const needsRender = ytBurnSubs || ytAspect !== '16:9';
+
     for (let i = 0; i < items.length && !ytRec.cancel; i++) {
       const it = items[i];
       st.textContent = `🎥 Grabando corte ${i + 1} de ${items.length}: "${it.title}" (${Math.max(3, it.e - it.s)} s en tiempo real). No cierres ni minimices ninguna de las dos ventanas.`;
@@ -5648,6 +5872,50 @@ async function recordYtClips(items) {
       if (clip) {
         st.textContent = `Comprobando el archivo del corte ${i + 1}...`;
         clip.ok = await verifyClip(clip.blob);
+        clip.aspect = ytAspect;
+        clip.hasSubs = false;
+        clip.subtitles = [];
+        clip.words = [];
+        clip.transcript = '';
+
+        if (clip.ok && needsRender && !ytRec.cancel) {
+          if (ytBurnSubs && ((state.ai.groqKey || '').trim() || hasProxy())) {
+            st.textContent = `🎙️ Transcribiendo subtítulos del corte ${i + 1} con Groq Whisper...`;
+            try {
+              const tr = await transcribeVideoWithGroqWhisper(clip.blob);
+              if (tr?.segments?.length) {
+                clip.transcript = tr.text || '';
+                clip.subtitles = tr.segments;
+                clip.words = tr.words || [];
+              }
+            } catch (trErr) {
+              console.warn('Whisper en corte YT:', trErr);
+              showToast(`Whisper aviso: ${trErr.message}`, 'warn');
+            }
+          }
+          st.textContent = `🎬 Renderizando corte ${i + 1} en ${ytAspect}${ytBurnSubs ? ' con subtítulos' : ''}...`;
+          try {
+            const rendered = await renderOffscreenClipWithSubtitles({
+              blob: clip.blob,
+              start: 0,
+              end: clip.dur,
+              dur: clip.dur,
+              name: it.title,
+              transcript: clip.transcript || it.caption || '',
+              subtitles: clip.subtitles,
+              words: clip.words,
+              subsFromFullBlob: true
+            }, { aspect: ytAspect, res: ytRes, subStyle: ytSubStyle, burnSubs: ytBurnSubs });
+            clip.blob = rendered.blob;
+            clip.ext = rendered.ext;
+            clip.subtitles = rendered.subs;
+            clip.hasSubs = ytBurnSubs && rendered.subs.length > 0;
+          } catch (rErr) {
+            console.warn('Render corte YT:', rErr);
+            showToast(`No se pudo renderizar en ${ytAspect}: ${rErr.message}`, 'warn');
+          }
+        }
+
         clip.ok ? ok++ : bad++;
         addYtClip(clip);
       } else if (!ytRec.cancel) showToast(`El corte "${it.title}" no se pudo grabar (el video no arrancó)`, 'warn');
@@ -6828,7 +7096,7 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
   // Dibuja subtítulos para un clip offscreen (reutiliza exactamente el mismo estilo visual del Estudio)
   function drawOffscreenSubtitles(c, w, h, now, subsList, wordsList, style, aspect) {
     if (!subsList || !subsList.length) return;
-    const active = subsList.find(s => now >= s.start && now <= s.end);
+    const active = subsList.find(s => now >= (s.start - 0.15) && now <= (s.end + 0.25));
     if (!active) return;
 
     if (style === 'word') {
@@ -6914,8 +7182,8 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
     window.addEventListener(ev, () => { getUnlockedAudioCtx(); }, { once: true, passive: true });
   });
 
-  // Renderiza en segundo plano (sin eco y CON AUDIO GARANTIZADO) un clip con subtítulos incrustados
-  async function renderOffscreenClipWithSubtitles(clipObj) {
+  // Renderiza en segundo plano (sin eco y CON AUDIO GARANTIZADO) un clip al tamaño elegido y con subtítulos opcionales
+  async function renderOffscreenClipWithSubtitles(clipObj, opts = {}) {
     const offVideo = document.createElement('video');
     offVideo.playsInline = true;
     offVideo.muted = false;
@@ -6938,10 +7206,12 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
         offVideo.load();
       });
 
-      const aspect = state.aspect || '9:16';
-      const dims = aspect === '16:9' ? { w: 960, h: 540 }
-        : aspect === '1:1' ? { w: 720, h: 720 }
-        : { w: 540, h: 960 };
+      const aspect = opts.aspect || state.aspect || '9:16';
+      const isHd = opts.res === 'hd';
+      const dims = aspect === '16:9' ? (isHd ? { w: 1280, h: 720 } : { w: 960, h: 540 })
+        : aspect === '1:1' ? (isHd ? { w: 960, h: 960 } : { w: 720, h: 720 })
+        : aspect === '4:5' ? (isHd ? { w: 864, h: 1080 } : { w: 640, h: 800 })
+        : (isHd ? { w: 720, h: 1280 } : { w: 540, h: 960 });
 
       const offCanvas = document.createElement('canvas');
       offCanvas.width = dims.w;
@@ -7010,16 +7280,18 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
 
       const startT = Math.max(0, Number(clipObj.start) || 0);
       const endT = Math.max(startT + 2, Number(clipObj.end) || Number(clipObj.dur) || 60);
-      const clipMs = Math.min(120000, Math.max(2000, (endT - startT) * 1000));
+      const clipMs = Math.min(185000, Math.max(2000, (endT - startT) * 1000));
+      const burnSubs = opts.burnSubs !== false;
 
       let subs = Array.isArray(clipObj.subtitles) && clipObj.subtitles.length
         ? clipObj.subtitles
         : (clipObj.transcript ? buildTimedSubtitles(clipObj.transcript.split(/(?<=[.!?])\s+/), startT, endT) : []);
-      if (!subs.length && clipObj.name) {
+      if (burnSubs && !subs.length && clipObj.name) {
         subs = [{ start: startT, end: endT, text: clipObj.name }];
       }
-      const words = Array.isArray(clipObj.words) ? clipObj.words : [];
-      const subStyle = state.subStyle || 'word';
+      if (!burnSubs) subs = [];
+      const words = burnSubs && Array.isArray(clipObj.words) ? clipObj.words : [];
+      const subStyle = opts.subStyle || state.subStyle || 'word';
 
       const drawFrame = () => {
         g.fillStyle = '#050811';
@@ -7046,6 +7318,15 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
         });
       }
       await offVideo.play().catch(() => {});
+      // Si el WebM del directo no permitió saltar a startT y se quedó en ~0s, alinear los subtítulos al tiempo real del video
+      const realStartNow = Number(offVideo.currentTime) || 0;
+      if (!clipObj.subsFromFullBlob && startT > 3 && Math.abs(realStartNow - startT) > 3 && subs.length) {
+        const shift = realStartNow - startT;
+        subs = subs.map(s => ({ ...s, start: Math.max(0, s.start + shift), end: Math.max(0.5, s.end + shift) }));
+        for (let i = 0; i < words.length; i++) {
+          words[i] = { ...words[i], start: Math.max(0, words[i].start + shift), end: Math.max(0.1, words[i].end + shift) };
+        }
+      }
       drawFrame();
       // 24 fps con setInterval: mitad de carga de CPU que requestAnimationFrame y nunca se pausa en segundo plano ligero
       drawTimer = setInterval(drawFrame, 42);
@@ -7130,18 +7411,31 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
         let finalExt = c.ext || 'mp4';
         let finalSubs = c.subtitles || [];
 
-        // Si el clip aún no tiene transcripción pero el usuario tiene Groq Whisper, transcribirlo rápido
-        if (!finalSubs.length && c.blob && ((state.ai.groqKey || '').trim() || hasProxy())) {
-          if ($('tgStatusText')) $('tgStatusText').textContent = `🎙️ Transcribiendo subtítulos de "${c.name}"...`;
+        // Comprobar si los subtítulos cubren todo el clip (los clips con pre-roll de 45-90s necesitan transcribir el tramo completo)
+        const clipLenSec = Math.max(5, (Number(c.end) || Number(c.dur) || 60) - (Number(c.start) || 0));
+        const subsSpan = finalSubs.length
+          ? (Math.max(...finalSubs.map(s => Number(s.end) || 0)) - Math.min(...finalSubs.map(s => Number(s.start) || 0)))
+          : 0;
+        const needsFullTranscribe = (!finalSubs.length || subsSpan < clipLenSec * 0.55);
+        const hasGroqForSubs = Boolean((state.ai.groqKey || '').trim() || hasProxy());
+
+        if (needsFullTranscribe && c.blob && hasGroqForSubs) {
+          if ($('tgStatusText')) $('tgStatusText').textContent = `🎙️ Transcribiendo subtítulos completos de "${c.name}"...`;
           try {
             const tr = await transcribeVideoWithGroqWhisper(c.blob);
             if (tr?.segments?.length) {
               c.transcript = tr.text || '';
-              c.subtitles = tr.segments.filter(s => s.end >= c.start && s.start <= c.end);
-              c.words = (tr.words || []).filter(w => w.end >= c.start && w.start <= c.end);
+              c.subtitles = tr.segments;
+              c.words = tr.words || [];
+              c.subsFromFullBlob = true;
               finalSubs = c.subtitles;
             }
-          } catch (_) {}
+          } catch (trErr) {
+            console.warn('Error transcribiendo clip para Telegram:', trErr);
+            if ($('tgStatusText')) $('tgStatusText').textContent = `⚠️ Whisper no pudo transcribir (${trErr.message}). Usando texto disponible...`;
+          }
+        } else if (!finalSubs.length && !hasGroqForSubs) {
+          if ($('tgStatusText')) $('tgStatusText').textContent = `⚠️ Sin clave de Groq Whisper: conecta Groq en "⚙️ Tokens IA" para subtítulos reales.`;
         }
 
         if (state.telegram.burnSubs !== false) {
@@ -7394,6 +7688,72 @@ $('ytRecStopBtn').addEventListener('click', () => { ytRec.cancel = true; if (ytR
     $(id)?.addEventListener('change', () => saveBrandPreset(false));
   });
   loadBrandPreset();
+
+  // 4b. Controles de Cortes por Enlace de YouTube (tamaño, tiempo, subtítulos y corte manual)
+  if ($('ytLinkInput2') && $('ytUrlInput')) {
+    $('ytLinkInput2').addEventListener('input', e => { $('ytUrlInput').value = e.target.value; });
+    $('ytUrlInput').addEventListener('input', e => { $('ytLinkInput2').value = e.target.value; });
+  }
+  function saveYtCutPrefs() {
+    safeSet('cliphub_yt_cut_prefs', JSON.stringify({
+      aspect: $('ytAspectSelect')?.value || '9:16',
+      res: $('ytResSelect')?.value || 'sd',
+      dur: Number($('ytCutDurInput')?.value) || 45,
+      burnSubs: Boolean($('ytBurnSubsCheck')?.checked),
+      subStyle: $('ytSubStyleSelect')?.value || 'word'
+    }));
+  }
+  function syncYtDurPills(val) {
+    document.querySelectorAll('.yt-dur-pill').forEach(p => {
+      p.classList.toggle('active', Number(p.dataset.ytDur) === Number(val));
+    });
+  }
+  document.querySelectorAll('.yt-dur-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const secs = Number(pill.dataset.ytDur) || 45;
+      if ($('ytCutDurInput')) $('ytCutDurInput').value = String(secs);
+      syncYtDurPills(secs);
+      saveYtCutPrefs();
+      showToast(`Duración de cortes YouTube: ${secs} s`, 'ok');
+    });
+  });
+  $('ytCutDurInput')?.addEventListener('input', e => { syncYtDurPills(e.target.value); saveYtCutPrefs(); });
+  ['ytAspectSelect', 'ytResSelect', 'ytBurnSubsCheck', 'ytSubStyleSelect'].forEach(id => {
+    $(id)?.addEventListener('change', saveYtCutPrefs);
+  });
+  try {
+    const yp = JSON.parse(safeGet('cliphub_yt_cut_prefs', 'null'));
+    if (yp && typeof yp === 'object') {
+      if (yp.aspect && $('ytAspectSelect')) $('ytAspectSelect').value = yp.aspect;
+      if (yp.res && $('ytResSelect')) $('ytResSelect').value = yp.res;
+      if (yp.dur && $('ytCutDurInput')) { $('ytCutDurInput').value = String(yp.dur); syncYtDurPills(yp.dur); }
+      if (typeof yp.burnSubs === 'boolean' && $('ytBurnSubsCheck')) $('ytBurnSubsCheck').checked = yp.burnSubs;
+      if (yp.subStyle && $('ytSubStyleSelect')) $('ytSubStyleSelect').value = yp.subStyle;
+    }
+  } catch (_) {}
+
+  $('ytManualRecBtn')?.addEventListener('click', () => {
+    const rawUrl = ($('ytLinkInput2')?.value || $('ytUrlInput')?.value || '').trim();
+    const id = ytId(rawUrl);
+    if (!id) { showToast('Pega primero un enlace válido de YouTube arriba', 'warn'); return; }
+    const fromMin = parseFloat($('ytFromMin')?.value);
+    const startSec = isFinite(fromMin) && fromMin > 0 ? Math.floor(fromMin * 60) : 0;
+    const durSec = Math.max(5, Math.min(180, Number($('ytCutDurInput')?.value) || 45));
+    const endSec = startSec + durSec;
+    const link = `https://youtu.be/${id}?t=${startSec}`;
+    recordYtClips([{
+      id,
+      s: startSec,
+      e: endSec,
+      title: `Corte YouTube ${fmtT(startSec)}-${fmtT(endSec)}`,
+      emotion: '',
+      reason: `Corte manual de ${durSec} s en formato ${$('ytAspectSelect')?.value || '9:16'}`,
+      score: 0,
+      caption: '',
+      link,
+      creator: getCreator()
+    }]);
+  });
 
   // 5. Atajos de teclado globales (ignorados cuando se escribe en campos de texto)
   window.addEventListener('keydown', e => {
